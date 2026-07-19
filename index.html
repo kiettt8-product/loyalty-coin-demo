@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>Loyalty Coin Campaign Demo</title>
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-toggle" id="menuToggle" aria-label="Mở menu">☰</button>
+    <a class="zalopay-logo" href="#" aria-label="Zalopay"><span>Zalo</span><b>pay</b></a>
+    <div class="account"><span>Kiệt, Tô Thế (8)</span><i>K</i></div>
+  </header>
+
+  <aside class="sidebar" id="sidebar">
+    <nav>
+      <button class="nav-parent" data-nav-target="userManagementMenu" aria-expanded="false">User Management<span>⌄</span></button>
+      <div class="nav-sub single" id="userManagementMenu" hidden><button>Label List</button></div>
+      <button class="nav-parent" data-nav-target="userProfileMenu" aria-expanded="false">User Profile<span>⌄</span></button>
+      <div class="nav-sub single" id="userProfileMenu" hidden><button>Segment</button></div>
+      <button class="nav-parent">Asset Management<span>⌄</span></button>
+      <button class="nav-parent">Campaign Management<span>⌃</span></button>
+      <div class="nav-sub campaign-menu">
+        <button>Notification Campaign</button>
+        <button>ZMS Campaign</button>
+        <button>Promo Asset Campaign</button>
+        <button>Promo Store Campaign</button>
+        <button data-route="trigger">Trigger Based Campaign</button>
+        <button>Promotion Code</button>
+        <button class="active" data-route="list">Promo Loyalty Coin Campaign</button>
+        <button>Revoke Voucher</button>
+      </div>
+      <button class="nav-parent">Inventory Management<span>⌄</span></button>
+      <button class="nav-parent">Budget Management<span>⌄</span></button>
+      <button class="nav-parent">Others<span>⌄</span></button>
+    </nav>
+  </aside>
+
+  <main id="mainContent" tabindex="-1"></main>
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <template id="listTemplate">
+    <div class="screen list-screen">
+      <section class="filter-panel">
+        <div class="filter-grid" id="filterGrid">
+          <input id="filterId" aria-label="Campaign ID hoặc Present ID" placeholder="Campaign ID / Present ID">
+          <input id="filterMkt" aria-label="MKT Name hoặc MKT Code" placeholder="MKT Name / MKT Code">
+          <select id="filterLabel" aria-label="Label"><option value="">Label</option><option>ZPO</option><option>BAU</option><option>Growth</option></select>
+          <select id="filterOwner" aria-label="Created By"><option value="">Created By</option><option>kiettt8</option><option>nghiatn</option><option>linhnt22</option></select>
+          <select id="filterStatus" aria-label="Status"><option value="">Status</option><option>Draft</option><option>Auto Approved</option><option>Approved</option><option>FA Review</option><option>Rejected</option><option>In Use</option><option>Ended</option></select>
+          <div class="range-field"><input type="text" placeholder="From" aria-label="From date"><span>→</span><input type="text" placeholder="To" aria-label="To date"></div>
+          <div class="filter-actions">
+            <button class="btn secondary" id="resetFilter">Reset</button>
+            <button class="btn primary" id="searchFilter">Search</button>
+            <button class="text-action" id="collapseFilter">Collapse <span>⌃</span></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="list-panel">
+        <div class="list-toolbar"><button class="btn primary" id="addNew">+ Add new</button></div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>ID</th><th>MKT Code</th><th>MKT Name</th><th>Total Budget</th><th>Present ID</th><th>Distribute time</th><th>Status</th><th>Label</th><th>Created by</th><th>Action</th></tr></thead>
+            <tbody id="campaignRows"></tbody>
+          </table>
+          <div class="empty-state" id="emptyState" hidden><strong>No data found</strong><span>Không có campaign phù hợp với filter.</span></div>
+        </div>
+        <div class="pagination"><span id="itemCount">1-10 of 733 items</span><button>‹</button><button class="active">1</button><button>2</button><button>3</button><span>...</span><button>74</button><button>›</button><span>10 / page</span></div>
+      </section>
+    </div>
+  </template>
+
+  <template id="formTemplate">
+    <form class="screen form-screen" id="campaignForm" novalidate>
+      <section class="crm-section">
+        <h1 class="section-title-row"><span id="formTitle">Basic Information</span><span id="formStatus"></span></h1>
+        <div class="section-content basic-fields">
+          <label class="field required"><span>Select MKT Code</span><select id="mktCode"><option value="">Select MKT Code</option><option value="shared">2893 - [28/05/2026][DLS_260528_563][BAU]</option><option value="campaign">ZPI_060426_341</option><option value="package">ZPI_060426_342</option></select></label>
+          <label class="field required"><span>Select MKT Name</span><select id="mktName" disabled><option>Select MKT Name</option></select></label>
+          <label class="field required"><span>Budget Control Method</span><select id="budgetMethod" disabled><option value="">Select Budget Control Method</option></select></label>
+          <label class="field"><span>Allocated Budget</span><div class="suffix-input"><input id="allocatedBudget" placeholder="Allocated Budget" disabled><b>VND</b></div></label>
+          <label class="field required time-field"><span>Distribute time</span><div class="range-field"><input id="startTime" type="datetime-local"><span>→</span><input id="endTime" type="datetime-local"></div></label>
+          <label class="field"><span>Label</span><select id="campaignLabel"><option>ZPO</option><option>BAU</option><option>Growth</option></select></label>
+        </div>
+      </section>
+
+      <div id="packages"></div>
+      <button type="button" class="btn primary add-package" id="addPackage">Add new Package</button>
+
+      <section class="crm-section budget-alert">
+        <h1>Budget Alert</h1>
+        <div class="section-content alert-fields">
+          <label class="field"><span>Alert to</span><div class="tag-control" id="emailControl"><div class="tags"></div><input id="emailInput" placeholder="domain@vng.com.vn"></div></label>
+          <label class="field"><span>Alert when budget low %</span><div class="tag-control" id="thresholdControl"><div class="tags"></div><input id="thresholdInput" placeholder="%"></div></label>
+        </div>
+      </section>
+
+      <div class="form-actions" id="formActions">
+        <button type="button" class="btn secondary" id="cancelForm">Cancel</button>
+        <button type="button" class="btn primary" id="saveDraft">Save Draft</button>
+        <button type="submit" class="btn primary">Save & Submit</button>
+      </div>
+    </form>
+  </template>
+
+  <template id="triggerTemplate">
+    <form class="screen trigger-screen" id="triggerForm" novalidate>
+      <section class="trigger-general">
+        <label class="field required"><span>Tên Campaign</span><input placeholder="Tên Campaign" value="Trigger Loyalty Coin - New User"></label>
+        <label class="field required"><span>Thời gian diễn ra campaign</span><div class="range-field"><input value="01/08/2026 00:00"><span>→</span><input value="31/12/2026 23:59"></div></label>
+        <label class="field trigger-description"><span>Mô tả campaign:</span><input placeholder="Mô tả campaign"></label>
+      </section>
+
+      <div class="trigger-layout">
+        <aside class="action-list">
+          <div class="event-select"><span>Khi 1 sự kiện xảy ra</span><select><option>Sau khi thực hiện giao dịch thành công</option></select></div>
+          <div class="action-card active"><p>Hành động bắt đầu sau khi sự kiện đầu tiên xảy ra: <b>Ngay lập tức</b></p><div><span>Hành động 1:</span><input placeholder="Mô tả"></div></div>
+          <button type="button" class="add-action">+ Thêm một hành động</button>
+        </aside>
+
+        <section class="action-detail">
+          <h1>Chi tiết - Hành động 1</h1>
+          <div class="detail-body">
+            <h2>Điều kiện</h2>
+            <p>Hành động được thực hiện khi giao dịch thoả mãn điều kiện sau</p>
+            <div class="condition-row"><input value="Đã thanh toán tại app_id"><select><option>In</option></select><select><option>Chọn danh sách App ID</option></select></div>
+            <div class="condition-row"><input value="Có giao dịch với trạng thái"><select><option>In</option></select><select><option>Success</option></select></div>
+            <button type="button" class="btn secondary add-condition">+ Thêm điều kiện</button>
+            <div class="notice"><span>Hành động bắt đầu sau khi sự kiện đầu tiên xảy ra: <b>Ngay lập tức</b></span></div>
+
+            <h2>Hành động</h2>
+            <div class="action-config-grid">
+              <label class="field required"><span>Hành động:</span><select><option>Phát xu</option></select></label>
+              <label class="field required"><span>Số lần tối đa user nhận được hành động</span><div class="limit-control"><input value="1"><select><option>per calendar day</option></select></div></label>
+              <label class="field required"><span>Campaign ID / MKT name</span><select id="triggerCampaign"><option value="">Chọn campaign trong Promo Loyalty Coin Campaign</option></select><small>Bạn cần tạo 1 Campaign Promo Loyalty Coin được FA approve trước.</small></label>
+              <label class="field required"><span>Present ID - Số xu phát</span><select id="triggerPresent" disabled><option>Chọn Present ID - Số xu phát đã cấu hình</option></select></label>
+            </div>
+
+            <h2>Áp dụng cho nhóm người dùng (Segment)</h2>
+            <p>Hành động này được thực hiện cho nhóm người dùng nào</p>
+            <div class="segment-row"><select><option>In</option></select><select><option>Chọn Segment</option></select></div>
+            <label class="field required risk-field"><span>Thực hiện hành động chỉ với người dùng là</span><div class="segment-row"><select><option>Đánh giá rủi ro toàn hệ thống</option></select><select><option>Normal user</option></select></div></label>
+            <button type="button" class="advanced">Điều kiện nâng cao</button>
+          </div>
+        </section>
+      </div>
+
+      <div class="trigger-actions"><button type="button" class="btn secondary" data-route="list">Cancel</button><button type="button" class="btn primary">Save Draft</button><button type="submit" class="btn primary">Approve and Distribute</button></div>
+    </form>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
