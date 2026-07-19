@@ -79,6 +79,14 @@ await page.screenshot({ path: "demo-edit-approved.png", fullPage: true });
 await page.getByRole("button", { name: "Save changes" }).click();
 await page.waitForTimeout(500);
 
+await rowFor("Auto Approved").getByRole("button", { name: "View" }).click();
+const campaignConsumedValues = await page.locator(".pkg-consumed").evaluateAll(nodes => nodes.map(node => node.value));
+const campaignRemainingValues = await page.locator(".pkg-remaining").evaluateAll(nodes => nodes.map(node => node.value));
+if (campaignConsumedValues.some(value => value !== "13.000.000") || campaignRemainingValues.some(value => value !== "17.000.000")) {
+  throw new Error("Control by campaign must display shared campaign-level consumed/remaining budget");
+}
+await page.getByRole("button", { name: "Back" }).click();
+
 await rowFor("In Use").getByRole("button", { name: "Edit" }).click();
 const inUseLabelDisabled = await page.locator("#campaignLabel").isDisabled();
 const inUseEditableIds = await page.locator("#campaignForm input:enabled, #campaignForm select:enabled").evaluateAll(nodes => nodes.map(node => node.id).filter(Boolean).sort());
@@ -204,6 +212,8 @@ const result = {
   approvedRemainingBudget,
   extendOnlyError,
   recalculatedRemaining,
+  campaignConsumedValues,
+  campaignRemainingValues,
   packageFieldOrder,
   generatedPresentIds,
   draftPackageCoinEnabled,

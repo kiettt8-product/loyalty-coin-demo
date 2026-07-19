@@ -35,7 +35,7 @@ const state = {
     { id: 1100, name: "Loyalty_Coin_Rejected", code: "ZPI_180726_009", budget: 9000000, presents: [], coins: [900], time: "30/11/2026 23:59", status: "Rejected", label: "BAU", owner: "kiettt8" },
     { id: 1098, name: "quantm6_CB3_22", code: "quantm6_CB3", budget: 360000000, budgetMethod: "package", packageBudgets: [300000000], consumedBudgets: [120000000], presents: [1173], coins: [30000], time: "31/03/2029 00:00", status: "Approved", label: "ZPO", owner: "nghiatn" },
     { id: 1023, name: "quantm6_CB2_21", code: "quantm6_CB2", budget: 360000000, budgetMethod: "package", packageBudgets: [150000000, 150000000], consumedBudgets: [80000000, 100000000], presents: [1157, 1136], coins: [10000, 30000], time: "28/02/2027 00:00", status: "Approved", label: "BAU", owner: "nghiatn" },
-    { id: 2893, name: "[28/05/2026][DLS_260528_563][BAU]", code: "DLS_260528_563", budget: 30000000, presents: [20535, 20711], coins: [304, 30000], time: "15/05/2027 00:00", status: "Auto Approved", label: "BAU", owner: "kiettt8" },
+    { id: 2893, name: "[28/05/2026][DLS_260528_563][BAU]", code: "DLS_260528_563", budget: 30000000, consumedBudgets: [5000000, 8000000], presents: [20535, 20711], coins: [304, 30000], time: "15/05/2027 00:00", status: "Auto Approved", label: "BAU", owner: "kiettt8" },
     { id: 1026, name: "quantm6_CB2_14", code: "quantm6_CB2", budget: 300000000, presents: [1157, 1108], coins: [5000, 20000], time: "28/02/2027 00:00", status: "Approved", label: "ZPO", owner: "nghiatn" },
     { id: 1017, name: "Voucher_Discount_721", code: "quantm6_Voucher_discount7", budget: 200000, budgetMethod: "package", packageBudgets: [150000], consumedBudgets: [0], presents: [1007], coins: [1000], time: "01/02/2027 00:00", status: "Auto Approved", label: "BAU", owner: "nghiatn" },
     { id: 1020, name: "Voucher_Discount_706", code: "quantm6_Voucher_discount7", budget: 200000, presents: [1151], coins: [500], time: "01/02/2027 00:00", status: "Ended", label: "ZPO", owner: "nghiatn" },
@@ -96,6 +96,25 @@ function canEditBudgetAlert() {
 }
 function canEditPackageBudget(campaign = getEditingCampaign()) {
   return state.formMode === "edit" && ["Auto Approved", "Approved", "In Use"].includes(campaign?.status) && campaign?.budgetMethod === "package";
+}
+
+function budgetSnapshot(control, pkg) {
+  const allocatedBudget = number(document.getElementById("allocatedBudget")?.value);
+  if (control === "campaign") {
+    const consumedBudget = state.packages.reduce((sum, item) => sum + number(item.consumedBudget), 0);
+    return {
+      budget: allocatedBudget,
+      consumedBudget,
+      remainingBudget: Math.max(allocatedBudget - consumedBudget, 0)
+    };
+  }
+  const budget = number(pkg.budget);
+  const consumedBudget = number(pkg.consumedBudget);
+  return {
+    budget,
+    consumedBudget,
+    remainingBudget: Math.max(budget - consumedBudget, 0)
+  };
 }
 
 function route(name, payload = {}) {
@@ -279,13 +298,10 @@ function renderPackages() {
   const campaign = getEditingCampaign();
   const limitedBudgetEdit = canEditPackageBudget(campaign);
   const showPresentId = campaign && ["Auto Approved", "Approved", "In Use", "Ended"].includes(campaign.status);
-  const allocatedBudget = number(document.getElementById("allocatedBudget")?.value);
   const holder = document.getElementById("packages");
   holder.innerHTML = state.packages.map(pkg => {
     const packageBudgetEnabled = hasMkt && control === "package" && (editable || limitedBudgetEdit);
-    const packageBudget = control === "package" ? number(pkg.budget) : allocatedBudget;
-    const consumedBudget = number(pkg.consumedBudget);
-    const remainingBudget = Math.max(packageBudget - consumedBudget, 0);
+    const { budget: packageBudget, consumedBudget, remainingBudget } = budgetSnapshot(control, pkg);
     const users = number(pkg.coin) ? Math.floor(packageBudget / number(pkg.coin)) : 0;
     return `<section class="crm-section package-block" data-id="${pkg.id}">
       <h1>Distribute Loyalty Coin</h1>${editable && state.packages.length > 1 ? "<button type='button' class='remove-package'>×</button>" : ""}
@@ -322,11 +338,10 @@ function bindPackage(block) {
 
 function updatePackage(block, pkg) {
   const control = document.getElementById("budgetMethod")?.value;
-  const budget = control === "package" ? number(pkg.budget) : number(document.getElementById("allocatedBudget")?.value);
+  const { budget, remainingBudget } = budgetSnapshot(control, pkg);
   const users = number(pkg.coin) ? Math.floor(budget / number(pkg.coin)) : 0;
-  const remaining = Math.max(budget - number(pkg.consumedBudget), 0);
   if (block.querySelector(".pkg-users")) block.querySelector(".pkg-users").value = money(users);
-  if (block.querySelector(".pkg-remaining")) block.querySelector(".pkg-remaining").value = money(remaining);
+  if (block.querySelector(".pkg-remaining")) block.querySelector(".pkg-remaining").value = money(remainingBudget);
 }
 
 function bindTagInput(id, type) {

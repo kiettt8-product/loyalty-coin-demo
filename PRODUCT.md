@@ -31,6 +31,14 @@ Quen thuộc, chính xác, tiết chế. UI phải nhìn như một phần có s
 - Interaction demo phải bám business rule đã chốt trong PRD.
 - Cùng một field/button/status phải có cùng visual vocabulary trên mọi screen.
 
+## Budget Display Rules
+
+- `Consumed Budget` và `Remaining Budget` luôn read-only, hiển thị ở mọi status và format theo `vi-VN`.
+- `Control budget by campaign`: Consumed Budget là tổng consumed của campaign; `Remaining Budget = MAX(Allocated Budget - Campaign Consumed Budget, 0)`.
+- `Control budget by package`: Consumed Budget theo từng package; `Remaining Budget = MAX(Package Budget - Package Consumed Budget, 0)`.
+- Khi Business edit Package Budget, UI preview Remaining Budget ngay nhưng Save phải revalidate bằng latest consumed snapshot.
+- Không hiển thị Estimated Budget hoặc Budget dư.
+
 ## Accessibility & Inclusion
 
 Keyboard usable, focus visible, label không thay bằng placeholder, semantic status không chỉ dựa vào màu và hỗ trợ reduced motion.
