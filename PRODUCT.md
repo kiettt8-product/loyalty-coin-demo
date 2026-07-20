@@ -39,14 +39,6 @@ Quen thuộc, chính xác, tiết chế. UI phải nhìn như một phần có s
 - Khi Business edit Package Budget, UI preview Remaining Budget ngay nhưng Save phải revalidate bằng latest consumed snapshot.
 - Không hiển thị Estimated Budget hoặc Budget dư.
 
-## Present ID Generation Rules
-
-- Campaign status và Present Generation Status là hai state riêng.
-- System chạy `01 initial attempt + tối đa 03 auto retry`; chỉ retry package lỗi và không generate lại Present ID đã thành công.
-- Trong lúc `Generating`, campaign giữ `Auto Approved`/`Approved`, không chuyển `In Use` và không xuất hiện trong Trigger-based Campaign.
-- Sau khi hết retry, generation chuyển `Failed`; list/form phải báo rõ cho user và Operations có action `Retry Generate Present ID`.
-- Manual retry mở một generation cycle mới. Khi `Ready`, campaign được expose cho Trigger-based; nếu Start Time đã qua nhưng chưa tới End Time thì chuyển `In Use` ngay.
-
 ## Accessibility & Inclusion
 
 Keyboard usable, focus visible, label không thay bằng placeholder, semantic status không chỉ dựa vào màu và hỗ trợ reduced motion.

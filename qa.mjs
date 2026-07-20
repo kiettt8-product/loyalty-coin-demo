@@ -38,26 +38,7 @@ for (const status of definedStatuses) {
 
 const mainOutline = await page.locator("main").evaluate(node => getComputedStyle(node).outlineStyle);
 const logoText = await page.locator(".zalopay-logo").innerText();
-const generatingRow = page.locator("tbody tr").filter({ hasText: "quantm6_CB2_21" });
-const failedRow = page.locator("tbody tr").filter({ hasText: "quantm6_CB2_14" });
-if (!await generatingRow.getByText("Generating · System retry", { exact: true }).isVisible()) throw new Error("Generating state must be visible in Present ID column");
-if (!await failedRow.getByText("Generation Failed", { exact: true }).isVisible()) throw new Error("Failed state must be visible in Present ID column");
-const failedActions = await failedRow.locator(".row-actions button").allTextContents();
-if (!failedActions.includes("Retry Generate Present ID")) throw new Error("Failed generation must expose manual retry action");
 await page.screenshot({ path: "demo-list.png", fullPage: true });
-
-await failedRow.getByRole("button", { name: "View" }).click();
-const failedGenerationNotice = await page.getByText("Generate Present ID thất bại", { exact: true }).isVisible();
-const failedGenerationMessage = await page.locator(".generation-notice.failed p").textContent();
-if (!failedGenerationNotice || !failedGenerationMessage.includes("01 initial attempt + 03 auto retry")) throw new Error("Failed generation warning is incomplete");
-await page.screenshot({ path: "demo-present-generation-failed.png", fullPage: true });
-await page.getByRole("button", { name: "Retry Generate Present ID" }).click();
-if (!await page.getByText("Đang generate Present ID", { exact: true }).isVisible()) throw new Error("Manual retry must switch generation state to Generating");
-await page.waitForTimeout(1400);
-if (await page.locator(".generation-notice").count()) throw new Error("Generation notice must clear after retry succeeds");
-const retriedPresentIds = await page.locator(".pkg-present").evaluateAll(nodes => nodes.map(node => node.value));
-if (retriedPresentIds.length !== 2 || retriedPresentIds.some(value => !value)) throw new Error("Successful retry must expose every Present ID");
-await page.getByRole("button", { name: "Back" }).click();
 
 await rowFor("Draft").getByRole("button", { name: "View" }).click();
 const viewUsesCreateForm = await page.locator("#campaignForm").isVisible();
@@ -202,8 +183,6 @@ await page.getByRole("button", { name: "Trigger Based Campaign" }).click();
 await page.locator("#triggerCampaign").selectOption({ index: 1 });
 const presentEnabled = await page.locator("#triggerPresent").isEnabled();
 const presentOptions = await page.locator("#triggerPresent option").count();
-const triggerCampaignOptions = await page.locator("#triggerCampaign option").allTextContents();
-if (triggerCampaignOptions.some(option => option.startsWith("1023 -"))) throw new Error("Generating campaign must not appear in Trigger-based dropdown");
 await page.locator("#triggerPresent").selectOption({ index: 1 });
 await page.screenshot({ path: "demo-trigger.png", fullPage: true });
 await page.getByRole("button", { name: "Approve and Distribute" }).click();
@@ -246,10 +225,6 @@ const result = {
   columnOrder: columnHeaders.slice(0, 3),
   mainOutline,
   logoText,
-  failedActions,
-  failedGenerationNotice,
-  retriedPresentIds,
-  triggerCampaignOptions,
   defaultPackageCount,
   initialBudgetMethodValue,
   initialBudgetMethodText,

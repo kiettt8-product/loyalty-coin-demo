@@ -34,9 +34,9 @@ const state = {
     { id: 1101, name: "Loyalty_Coin_Draft", code: "ZPI_190726_001", budget: 5000000, presents: [], coins: [300, 500], time: "31/12/2026 23:59", status: "Draft", label: "ZPO", owner: "kiettt8" },
     { id: 1100, name: "Loyalty_Coin_Rejected", code: "ZPI_180726_009", budget: 9000000, presents: [], coins: [900], time: "30/11/2026 23:59", status: "Rejected", label: "BAU", owner: "kiettt8" },
     { id: 1098, name: "quantm6_CB3_22", code: "quantm6_CB3", budget: 360000000, budgetMethod: "package", packageBudgets: [300000000], consumedBudgets: [120000000], presents: [1173], coins: [30000], time: "31/03/2029 00:00", status: "Approved", label: "ZPO", owner: "nghiatn" },
-    { id: 1023, name: "quantm6_CB2_21", code: "quantm6_CB2", budget: 360000000, budgetMethod: "package", packageBudgets: [150000000, 150000000], consumedBudgets: [80000000, 100000000], presents: [], coins: [10000, 30000], time: "28/02/2027 00:00", status: "Approved", generationStatus: "Generating", generationAttempt: 2, label: "BAU", owner: "nghiatn" },
+    { id: 1023, name: "quantm6_CB2_21", code: "quantm6_CB2", budget: 360000000, budgetMethod: "package", packageBudgets: [150000000, 150000000], consumedBudgets: [80000000, 100000000], presents: [1157, 1136], coins: [10000, 30000], time: "28/02/2027 00:00", status: "Approved", label: "BAU", owner: "nghiatn" },
     { id: 2893, name: "[28/05/2026][DLS_260528_563][BAU]", code: "DLS_260528_563", budget: 30000000, consumedBudgets: [5000000, 8000000], presents: [20535, 20711], coins: [304, 30000], time: "15/05/2027 00:00", status: "Auto Approved", label: "BAU", owner: "kiettt8" },
-    { id: 1026, name: "quantm6_CB2_14", code: "quantm6_CB2", budget: 300000000, presents: [], coins: [5000, 20000], time: "28/02/2027 00:00", status: "Approved", generationStatus: "Failed", generationAttempt: 4, generationLastError: "zpp-promotion-present timeout", generationFailedAt: "20/07/2026 09:42", label: "ZPO", owner: "nghiatn" },
+    { id: 1026, name: "quantm6_CB2_14", code: "quantm6_CB2", budget: 300000000, presents: [1157, 1108], coins: [5000, 20000], time: "28/02/2027 00:00", status: "Approved", label: "ZPO", owner: "nghiatn" },
     { id: 1017, name: "Voucher_Discount_721", code: "quantm6_Voucher_discount7", budget: 200000, budgetMethod: "package", packageBudgets: [150000], consumedBudgets: [0], presents: [1007], coins: [1000], time: "01/02/2027 00:00", status: "Auto Approved", label: "BAU", owner: "nghiatn" },
     { id: 1020, name: "Voucher_Discount_706", code: "quantm6_Voucher_discount7", budget: 200000, presents: [1151], coins: [500], time: "01/02/2027 00:00", status: "Ended", label: "ZPO", owner: "nghiatn" },
     { id: 998, name: "New_User_Coin", code: "ZPI_290426_118", budget: 18000000, budgetMethod: "package", packageBudgets: [12000000], consumedBudgets: [11000000], presents: [19882], coins: [10000], time: "31/12/2026 23:59", status: "In Use", label: "Growth", owner: "linhnt22" },
@@ -48,8 +48,6 @@ state.campaigns = state.campaigns.map((campaign, campaignIndex) => {
   const coins = campaign.coins.length ? campaign.coins : [300];
   const packageBudget = Math.floor(campaign.budget / coins.length);
   return {
-    generationStatus: campaign.generationStatus || (campaign.presents.length ? "Ready" : "Not Started"),
-    generationAttempt: campaign.generationAttempt || 0,
     budgetMethod: campaign.budgetMethod || "campaign",
     budgetType: campaign.code.startsWith("DLS_") ? "shared" : "campaign",
     allocatedBudget: campaign.budget,
@@ -134,21 +132,14 @@ function route(name, payload = {}) {
 function actionButtons(item) {
   const actions = [`<button data-view="${item.id}">View</button>`];
   if (["Draft", "Rejected", "Auto Approved", "Approved", "In Use"].includes(item.status)) actions.push(`<button data-edit="${item.id}">Edit</button>`);
-  if (item.generationStatus === "Failed") actions.push(`<button data-retry-generation="${item.id}">Retry Generate Present ID</button>`);
   if (["Draft", "Rejected"].includes(item.status)) actions.push(`<button class="danger-action" data-delete="${item.id}">Delete</button>`);
   return actions.join("");
-}
-
-function presentDisplay(item) {
-  if (item.generationStatus === "Generating") return '<span class="generation-state generating">Generating · System retry</span>';
-  if (item.generationStatus === "Failed") return '<span class="generation-state failed">Generation Failed</span>';
-  return item.presents.join(", ") || "-";
 }
 
 function renderRows(rows = state.campaigns) {
   const body = document.getElementById("campaignRows");
   body.innerHTML = rows.map(item => `<tr>
-    <td>${item.id}</td><td>${item.code}</td><td>${item.name}</td><td>${money(item.allocatedBudget)}</td><td>${presentDisplay(item)}</td><td>${item.time}</td>
+    <td>${item.id}</td><td>${item.code}</td><td>${item.name}</td><td>${money(item.allocatedBudget)}</td><td>${item.presents.join(", ") || "-"}</td><td>${item.time}</td>
     <td><span class="status ${statusClass(item.status)}">${item.status}</span></td><td>${item.label}</td><td>${item.owner}</td>
     <td><div class="row-actions">${actionButtons(item)}</div></td>
   </tr>`).join("");
@@ -182,7 +173,6 @@ function initList() {
     if (!action) return;
     if (action.dataset.view) route("form", { mode: "view", id: Number(action.dataset.view) });
     if (action.dataset.edit) route("form", { mode: "edit", id: Number(action.dataset.edit) });
-    if (action.dataset.retryGeneration) retryPresentGeneration(Number(action.dataset.retryGeneration));
     if (action.dataset.delete) {
       const id = Number(action.dataset.delete);
       state.campaigns = state.campaigns.filter(item => item.id !== id);
@@ -213,7 +203,6 @@ function initForm(options = {}) {
   bindTagInput("emailInput", "email");
   bindTagInput("thresholdInput", "threshold");
   renderPackages();
-  renderGenerationNotice(campaign);
   renderTags("email");
   renderTags("threshold");
   bindValidationClear();
@@ -239,53 +228,7 @@ function hydrateCampaignForm(campaign) {
   document.getElementById("endTime").value = campaign.endTime;
   document.getElementById("campaignLabel").value = campaign.label;
   document.getElementById("formTitle").textContent = `${state.formMode === "view" ? "View" : "Edit"} Campaign #${campaign.id}`;
-  const generationState = ["Generating", "Failed"].includes(campaign.generationStatus)
-    ? `<span class="generation-state ${campaign.generationStatus.toLowerCase()}">${campaign.generationStatus === "Generating" ? "Present ID Generating" : "Present ID Failed"}</span>`
-    : "";
-  document.getElementById("formStatus").innerHTML = `<span class="status ${statusClass(campaign.status)}">${campaign.status}</span>${generationState}`;
-}
-
-function renderGenerationNotice(campaign) {
-  const holder = document.getElementById("generationNotice");
-  if (!campaign || !["Generating", "Failed"].includes(campaign.generationStatus)) {
-    holder.replaceChildren();
-    return;
-  }
-  if (campaign.generationStatus === "Generating") {
-    holder.innerHTML = `<section class="generation-notice generating" role="status">
-      <div><strong>Đang generate Present ID</strong><p>System đang tự động xử lý attempt ${campaign.generationAttempt || 1}/4. Campaign chưa thể chuyển In Use hoặc sử dụng trong Trigger-based Campaign.</p></div>
-    </section>`;
-    return;
-  }
-  holder.innerHTML = `<section class="generation-notice failed" role="alert">
-    <div><strong>Generate Present ID thất bại</strong><p>System đã chạy 01 initial attempt + 03 auto retry nhưng vẫn lỗi. Campaign giữ status ${campaign.status}; Campaign Owner và Operations đã được gửi email.</p><small>Last error: ${campaign.generationLastError || "Unknown error"} · ${campaign.generationFailedAt || "-"}</small></div>
-    <button type="button" class="btn primary" id="retryGeneration">Retry Generate Present ID</button>
-  </section>`;
-  document.getElementById("retryGeneration").onclick = () => retryPresentGeneration(campaign.id);
-}
-
-function retryPresentGeneration(campaignId) {
-  const campaign = state.campaigns.find(item => item.id === campaignId);
-  if (!campaign || campaign.generationStatus !== "Failed") return;
-  campaign.generationStatus = "Generating";
-  campaign.generationAttempt = 1;
-  campaign.generationLastError = "";
-  campaign.generationFailedAt = "";
-  if (state.route === "list") renderRows();
-  else if (state.route === "form" && state.editingCampaignId === campaign.id) renderGenerationNotice(campaign);
-  toast(`Campaign ${campaign.id}: system bắt đầu retry Present ID.`);
-
-  setTimeout(() => {
-    campaign.presents = campaign.packages.map((pkg, index) => Number(pkg.presentId) || 23000 + campaign.id + index);
-    campaign.packages = campaign.packages.map((pkg, index) => ({ ...pkg, presentId: campaign.presents[index] }));
-    campaign.generationStatus = "Ready";
-    campaign.generationAttempt = 0;
-    const now = Date.now();
-    if (now >= new Date(campaign.startTime).getTime() && now <= new Date(campaign.endTime).getTime()) campaign.status = "In Use";
-    if (state.route === "list") renderRows();
-    else if (state.route === "form" && state.editingCampaignId === campaign.id) route("form", { mode: state.formMode, id: campaign.id });
-    toast(`Campaign ${campaign.id}: Present ID đã Ready.`);
-  }, 1200);
+  document.getElementById("formStatus").innerHTML = `<span class="status ${statusClass(campaign.status)}">${campaign.status}</span>`;
 }
 
 function applyFormAccess(campaign) {
@@ -594,7 +537,7 @@ function submitCampaign(draft) {
   const id = Math.max(...state.campaigns.map(item => item.id)) + 1;
   const presents = status === "Auto Approved" ? state.packages.map((_, index) => 21020 + index) : [];
   if (presents.length) data.packages = data.packages.map((pkg, index) => ({ ...pkg, presentId: presents[index] }));
-  state.campaigns.unshift({ ...data, id, presents, status, generationStatus: presents.length ? "Ready" : "Not Started", generationAttempt: 0, owner: "kiettt8" });
+  state.campaigns.unshift({ ...data, id, presents, status, owner: "kiettt8" });
   toast(draft ? `Campaign ${id} đã Save Draft.` : `Campaign ${id}: ${status}${status === "Auto Approved" ? ", Present ID đã generate." : "."}`);
   setTimeout(() => route("list"), 500);
 }
@@ -626,7 +569,7 @@ function saveCampaignEdit(campaign) {
 function initTrigger() {
   const campaignSelect = document.getElementById("triggerCampaign");
   const presentSelect = document.getElementById("triggerPresent");
-  const eligible = state.campaigns.filter(item => ["Approved", "Auto Approved", "In Use"].includes(item.status) && item.generationStatus === "Ready" && item.presents.length);
+  const eligible = state.campaigns.filter(item => ["Approved", "Auto Approved", "In Use"].includes(item.status) && item.presents.length);
   campaignSelect.innerHTML += eligible.map(item => `<option value="${item.id}">${item.id} - ${item.name}</option>`).join("");
   campaignSelect.onchange = () => {
     const campaign = eligible.find(item => item.id === Number(campaignSelect.value));
