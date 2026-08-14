@@ -26,6 +26,7 @@ function isoToDisplay(value) {
 const state = {
   route: "list",
   formMode: "create",
+  formReturnRoute: "list",
   editingCampaignId: null,
   packages: [],
   emails: [],
@@ -87,7 +88,8 @@ const templates = {
   form: document.getElementById("formTemplate"),
   trigger: document.getElementById("triggerTemplate"),
   "asset-list": document.getElementById("assetListTemplate"),
-  "asset-massive": document.getElementById("assetMassiveTemplate")
+  "asset-massive": document.getElementById("assetMassiveTemplate"),
+  "asset-coin-create": document.getElementById("formTemplate")
 };
 
 function toast(message, type = "") {
@@ -137,12 +139,13 @@ function route(name, payload = {}) {
   document.body.classList.toggle("asset-mode", name.startsWith("asset-"));
   main.onclick = null;
   main.replaceChildren(templates[name].content.cloneNode(true));
-  document.querySelectorAll("[data-route]").forEach(button => button.classList.toggle("active", button.dataset.route === name || (name === "form" && button.dataset.route === "list") || (name === "asset-massive" && button.dataset.route === "asset-list")));
+  document.querySelectorAll("[data-route]").forEach(button => button.classList.toggle("active", button.dataset.route === name || (name === "form" && button.dataset.route === "list") || (["asset-massive", "asset-coin-create"].includes(name) && button.dataset.route === "asset-list")));
   if (name === "list") initList();
   if (name === "form") initForm(payload);
   if (name === "trigger") initTrigger();
   if (name === "asset-list") initAssetList();
   if (name === "asset-massive") initAssetMassive();
+  if (name === "asset-coin-create") initForm({ mode: "create", returnRoute: "asset-list" });
   document.getElementById("sidebar").classList.remove("open");
   main.focus();
 }
@@ -175,6 +178,7 @@ function initAssetList() {
     if (dialog.returnValue !== "confirm") return;
     const choice = dialog.querySelector('input[name="distributionChoice"]:checked')?.value;
     if (choice === "massive") route("asset-massive");
+    else if (choice === "coin-trigger") route("asset-coin-create");
     else toast("Demo hiện tại tập trung flow Distribute Massive.");
   });
   document.getElementById("assetCollapseFilter").onclick = event => {
@@ -322,6 +326,7 @@ function initList() {
 
 function initForm(options = {}) {
   state.formMode = options.mode || "create";
+  state.formReturnRoute = options.returnRoute || "list";
   state.editingCampaignId = options.id || null;
   const campaign = getEditingCampaign();
   if (state.formMode !== "create" && !campaign) return route("list");
@@ -394,7 +399,7 @@ function renderFormActions(campaign) {
   } else if (state.formMode === "edit") {
     holder.innerHTML = '<button type="button" class="btn secondary" id="cancelForm">Cancel</button><button type="button" class="btn primary" id="saveChanges">Save changes</button>';
   }
-  document.getElementById("cancelForm").onclick = () => route("list");
+  document.getElementById("cancelForm").onclick = () => route(state.formReturnRoute);
   if (state.formMode === "create") {
     document.getElementById("saveDraft").onclick = () => submitCampaign(true);
     document.getElementById("campaignForm").onsubmit = event => { event.preventDefault(); submitCampaign(false); };
@@ -677,7 +682,7 @@ function submitCampaign(draft) {
   if (presents.length) data.packages = data.packages.map((pkg, index) => ({ ...pkg, presentId: presents[index] }));
   state.campaigns.unshift({ ...data, id, presents, status, owner: "kiettt8" });
   toast(draft ? `Campaign ${id} đã Save Draft.` : `Campaign ${id}: ${status}${status === "Auto Approved" ? ", Present ID đã generate." : "."}`);
-  setTimeout(() => route("list"), 500);
+  setTimeout(() => route(state.formReturnRoute), 500);
 }
 
 function saveCampaignEdit(campaign) {

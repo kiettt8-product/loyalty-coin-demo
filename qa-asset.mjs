@@ -21,10 +21,22 @@ await page.getByRole("button", { name: "Add new" }).click();
 const dialog = page.getByRole("dialog", { name: "How you want to distribute the voucher" });
 if (!await dialog.isVisible()) throw new Error("Add new distribution modal is missing");
 const choices = await dialog.locator('input[name="distributionChoice"]').count();
-if (choices !== 3 || !await dialog.locator('input[value="massive"]').isChecked()) throw new Error("Distribution options do not match Figma");
+if (choices !== 4 || !await dialog.locator('input[value="massive"]').isChecked()) throw new Error("Distribution options do not match the expected Promo Asset flow");
 await page.screenshot({ path: "demo-asset-add-new.png", fullPage: true });
 
+await dialog.locator('input[value="coin-trigger"]').check();
 await dialog.getByRole("button", { name: "OK" }).click();
+await page.locator("#campaignForm").waitFor({ state: "visible" });
+if (!await page.getByRole("button", { name: "Promo Asset Campaign" }).evaluate(node => node.classList.contains("active"))) throw new Error("Promo Asset navigation must remain active in coin create flow");
+if (await page.locator(".package-block").count() !== 1) throw new Error("Coin form must start with one package");
+await page.screenshot({ path: "demo-asset-coin-create.png", fullPage: true });
+await page.getByRole("button", { name: "Cancel" }).click();
+await page.locator(".asset-list-screen").waitFor({ state: "visible" });
+
+await page.getByRole("button", { name: "Add new" }).click();
+await page.getByRole("dialog", { name: "How you want to distribute the voucher" }).locator('input[value="massive"]').check();
+const massiveDialog = page.getByRole("dialog", { name: "How you want to distribute the voucher" });
+await massiveDialog.getByRole("button", { name: "OK" }).click();
 await page.locator("#assetMassiveForm").waitFor({ state: "visible" });
 if (!await page.locator("#assetMassiveForm").isVisible()) throw new Error("Distribute Massive form did not open");
 const sectionHeadings = await page.locator(".asset-form-section > h1").allTextContents();
@@ -39,5 +51,5 @@ const validationCount = await page.locator(".asset-field-error").count();
 if (validationCount < 7) throw new Error("Massive form validation is incomplete");
 if (consoleErrors.length) throw new Error(`Console errors: ${consoleErrors.join(" | ")}`);
 
-console.log(JSON.stringify({ assetHeaders, choices, sectionHeadings, validationCount, consoleErrors }, null, 2));
+console.log(JSON.stringify({ assetHeaders, choices, coinCreateFlow: "passed", sectionHeadings, validationCount, consoleErrors }, null, 2));
 await browser.close();
