@@ -45,7 +45,7 @@
     <div class="screen list-screen">
       <section class="filter-panel">
         <div class="filter-grid" id="filterGrid">
-          <input id="filterId" aria-label="Campaign ID hoặc Present ID" placeholder="Campaign ID / Present ID">
+          <input id="filterId" aria-label="Campaign ID hoặc Package ID" placeholder="Campaign ID / Package ID">
           <input id="filterMkt" aria-label="MKT Name hoặc MKT Code" placeholder="MKT Name / MKT Code">
           <select id="filterLabel" aria-label="Label"><option value="">Label</option><option>ZPO</option><option>BAU</option><option>Growth</option></select>
           <select id="filterOwner" aria-label="Created By"><option value="">Created By</option><option>kiettt8</option><option>nghiatn</option><option>linhnt22</option></select>
@@ -63,7 +63,7 @@
         <div class="list-toolbar"><button class="btn primary" id="addNew">+ Add new</button></div>
         <div class="table-scroll">
           <table>
-            <thead><tr><th>ID</th><th>MKT Code</th><th>MKT Name</th><th>Total Budget</th><th>Present ID</th><th>Distribute time</th><th>Status</th><th>Label</th><th>Created by</th><th>Action</th></tr></thead>
+            <thead><tr><th>ID</th><th>MKT Code</th><th>MKT Name</th><th>Total Budget</th><th>Package ID</th><th>Distribute time</th><th>Status</th><th>Label</th><th>Created by</th><th>Action</th></tr></thead>
             <tbody id="campaignRows"></tbody>
           </table>
           <div class="empty-state" id="emptyState" hidden><strong>No data found</strong><span>Không có campaign phù hợp với filter.</span></div>
@@ -77,7 +77,7 @@
     <div class="screen asset-screen asset-list-screen">
       <section class="asset-filter-panel">
         <div class="asset-filter-grid" id="assetFilterGrid">
-          <input id="assetFilterId" aria-label="Campaign ID, Reward ID hoặc Present ID" placeholder="Campaign ID/Reward/Present ID">
+          <input id="assetFilterId" aria-label="Campaign ID, Reward ID hoặc Package ID" placeholder="Campaign ID/Reward/Package ID">
           <input id="assetFilterMkt" aria-label="MKT Name hoặc MKT Code" placeholder="MKT Name/MKT Code">
           <select id="assetFilterType" aria-label="Distribution Type"><option value="">Distribution Type</option><option>Massive</option><option>Trigger Base</option><option>Direct Discount</option><option>Loyalty Coin</option></select>
           <div class="asset-date-range" aria-label="Distribute time"><input id="assetFilterFrom" placeholder="From" aria-label="From"><span>→</span><input id="assetFilterTo" placeholder="To" aria-label="To"><span class="calendar-mark" aria-hidden="true"></span></div>
@@ -96,7 +96,7 @@
         <div class="asset-list-toolbar"><button class="asset-btn primary" id="assetAddNew"><span class="plus-mark" aria-hidden="true"></span>Add new</button></div>
         <div class="asset-table-wrap">
           <table class="asset-table">
-            <thead><tr><th>ID <span class="sort-mark" aria-hidden="true"><img src="assets/icon-sort-up.svg" alt=""><img src="assets/icon-sort-down.svg" alt=""></span></th><th>MKT Name</th><th>MKT Code</th><th>Total Budget</th><th>Reward / Present ID</th><th>Distribution Type</th><th>Distribute time <span class="sort-mark" aria-hidden="true"><img src="assets/icon-sort-up.svg" alt=""><img src="assets/icon-sort-down.svg" alt=""></span></th><th>Distribute to</th><th>Status</th><th>Label</th><th>Created by</th><th>Action</th></tr></thead>
+            <thead><tr><th>ID <span class="sort-mark" aria-hidden="true"><img src="assets/icon-sort-up.svg" alt=""><img src="assets/icon-sort-down.svg" alt=""></span></th><th>MKT Name</th><th>MKT Code</th><th>Total Budget</th><th>Reward / Package ID</th><th>Distribution Type</th><th>Distribute time <span class="sort-mark" aria-hidden="true"><img src="assets/icon-sort-up.svg" alt=""><img src="assets/icon-sort-down.svg" alt=""></span></th><th>Distribute to</th><th>Status</th><th>Label</th><th>Created by</th><th>Action</th></tr></thead>
             <tbody id="assetCampaignRows"></tbody>
           </table>
         </div>
@@ -225,7 +225,7 @@
               <label class="field required"><span>Hành động:</span><select><option>Phát xu</option></select></label>
               <label class="field required"><span>Số lần tối đa user nhận được hành động</span><div class="limit-control"><input value="1"><select><option>per calendar day</option></select></div></label>
               <label class="field required"><span>Campaign ID / MKT name</span><select id="triggerCampaign"><option value="">Chọn Loyalty Coin Campaign trong Promo Asset Campaign</option></select><small>Bạn cần tạo Loyalty Coin Campaign tại Promo Asset Campaign và được FA approve trước.</small></label>
-              <label class="field required"><span>Present ID - Số xu phát</span><select id="triggerPresent" disabled><option>Chọn Present ID - Số xu phát đã cấu hình</option></select></label>
+              <label class="field required"><span>Package ID - Số xu phát</span><select id="triggerPackage" disabled><option>Chọn Package ID - Số xu phát đã cấu hình</option></select></label>
             </div>
 
             <h2>Áp dụng cho nhóm người dùng (Segment)</h2>

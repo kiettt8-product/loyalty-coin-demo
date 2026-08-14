@@ -51,7 +51,7 @@ const viewUsesCreateForm = await page.locator("#campaignForm").isVisible();
 const viewEnabledControlCount = await page.locator("#campaignForm input:enabled, #campaignForm select:enabled, #campaignForm textarea:enabled").count();
 const viewPackageCount = await page.locator(".package-block").count();
 if (!viewUsesCreateForm || viewEnabledControlCount !== 0 || viewPackageCount < 1) throw new Error("View must reuse the create form in read-only mode");
-if (await page.locator(".pkg-present").count()) throw new Error("Draft must not display Present ID before generation");
+if (await page.locator(".pkg-package-id").count()) throw new Error("Draft must not display Package ID before generation");
 if (await page.locator(".pkg-consumed, .pkg-remaining").count()) throw new Error("Draft must not display consumption fields before distribution");
 await page.screenshot({ path: "demo-view.png", fullPage: true });
 await page.getByRole("button", { name: "Back" }).click();
@@ -62,14 +62,14 @@ const expectedLimitedEditableIds = ["emailInput", "thresholdInput"].sort();
 if (JSON.stringify(limitedEditableIds) !== JSON.stringify(expectedLimitedEditableIds)) throw new Error("Approved editability does not match PRD");
 const approvedLabelDisabled = await page.locator("#campaignLabel").isDisabled();
 if (!approvedLabelDisabled) throw new Error("Approved Label must be disabled");
-const approvedPresentId = await page.locator(".pkg-present").first().inputValue();
-if (approvedPresentId !== "1173") throw new Error("Approved package must display its generated Present ID");
+const approvedPackageId = await page.locator(".pkg-package-id").first().inputValue();
+if (approvedPackageId !== "1173") throw new Error("Approved package must display its generated Package ID");
 const packageFieldOrder = await page.locator(".package-block").first().locator(".field > span").allTextContents();
-const expectedPackageFieldOrder = ["Package Budget", "Coin Distribution Method", "Coin Per User", "Estimated Users", "Present ID", "Coin History Content"];
+const expectedPackageFieldOrder = ["Package Budget", "Coin Distribution Method", "Coin Per User", "Estimated Users", "Package ID", "Coin History Content"];
 if (JSON.stringify(packageFieldOrder) !== JSON.stringify(expectedPackageFieldOrder)) throw new Error("Package field order is incorrect");
 if (await page.getByText("Description", { exact: true }).count()) throw new Error("Campaign Description must not exist in Basic Information");
 const approvedPackageBudgetEnabled = await page.locator(".pkg-budget").first().isEnabled();
-const approvedPackageControlsDisabled = await page.locator(".pkg-method, .pkg-coin, .pkg-users, .pkg-present").evaluateAll(nodes => nodes.every(node => node.disabled));
+const approvedPackageControlsDisabled = await page.locator(".pkg-method, .pkg-coin, .pkg-users, .pkg-package-id").evaluateAll(nodes => nodes.every(node => node.disabled));
 if (!approvedPackageBudgetEnabled || !approvedPackageControlsDisabled) throw new Error("Approved must only allow Package Budget and Budget Alert editing");
 if (!await page.locator(".pkg-history-content").first().isDisabled()) throw new Error("Approved Coin History Content must be read-only");
 if (await page.locator(".pkg-consumed, .pkg-remaining").count()) throw new Error("Approved must hide consumption fields before distribution starts");
@@ -191,16 +191,16 @@ await page.getByRole("button", { name: "Save & Submit" }).click();
 await page.waitForTimeout(700);
 const createdAutoApprovedRow = page.locator("tbody tr").filter({ hasText: "Auto Approved" }).first();
 await createdAutoApprovedRow.getByRole("button", { name: "Edit" }).click();
-const generatedPresentIds = await page.locator(".pkg-present").evaluateAll(nodes => nodes.map(node => node.value));
-if (generatedPresentIds.length !== 2 || generatedPresentIds.some(value => !value)) throw new Error("Auto Approved Edit must display generated Present ID for every package");
+const generatedPackageIds = await page.locator(".pkg-package-id").evaluateAll(nodes => nodes.map(node => node.value));
+if (generatedPackageIds.length !== 2 || generatedPackageIds.some(value => !value)) throw new Error("Auto Approved Edit must display generated Package ID for every package");
 if (!await page.locator(".pkg-history-content").first().isDisabled()) throw new Error("Auto Approved Coin History Content must be read-only");
 await page.getByRole("button", { name: "Cancel" }).click();
 
 await page.getByRole("button", { name: "Trigger Based Campaign" }).click();
 await page.locator("#triggerCampaign").selectOption({ index: 1 });
-const presentEnabled = await page.locator("#triggerPresent").isEnabled();
-const presentOptions = await page.locator("#triggerPresent option").count();
-await page.locator("#triggerPresent").selectOption({ index: 1 });
+const packageEnabled = await page.locator("#triggerPackage").isEnabled();
+const packageOptions = await page.locator("#triggerPackage option").count();
+await page.locator("#triggerPackage").selectOption({ index: 1 });
 await page.screenshot({ path: "demo-trigger.png", fullPage: true });
 await page.getByRole("button", { name: "Approve and Distribute" }).click();
 
@@ -225,14 +225,14 @@ const result = {
   inUseLabelDisabled,
   inUsePackageBudgetEnabled,
   disabledRangeBackground,
-  approvedPresentId,
+  approvedPackageId,
   approvedPackageBudgetEnabled,
   inUseConsumedBudget,
   inUseRemainingBudget,
   extendOnlyError,
   recalculatedRemaining,
   packageFieldOrder,
-  generatedPresentIds,
+  generatedPackageIds,
   draftPackageCoinEnabled,
   draftHistoryContentEnabled,
   liveHistoryPreview,
@@ -241,8 +241,8 @@ const result = {
   distributionMethods,
   distributionMethodsDisabled,
   disabledDistributionArrowVisible: disabledDistributionArrow !== "none",
-  presentDropdownEnabled: presentEnabled,
-  presentOptionCount: presentOptions,
+  packageDropdownEnabled: packageEnabled,
+  packageOptionCount: packageOptions,
   columnOrder: columnHeaders.slice(0, 3),
   mainOutline,
   logoText,

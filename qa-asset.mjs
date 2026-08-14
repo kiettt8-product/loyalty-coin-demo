@@ -13,7 +13,7 @@ if (await page.getByRole("button", { name: "Promo Loyalty Coin Campaign" }).coun
 if (!await page.getByRole("button", { name: "Promo Asset Campaign" }).evaluate(node => node.classList.contains("active"))) throw new Error("Promo Asset Campaign must be the default entry point");
 
 const assetHeaders = (await page.locator(".asset-table th").allTextContents()).map(value => value.trim());
-const expectedHeaders = ["ID", "MKT Name", "MKT Code", "Total Budget", "Reward / Present ID", "Distribution Type", "Distribute time", "Distribute to", "Status", "Label", "Created by", "Action"];
+const expectedHeaders = ["ID", "MKT Name", "MKT Code", "Total Budget", "Reward / Package ID", "Distribution Type", "Distribute time", "Distribute to", "Status", "Label", "Created by", "Action"];
 if (JSON.stringify(assetHeaders) !== JSON.stringify(expectedHeaders)) throw new Error("Promo Asset listing columns do not match Figma");
 if (await page.locator(".asset-table tbody tr").count() !== 10) throw new Error("Promo Asset list must render 10 mock rows");
 const firstAssetRowCells = (await page.locator(".asset-table tbody tr").first().locator("td").allTextContents()).map(value => value.trim());
@@ -23,10 +23,10 @@ if (JSON.stringify(distributionTypeOptions) !== JSON.stringify(["Distribution Ty
 if (await page.locator(".asset-table tbody tr").filter({ hasText: "Loyalty Coin" }).count() !== 2) throw new Error("Loyalty Coin mock campaigns are missing");
 const loyaltyRows = page.locator(".asset-table tbody tr").filter({ hasText: "Loyalty Coin" });
 if (await loyaltyRows.first().locator("td").nth(4).getAttribute("title") !== null) throw new Error("Identifier tooltip must live on the value, not the table cell");
-if (!await loyaltyRows.first().locator(".asset-identifier").getAttribute("title").then(value => value?.startsWith("Present ID:"))) throw new Error("Loyalty Coin identifiers must be presented as Present ID");
+if (!await loyaltyRows.first().locator(".asset-identifier").getAttribute("title").then(value => value?.startsWith("Package ID:"))) throw new Error("Loyalty Coin identifiers must be presented as Package ID");
 await page.locator("#assetFilterId").fill("20535");
 await page.getByRole("button", { name: "Search" }).click();
-if (await page.locator(".asset-table tbody tr").count() !== 1 || !await page.locator(".asset-table tbody tr").first().getByText("Loyalty Coin", { exact: true }).isVisible()) throw new Error("Present ID search must return its Loyalty Coin campaign");
+if (await page.locator(".asset-table tbody tr").count() !== 1 || !await page.locator(".asset-table tbody tr").first().getByText("Loyalty Coin", { exact: true }).isVisible()) throw new Error("Package ID search must return its Loyalty Coin campaign");
 await page.getByRole("button", { name: "Reset" }).click();
 const assetVisualBaseline = await page.evaluate(() => {
   const style = selector => getComputedStyle(document.querySelector(selector));

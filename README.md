@@ -26,7 +26,7 @@ http://127.0.0.1:4173
 5. Distribution Package: By Budget, Add/Remove, max 10 package và tự tính budget.
 6. Budget Alert: nhập username/email và threshold bằng phím Enter.
 7. Submit: Auto Approved hoặc FA Review theo Coin Per User.
-8. Generate Present ID: mô phỏng all package thành công sau Auto Approved.
-9. Trigger Based Campaign: chọn Campaign trước, sau đó Present ID mới được enable và load đúng package.
+8. Generate Package ID: mô phỏng all package thành công sau Auto Approved.
+9. Trigger Based Campaign: chọn Campaign trước, sau đó Package ID mới được enable và load đúng package.
 
 `qa.mjs` kiểm tra Loyalty Coin flow. `qa-asset.mjs` kiểm tra Promo Asset Massive và Coin Create flow.

@@ -133,10 +133,10 @@ body.asset-mode .time-field { grid-column: auto; }
 .package-block { position: relative; }
 .package-inner { border: 1px solid #f0f0f0; border-radius: 4px; margin: 22px 24px 24px; padding: 24px; }
 .package-fields { display: grid; gap: 18px 16px; align-items: start; }
-.package-fields.without-consumption.without-present { grid-template-columns: repeat(4, minmax(160px, 1fr)); }
-.package-fields.without-consumption.with-present { grid-template-columns: repeat(5, minmax(140px, 1fr)); }
-.package-fields.with-consumption.without-present { grid-template-columns: repeat(6, minmax(125px, 1fr)); }
-.package-fields.with-consumption.with-present { grid-template-columns: repeat(7, minmax(112px, 1fr)); }
+.package-fields.without-consumption.without-package-id { grid-template-columns: repeat(4, minmax(160px, 1fr)); }
+.package-fields.without-consumption.with-package-id { grid-template-columns: repeat(5, minmax(140px, 1fr)); }
+.package-fields.with-consumption.without-package-id { grid-template-columns: repeat(6, minmax(125px, 1fr)); }
+.package-fields.with-consumption.with-package-id { grid-template-columns: repeat(7, minmax(112px, 1fr)); }
 .package-fields .package-budget { grid-column: 1; }
 .package-experience { display: grid; grid-template-columns: minmax(340px, 1fr) minmax(420px, 1.15fr); gap: 24px; align-items: stretch; margin-top: 22px; padding-top: 22px; border-top: 1px solid #f0f0f0; }
 .coin-history-field small { display: flex; justify-content: space-between; gap: 12px; min-height: 16px; color: #66798b; font-size: 12px; }
@@ -324,10 +324,10 @@ body.asset-mode .time-field { grid-column: auto; }
 
 @media (max-width: 1200px) {
   .filter-grid, .basic-fields, .package-fields { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
-  .package-fields.without-consumption.without-present,
-  .package-fields.without-consumption.with-present,
-  .package-fields.with-consumption.without-present,
-  .package-fields.with-consumption.with-present { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+  .package-fields.without-consumption.without-package-id,
+  .package-fields.without-consumption.with-package-id,
+  .package-fields.with-consumption.without-package-id,
+  .package-fields.with-consumption.with-package-id { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
   .filter-actions { grid-column: 1 / -1; }
   .trigger-layout { grid-template-columns: 380px 1fr; }
   .asset-filter-grid,
@@ -348,10 +348,10 @@ body.asset-mode .time-field { grid-column: auto; }
   main { margin-left: 0; }
   .screen { padding: 12px; }
   .filter-grid, .basic-fields, .package-fields, .alert-fields, .trigger-general, .action-config-grid { grid-template-columns: 1fr; }
-  .package-fields.without-consumption.without-present,
-  .package-fields.without-consumption.with-present,
-  .package-fields.with-consumption.without-present,
-  .package-fields.with-consumption.with-present { grid-template-columns: 1fr; }
+  .package-fields.without-consumption.without-package-id,
+  .package-fields.without-consumption.with-package-id,
+  .package-fields.with-consumption.without-package-id,
+  .package-fields.with-consumption.with-package-id { grid-template-columns: 1fr; }
   .filter-actions, .trigger-description { grid-column: 1; }
   .trigger-description { display: flex; }
   .trigger-layout { grid-template-columns: 1fr; }

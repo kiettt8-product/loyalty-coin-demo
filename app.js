@@ -2,13 +2,13 @@ function money(value) { return new Intl.NumberFormat("vi-VN").format(Number(valu
 function number(value) { return Number(String(value || "").replace(/[^0-9]/g, "")); }
 function formattedNumber(value) { return number(value) ? money(number(value)) : ""; }
 function statusClass(value) { return value.toLowerCase().replaceAll(" ", "-"); }
-function packageId() { return `pkg-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+function packageKey() { return `pkg-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function escapeHtml(value) { return String(value || "").replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }
-function newPackage() { return { id: packageId(), method: "budget", budget: "", originalBudget: "", consumedBudget: "0", coin: "", historyContent: "" }; }
+function newPackage() { return { id: packageKey(), method: "budget", budget: "", originalBudget: "", consumedBudget: "0", coin: "", historyContent: "" }; }
 function clonePackages(packages) {
   return packages.map(pkg => ({
     ...pkg,
-    id: packageId(),
+    id: packageKey(),
     originalBudget: String(pkg.budget || pkg.originalBudget || ""),
     consumedBudget: String(pkg.consumedBudget || 0),
     historyContent: String(pkg.historyContent || "")
@@ -34,16 +34,16 @@ const state = {
   emails: [],
   thresholds: [],
   campaigns: [
-    { id: 1101, name: "Loyalty_Coin_Draft", code: "ZPI_190726_001", budget: 5000000, presents: [], coins: [300, 500], time: "31/12/2026 23:59", status: "Draft", label: "ZPO", owner: "kiettt8" },
-    { id: 1100, name: "Loyalty_Coin_Rejected", code: "ZPI_180726_009", budget: 9000000, presents: [], coins: [900], time: "30/11/2026 23:59", status: "Rejected", label: "BAU", owner: "kiettt8" },
-    { id: 1098, name: "quantm6_CB3_22", code: "quantm6_CB3", budget: 360000000, budgetMethod: "package", packageBudgets: [300000000], consumedBudgets: [120000000], presents: [1173], coins: [30000], time: "31/03/2029 00:00", status: "Approved", label: "ZPO", owner: "nghiatn" },
-    { id: 1023, name: "quantm6_CB2_21", code: "quantm6_CB2", budget: 360000000, budgetMethod: "package", packageBudgets: [150000000, 150000000], consumedBudgets: [80000000, 100000000], presents: [1157, 1136], coins: [10000, 30000], time: "28/02/2027 00:00", status: "Approved", label: "BAU", owner: "nghiatn" },
-    { id: 2893, name: "[28/05/2026][DLS_260528_563][BAU]", code: "DLS_260528_563", budget: 30000000, consumedBudgets: [5000000, 8000000], presents: [20535, 20711], coins: [304, 30000], time: "15/05/2027 00:00", status: "Auto Approved", label: "BAU", owner: "kiettt8" },
-    { id: 1026, name: "quantm6_CB2_14", code: "quantm6_CB2", budget: 300000000, presents: [1157, 1108], coins: [5000, 20000], time: "28/02/2027 00:00", status: "Approved", label: "ZPO", owner: "nghiatn" },
-    { id: 1017, name: "Voucher_Discount_721", code: "quantm6_Voucher_discount7", budget: 200000, budgetMethod: "package", packageBudgets: [150000], consumedBudgets: [0], presents: [1007], coins: [1000], time: "01/02/2027 00:00", status: "Auto Approved", label: "BAU", owner: "nghiatn" },
-    { id: 1020, name: "Voucher_Discount_706", code: "quantm6_Voucher_discount7", budget: 200000, presents: [1151], coins: [500], time: "01/02/2027 00:00", status: "Ended", label: "ZPO", owner: "nghiatn" },
-    { id: 998, name: "New_User_Coin", code: "ZPI_290426_118", budget: 18000000, budgetMethod: "package", packageBudgets: [12000000], consumedBudgets: [11000000], presents: [19882], coins: [10000], time: "31/12/2026 23:59", status: "In Use", label: "Growth", owner: "linhnt22" },
-    { id: 992, name: "Retention_Coin", code: "ZPI_250426_031", budget: 8000000, presents: [], coins: [800], time: "15/09/2026 23:59", status: "FA Review", label: "ZPO", owner: "kiettt8" }
+    { id: 1101, name: "Loyalty_Coin_Draft", code: "ZPI_190726_001", budget: 5000000, packageIds: [], coins: [300, 500], time: "31/12/2026 23:59", status: "Draft", label: "ZPO", owner: "kiettt8" },
+    { id: 1100, name: "Loyalty_Coin_Rejected", code: "ZPI_180726_009", budget: 9000000, packageIds: [], coins: [900], time: "30/11/2026 23:59", status: "Rejected", label: "BAU", owner: "kiettt8" },
+    { id: 1098, name: "quantm6_CB3_22", code: "quantm6_CB3", budget: 360000000, budgetMethod: "package", packageBudgets: [300000000], consumedBudgets: [120000000], packageIds: [1173], coins: [30000], time: "31/03/2029 00:00", status: "Approved", label: "ZPO", owner: "nghiatn" },
+    { id: 1023, name: "quantm6_CB2_21", code: "quantm6_CB2", budget: 360000000, budgetMethod: "package", packageBudgets: [150000000, 150000000], consumedBudgets: [80000000, 100000000], packageIds: [1157, 1136], coins: [10000, 30000], time: "28/02/2027 00:00", status: "Approved", label: "BAU", owner: "nghiatn" },
+    { id: 2893, name: "[28/05/2026][DLS_260528_563][BAU]", code: "DLS_260528_563", budget: 30000000, consumedBudgets: [5000000, 8000000], packageIds: [20535, 20711], coins: [304, 30000], time: "15/05/2027 00:00", status: "Auto Approved", label: "BAU", owner: "kiettt8" },
+    { id: 1026, name: "quantm6_CB2_14", code: "quantm6_CB2", budget: 300000000, packageIds: [1157, 1108], coins: [5000, 20000], time: "28/02/2027 00:00", status: "Approved", label: "ZPO", owner: "nghiatn" },
+    { id: 1017, name: "Voucher_Discount_721", code: "quantm6_Voucher_discount7", budget: 200000, budgetMethod: "package", packageBudgets: [150000], consumedBudgets: [0], packageIds: [1007], coins: [1000], time: "01/02/2027 00:00", status: "Auto Approved", label: "BAU", owner: "nghiatn" },
+    { id: 1020, name: "Voucher_Discount_706", code: "quantm6_Voucher_discount7", budget: 200000, packageIds: [1151], coins: [500], time: "01/02/2027 00:00", status: "Ended", label: "ZPO", owner: "nghiatn" },
+    { id: 998, name: "New_User_Coin", code: "ZPI_290426_118", budget: 18000000, budgetMethod: "package", packageBudgets: [12000000], consumedBudgets: [11000000], packageIds: [19882], coins: [10000], time: "31/12/2026 23:59", status: "In Use", label: "Growth", owner: "linhnt22" },
+    { id: 992, name: "Retention_Coin", code: "ZPI_250426_031", budget: 8000000, packageIds: [], coins: [800], time: "15/09/2026 23:59", status: "FA Review", label: "ZPO", owner: "kiettt8" }
   ]
 };
 
@@ -56,8 +56,8 @@ const assetCampaigns = [
   { id: 1027, name: "quantm6_CB2_15", code: "quantm6_CB2", budget: 300000000, rewards: "1157, 1138", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved", label: "", owner: "nghiatn" },
   { id: 1017, name: "Voucher_Discount_721", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1007", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Auto Approved", label: "", owner: "nghiatn" },
   { id: 1018, name: "Voucher_Discount_703", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1108", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Approved", label: "", owner: "nghiatn" },
-  { id: 2893, name: "[28/05/2026][DLS_260528_563][BAU]", code: "DLS_260528_563", budget: 30000000, presentIds: "20535, 20711", type: "Loyalty Coin", time: "15/05/2027 00:00", target: "Trigger Campaign", status: "Auto Approved", label: "BAU", owner: "kiettt8" },
-  { id: 998, name: "New_User_Coin", code: "ZPI_290426_118", budget: 18000000, presentIds: "19882", type: "Loyalty Coin", time: "31/12/2026 23:59", target: "Trigger Campaign", status: "In Use", label: "Growth", owner: "linhnt22" }
+  { id: 2893, name: "[28/05/2026][DLS_260528_563][BAU]", code: "DLS_260528_563", budget: 30000000, packageIds: "20535, 20711", type: "Loyalty Coin", time: "15/05/2027 00:00", target: "Trigger Campaign", status: "Auto Approved", label: "BAU", owner: "kiettt8" },
+  { id: 998, name: "New_User_Coin", code: "ZPI_290426_118", budget: 18000000, packageIds: "19882", type: "Loyalty Coin", time: "31/12/2026 23:59", target: "Trigger Campaign", status: "In Use", label: "Growth", owner: "linhnt22" }
 ];
 
 state.campaigns = state.campaigns.map((campaign, campaignIndex) => {
@@ -78,7 +78,7 @@ state.campaigns = state.campaigns.map((campaign, campaignIndex) => {
       originalBudget: String(campaign.packageBudgets?.[packageIndex] ?? packageBudget),
       consumedBudget: String(campaign.consumedBudgets?.[packageIndex] ?? 0),
       coin: String(coin),
-      presentId: campaign.presents[packageIndex] || "",
+      packageId: campaign.packageIds[packageIndex] || "",
       historyContent: campaign.historyContents?.[packageIndex] || `Nhận xu từ chương trình ${campaign.name}`
     })),
     ...campaign
@@ -159,14 +159,14 @@ function assetActionIcon(kind, label) {
 
 function assetIdentifierCell(item) {
   const isCoin = item.type === "Loyalty Coin";
-  const value = (isCoin ? item.presentIds : item.rewards)?.trim();
+  const value = (isCoin ? item.packageIds : item.rewards)?.trim();
   if (!value) {
     const title = isCoin
-      ? "Present ID được generate sau khi campaign được Approved hoặc Auto Approved"
+      ? "Package ID được generate sau khi campaign được Approved hoặc Auto Approved"
       : "Campaign chưa có Reward ID";
     return `<span class="asset-empty-value" title="${title}">—</span>`;
   }
-  const label = isCoin ? "Present ID" : "Reward ID";
+  const label = isCoin ? "Package ID" : "Reward ID";
   return `<span class="asset-identifier" data-identifier-kind="${label}" title="${label}: ${value}" aria-label="${label}: ${value}">${value}</span>`;
 }
 
@@ -207,7 +207,7 @@ function initAssetList() {
     const status = document.getElementById("assetFilterStatus").value;
     const label = document.getElementById("assetFilterLabel").value;
     const owner = document.getElementById("assetFilterOwner").value;
-    renderAssetRows(assetCampaigns.filter(item => (!id || String(item.id).includes(id) || item.rewards?.includes(id) || item.presentIds?.includes(id)) && (!mkt || item.name.toLowerCase().includes(mkt) || item.code.toLowerCase().includes(mkt)) && (!type || item.type === type) && (!status || item.status === status) && (!label || item.label.includes(label)) && (!owner || item.owner === owner)));
+    renderAssetRows(assetCampaigns.filter(item => (!id || String(item.id).includes(id) || item.rewards?.includes(id) || item.packageIds?.includes(id)) && (!mkt || item.name.toLowerCase().includes(mkt) || item.code.toLowerCase().includes(mkt)) && (!type || item.type === type) && (!status || item.status === status) && (!label || item.label.includes(label)) && (!owner || item.owner === owner)));
   };
   main.onclick = event => {
     const action = event.target.closest(".asset-icon-button");
@@ -295,7 +295,7 @@ function actionButtons(item) {
 function renderRows(rows = state.campaigns) {
   const body = document.getElementById("campaignRows");
   body.innerHTML = rows.map(item => `<tr>
-    <td>${item.id}</td><td>${item.code}</td><td>${item.name}</td><td>${money(item.allocatedBudget)}</td><td>${item.presents.join(", ") || "-"}</td><td>${item.time}</td>
+    <td>${item.id}</td><td>${item.code}</td><td>${item.name}</td><td>${money(item.allocatedBudget)}</td><td>${item.packageIds.join(", ") || "-"}</td><td>${item.time}</td>
     <td><span class="status ${statusClass(item.status)}">${item.status}</span></td><td>${item.label}</td><td>${item.owner}</td>
     <td><div class="row-actions">${actionButtons(item)}</div></td>
   </tr>`).join("");
@@ -322,7 +322,7 @@ function initList() {
     const label = document.getElementById("filterLabel").value;
     const owner = document.getElementById("filterOwner").value;
     const status = document.getElementById("filterStatus").value;
-    renderRows(state.campaigns.filter(item => (!id || String(item.id).includes(id) || item.presents.some(p => String(p).includes(id))) && (!mkt || item.name.toLowerCase().includes(mkt) || item.code.toLowerCase().includes(mkt)) && (!label || item.label === label) && (!owner || item.owner === owner) && (!status || item.status === status)));
+    renderRows(state.campaigns.filter(item => (!id || String(item.id).includes(id) || item.packageIds.some(packageId => String(packageId).includes(id))) && (!mkt || item.name.toLowerCase().includes(mkt) || item.code.toLowerCase().includes(mkt)) && (!label || item.label === label) && (!owner || item.owner === owner) && (!status || item.status === status)));
   };
   main.onclick = event => {
     const action = event.target.closest("button");
@@ -464,8 +464,8 @@ function renderPackages() {
   const campaign = getEditingCampaign();
   const limitedBudgetEdit = canEditPackageBudget(campaign);
   const showConsumption = campaign && ["In Use", "Distributing", "Ended"].includes(campaign.status);
-  const showPresentId = campaign && ["Auto Approved", "Approved", "In Use", "Distributing", "Ended"].includes(campaign.status);
-  const packageLayout = `${showConsumption ? "with-consumption" : "without-consumption"} ${showPresentId ? "with-present" : "without-present"}`;
+  const showPackageId = campaign && ["Auto Approved", "Approved", "In Use", "Distributing", "Ended"].includes(campaign.status);
+  const packageLayout = `${showConsumption ? "with-consumption" : "without-consumption"} ${showPackageId ? "with-package-id" : "without-package-id"}`;
   const holder = document.getElementById("packages");
   holder.innerHTML = state.packages.map(pkg => {
     const packageBudgetEnabled = hasMkt && control === "package" && (editable || limitedBudgetEdit);
@@ -482,7 +482,7 @@ function renderPackages() {
         <label class="field required"><span>Coin Distribution Method</span><select class="pkg-method" disabled><option value="budget" selected>By Budget</option></select></label>
         <label class="field required"><span>Coin Per User</span><input class="pkg-coin" inputmode="numeric" value="${formattedNumber(pkg.coin)}" ${editable ? "" : "disabled"}></label>
         <label class="field"><span>Estimated Users</span><input class="pkg-users" value="${money(users)}" disabled></label>
-        ${showPresentId ? `<label class="field"><span>Present ID</span><input class="pkg-present" value="${pkg.presentId}" disabled></label>` : ""}
+        ${showPackageId ? `<label class="field"><span>Package ID</span><input class="pkg-package-id" value="${pkg.packageId}" disabled></label>` : ""}
       </div>
       <div class="package-experience">
         <label class="field required coin-history-field"><span>Coin History Content</span><textarea class="pkg-history-content" maxlength="100" rows="3" ${editable ? "" : "disabled"} placeholder="Nhập nội dung hiển thị trong lịch sử nhận xu">${escapeHtml(pkg.historyContent)}</textarea><small><span>Hiển thị tại màn Tích xu trên Zalopay app</span><span class="pkg-history-count">${pkg.historyContent.length} / 100</span></small></label>
@@ -731,10 +731,10 @@ function submitCampaign(draft) {
   const maxCoin = Math.max(...data.coins);
   const status = draft ? "Draft" : maxCoin <= 500 ? "Auto Approved" : "FA Review";
   const id = Math.max(...state.campaigns.map(item => item.id)) + 1;
-  const presents = status === "Auto Approved" ? state.packages.map((_, index) => 21020 + index) : [];
-  if (presents.length) data.packages = data.packages.map((pkg, index) => ({ ...pkg, presentId: presents[index] }));
-  state.campaigns.unshift({ ...data, id, presents, status, owner: "kiettt8" });
-  toast(draft ? `Campaign ${id} đã Save Draft.` : `Campaign ${id}: ${status}${status === "Auto Approved" ? ", Present ID đã generate." : "."}`);
+  const packageIds = status === "Auto Approved" ? state.packages.map((_, index) => 21020 + index) : [];
+  if (packageIds.length) data.packages = data.packages.map((pkg, index) => ({ ...pkg, packageId: packageIds[index] }));
+  state.campaigns.unshift({ ...data, id, packageIds, status, owner: "kiettt8" });
+  toast(draft ? `Campaign ${id} đã Save Draft.` : `Campaign ${id}: ${status}${status === "Auto Approved" ? ", Package ID đã generate." : "."}`);
   setTimeout(() => route(state.formReturnRoute), 500);
 }
 
@@ -764,17 +764,17 @@ function saveCampaignEdit(campaign) {
 
 function initTrigger() {
   const campaignSelect = document.getElementById("triggerCampaign");
-  const presentSelect = document.getElementById("triggerPresent");
-  const eligible = state.campaigns.filter(item => ["Approved", "Auto Approved", "In Use"].includes(item.status) && item.presents.length);
+  const packageSelect = document.getElementById("triggerPackage");
+  const eligible = state.campaigns.filter(item => ["Approved", "Auto Approved", "In Use"].includes(item.status) && item.packageIds.length);
   campaignSelect.innerHTML += eligible.map(item => `<option value="${item.id}">${item.id} - ${item.name}</option>`).join("");
   campaignSelect.onchange = () => {
     const campaign = eligible.find(item => item.id === Number(campaignSelect.value));
-    presentSelect.disabled = !campaign;
-    presentSelect.innerHTML = campaign ? `<option value="">Chọn Present ID - Số xu phát</option>${campaign.presents.map((id, index) => `<option value="${id}">ID ${id} - ${money(campaign.coins[index])} coin per user</option>`).join("")}` : "<option>Chọn Present ID - Số xu phát đã cấu hình</option>";
+    packageSelect.disabled = !campaign;
+    packageSelect.innerHTML = campaign ? `<option value="">Chọn Package ID - Số xu phát</option>${campaign.packageIds.map((id, index) => `<option value="${id}">ID ${id} - ${money(campaign.coins[index])} coin per user</option>`).join("")}` : "<option>Chọn Package ID - Số xu phát đã cấu hình</option>";
   };
   document.getElementById("triggerForm").onsubmit = event => {
     event.preventDefault();
-    if (!campaignSelect.value || !presentSelect.value) return toast("Chọn Campaign trước, sau đó chọn Present ID.", "error");
+    if (!campaignSelect.value || !packageSelect.value) return toast("Chọn Campaign trước, sau đó chọn Package ID.", "error");
     toast("Trigger Based Campaign đã được approve và distribute.");
   };
   document.querySelectorAll("[data-route]").forEach(button => button.onclick = () => route(button.dataset.route));
