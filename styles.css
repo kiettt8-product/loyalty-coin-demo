@@ -235,10 +235,13 @@ body.asset-mode .time-field { grid-column: auto; }
 .asset-table th:nth-child(12) { width: 120px; }
 .asset-table th { position: relative; height: 47px; padding: 0 8px; background: #f9fafb; color: #001f3e; font-size: 14px; font-weight: 600; }
 .asset-table th:not(:last-child)::after { content: ""; position: absolute; top: 12px; right: 0; width: 1px; height: 22px; background: #f0f0f0; }
-.asset-table td { height: 57px; padding: 0 8px; border-color: #f0f0f0; color: #17365d; font-size: 14px; }
+.asset-table td { height: 57px; padding: 0 8px; overflow: hidden; border-color: #f0f0f0; color: #17365d; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .asset-table tbody tr:first-child td { height: 93px; }
 .asset-table tbody tr:nth-child(2) td { height: 69px; }
 .asset-table td:nth-child(10) { white-space: normal; line-height: 22px; }
+.asset-table td:nth-child(12) { overflow: visible; white-space: normal; }
+.asset-identifier { font-variant-numeric: tabular-nums; }
+.asset-empty-value { color: #8da0b3; cursor: help; }
 .asset-table th:last-child,
 .asset-table td:last-child { position: sticky; right: 0; z-index: 2; width: 120px; background: #fff; text-align: center; box-shadow: -14px 0 18px -18px rgba(0,31,62,.55); }
 .asset-table th:last-child { z-index: 3; background: #f9fafb; }

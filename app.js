@@ -56,8 +56,8 @@ const assetCampaigns = [
   { id: 1027, name: "quantm6_CB2_15", code: "quantm6_CB2", budget: 300000000, rewards: "1157, 1138", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved", label: "", owner: "nghiatn" },
   { id: 1017, name: "Voucher_Discount_721", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1007", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Auto Approved", label: "", owner: "nghiatn" },
   { id: 1018, name: "Voucher_Discount_703", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1108", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Approved", label: "", owner: "nghiatn" },
-  { id: 2893, name: "[28/05/2026][DLS_260528_563][BAU]", code: "DLS_260528_563", budget: 30000000, rewards: "20535, 20711", type: "Loyalty Coin", time: "15/05/2027 00:00", target: "Trigger Campaign", status: "Auto Approved", label: "BAU", owner: "kiettt8" },
-  { id: 998, name: "New_User_Coin", code: "ZPI_290426_118", budget: 18000000, rewards: "19882", type: "Loyalty Coin", time: "31/12/2026 23:59", target: "Trigger Campaign", status: "In Use", label: "Growth", owner: "linhnt22" }
+  { id: 2893, name: "[28/05/2026][DLS_260528_563][BAU]", code: "DLS_260528_563", budget: 30000000, presentIds: "20535, 20711", type: "Loyalty Coin", time: "15/05/2027 00:00", target: "Trigger Campaign", status: "Auto Approved", label: "BAU", owner: "kiettt8" },
+  { id: 998, name: "New_User_Coin", code: "ZPI_290426_118", budget: 18000000, presentIds: "19882", type: "Loyalty Coin", time: "31/12/2026 23:59", target: "Trigger Campaign", status: "In Use", label: "Growth", owner: "linhnt22" }
 ];
 
 state.campaigns = state.campaigns.map((campaign, campaignIndex) => {
@@ -157,10 +157,23 @@ function assetActionIcon(kind, label) {
   return `<button class="asset-icon-button ${kind}" aria-label="${label}" title="${label}"><img src="assets/action-${kind}.svg" alt="" aria-hidden="true"></button>`;
 }
 
+function assetIdentifierCell(item) {
+  const isCoin = item.type === "Loyalty Coin";
+  const value = (isCoin ? item.presentIds : item.rewards)?.trim();
+  if (!value) {
+    const title = isCoin
+      ? "Present ID được generate sau khi campaign được Approved hoặc Auto Approved"
+      : "Campaign chưa có Reward ID";
+    return `<span class="asset-empty-value" title="${title}">—</span>`;
+  }
+  const label = isCoin ? "Present ID" : "Reward ID";
+  return `<span class="asset-identifier" data-identifier-kind="${label}" title="${label}: ${value}" aria-label="${label}: ${value}">${value}</span>`;
+}
+
 function renderAssetRows(rows = assetCampaigns) {
   const body = document.getElementById("assetCampaignRows");
   body.innerHTML = rows.map(item => `<tr>
-    <td>${item.id}</td><td>${item.name}</td><td>${item.code}</td><td>${money(item.budget)}</td><td>${item.rewards}</td><td>${item.type}</td><td>${item.time}</td><td><a href="#">${item.target}</a></td><td><span class="status ${statusClass(item.status)}">${item.status}</span></td><td>${item.label}</td><td>${item.owner}</td>
+    <td>${item.id}</td><td title="${item.name}">${item.name}</td><td title="${item.code}">${item.code}</td><td>${money(item.budget)}</td><td>${assetIdentifierCell(item)}</td><td>${item.type}</td><td>${item.time}</td><td><a href="#" title="${item.target}">${item.target}</a></td><td><span class="status ${statusClass(item.status)}">${item.status}</span></td><td title="${item.label}">${item.label}</td><td>${item.owner}</td>
     <td><div class="asset-row-actions">${assetActionIcon(item.status === "Draft" ? "approve" : "stop", item.status === "Draft" ? "Approve" : "Stop")}${assetActionIcon("clone", "Clone")}${assetActionIcon("edit", "Edit")}${item.status === "Draft" ? assetActionIcon("delete", "Delete") : ""}</div></td>
   </tr>`).join("");
   document.getElementById("assetItemCount").textContent = rows.length ? `1-${rows.length} of 940 items` : "0 items";
@@ -194,7 +207,7 @@ function initAssetList() {
     const status = document.getElementById("assetFilterStatus").value;
     const label = document.getElementById("assetFilterLabel").value;
     const owner = document.getElementById("assetFilterOwner").value;
-    renderAssetRows(assetCampaigns.filter(item => (!id || String(item.id).includes(id) || item.rewards.includes(id)) && (!mkt || item.name.toLowerCase().includes(mkt) || item.code.toLowerCase().includes(mkt)) && (!type || item.type === type) && (!status || item.status === status) && (!label || item.label.includes(label)) && (!owner || item.owner === owner)));
+    renderAssetRows(assetCampaigns.filter(item => (!id || String(item.id).includes(id) || item.rewards?.includes(id) || item.presentIds?.includes(id)) && (!mkt || item.name.toLowerCase().includes(mkt) || item.code.toLowerCase().includes(mkt)) && (!type || item.type === type) && (!status || item.status === status) && (!label || item.label.includes(label)) && (!owner || item.owner === owner)));
   };
   main.onclick = event => {
     const action = event.target.closest(".asset-icon-button");
