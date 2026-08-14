@@ -9,6 +9,8 @@ page.on("console", message => { if (message.type() === "error") consoleErrors.pu
 page.on("pageerror", error => consoleErrors.push(error.message));
 
 await page.goto("http://127.0.0.1:4173", { waitUntil: "networkidle" });
+if (await page.getByRole("button", { name: "Promo Loyalty Coin Campaign" }).count()) throw new Error("Standalone Promo Loyalty Coin Campaign menu must be hidden");
+await page.evaluate(() => route("list"));
 const columnHeaders = await page.locator("thead th").allTextContents();
 if (columnHeaders[1] !== "MKT Code" || columnHeaders[2] !== "MKT Name") throw new Error("MKT Code/MKT Name column order is incorrect");
 

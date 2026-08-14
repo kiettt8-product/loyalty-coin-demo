@@ -12,6 +12,8 @@ Business, Operations, FA và Product Ops sử dụng CRM nội bộ để config
 
 Demo đúng flow Loyalty Coin Campaign trong buổi grooming: tạo campaign, config budget/package, submit approval, generate Present ID và gắn Present ID vào Trigger Based Campaign.
 
+Loyalty Coin Campaign không có menu riêng. Entry point nằm tại `Promo Asset Campaign` → `Add new` → `Distribute coin based on action trigger`.
+
 ## Brand Personality
 
 Quen thuộc, chính xác, tiết chế. UI phải nhìn như một phần có sẵn của Zalopay CRM, không phải một product mới.

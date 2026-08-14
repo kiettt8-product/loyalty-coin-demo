@@ -9,7 +9,8 @@ page.on("console", message => { if (message.type() === "error") consoleErrors.pu
 page.on("pageerror", error => consoleErrors.push(error.message));
 
 await page.goto("http://127.0.0.1:4173", { waitUntil: "networkidle" });
-await page.getByRole("button", { name: "Promo Asset Campaign" }).click();
+if (await page.getByRole("button", { name: "Promo Loyalty Coin Campaign" }).count()) throw new Error("Standalone Promo Loyalty Coin Campaign menu must be hidden");
+if (!await page.getByRole("button", { name: "Promo Asset Campaign" }).evaluate(node => node.classList.contains("active"))) throw new Error("Promo Asset Campaign must be the default entry point");
 
 const assetHeaders = (await page.locator(".asset-table th").allTextContents()).map(value => value.trim());
 const expectedHeaders = ["ID", "MKT Name", "MKT Code", "Total Budget", "Reward ID", "Distribution Type", "Distribute time", "Distribute to", "Status", "Action"];
@@ -74,7 +75,7 @@ await page.getByRole("button", { name: "Save & Submit" }).click();
 const validationCount = await page.locator(".asset-field-error").count();
 if (validationCount < 7) throw new Error("Massive form validation is incomplete");
 
-await page.getByRole("button", { name: "Promo Loyalty Coin Campaign" }).click();
+await page.evaluate(() => route("list"));
 const loyaltyVisualBaseline = await page.evaluate(() => {
   const style = selector => getComputedStyle(document.querySelector(selector));
   return {

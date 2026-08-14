@@ -773,4 +773,4 @@ document.querySelectorAll("[data-nav-target]").forEach(button => button.onclick 
   button.querySelector("span").textContent = target.hidden ? "⌄" : "⌃";
 });
 document.getElementById("menuToggle").onclick = () => document.getElementById("sidebar").classList.toggle("open");
-route("list");
+route("asset-list");

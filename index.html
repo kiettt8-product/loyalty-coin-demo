@@ -30,7 +30,6 @@
         <button>Promo Store Campaign</button>
         <button data-route="trigger">Trigger Based Campaign</button>
         <button>Promotion Code</button>
-        <button class="active" data-route="list">Promo Loyalty Coin Campaign</button>
         <button>Revoke Voucher</button>
       </div>
       <button class="nav-parent" aria-expanded="false"><img class="nav-icon" src="assets/nav-inventory.svg" alt="">Inventory Management<span>⌄</span></button>
@@ -225,7 +224,7 @@
             <div class="action-config-grid">
               <label class="field required"><span>Hành động:</span><select><option>Phát xu</option></select></label>
               <label class="field required"><span>Số lần tối đa user nhận được hành động</span><div class="limit-control"><input value="1"><select><option>per calendar day</option></select></div></label>
-              <label class="field required"><span>Campaign ID / MKT name</span><select id="triggerCampaign"><option value="">Chọn campaign trong Promo Loyalty Coin Campaign</option></select><small>Bạn cần tạo 1 Campaign Promo Loyalty Coin được FA approve trước.</small></label>
+              <label class="field required"><span>Campaign ID / MKT name</span><select id="triggerCampaign"><option value="">Chọn Loyalty Coin Campaign trong Promo Asset Campaign</option></select><small>Bạn cần tạo Loyalty Coin Campaign tại Promo Asset Campaign và được FA approve trước.</small></label>
               <label class="field required"><span>Present ID - Số xu phát</span><select id="triggerPresent" disabled><option>Chọn Present ID - Số xu phát đã cấu hình</option></select></label>
             </div>
 
@@ -238,7 +237,7 @@
         </section>
       </div>
 
-      <div class="trigger-actions"><button type="button" class="btn secondary" data-route="list">Cancel</button><button type="button" class="btn primary">Save Draft</button><button type="submit" class="btn primary">Approve and Distribute</button></div>
+      <div class="trigger-actions"><button type="button" class="btn secondary" data-route="asset-list">Cancel</button><button type="button" class="btn primary">Save Draft</button><button type="submit" class="btn primary">Approve and Distribute</button></div>
     </form>
   </template>
 
