@@ -15,6 +15,17 @@ const assetHeaders = await page.locator(".asset-table th").allTextContents();
 const expectedHeaders = ["ID ◆", "MKT Name", "MKT Code", "Total Budget", "Reward ID", "Distribution Type", "Distribute time ◆", "Distribute to", "Status", "Action"];
 if (JSON.stringify(assetHeaders) !== JSON.stringify(expectedHeaders)) throw new Error("Promo Asset listing columns do not match Figma");
 if (await page.locator(".asset-table tbody tr").count() !== 10) throw new Error("Promo Asset list must render 10 mock rows");
+const assetVisualBaseline = await page.evaluate(() => {
+  const style = selector => getComputedStyle(document.querySelector(selector));
+  return {
+    fontFamily: style(".asset-table td").fontFamily,
+    tableFontSize: style(".asset-table td").fontSize,
+    inputFontSize: style("#assetFilterId").fontSize,
+    inputRadius: style("#assetFilterId").borderRadius,
+    buttonFontSize: style("#assetAddNew").fontSize,
+    buttonRadius: style("#assetAddNew").borderRadius
+  };
+});
 await page.screenshot({ path: "demo-asset-list.png", fullPage: true });
 
 await page.getByRole("button", { name: "Add new" }).click();
@@ -22,6 +33,7 @@ const dialog = page.getByRole("dialog", { name: "How you want to distribute the 
 if (!await dialog.isVisible()) throw new Error("Add new distribution modal is missing");
 const choices = await dialog.locator('input[name="distributionChoice"]').count();
 if (choices !== 4 || !await dialog.locator('input[value="massive"]').isChecked()) throw new Error("Distribution options do not match the expected Promo Asset flow");
+if (!await dialog.getByText("Distribute coin based on action trigger", { exact: true }).isVisible()) throw new Error("Coin distribution wording is incorrect");
 await page.screenshot({ path: "demo-asset-add-new.png", fullPage: true });
 
 await dialog.locator('input[value="coin-trigger"]').check();
@@ -49,7 +61,21 @@ if (await page.locator(".asset-reward-block").count() !== 2) throw new Error("Ad
 await page.getByRole("button", { name: "Save & Submit" }).click();
 const validationCount = await page.locator(".asset-field-error").count();
 if (validationCount < 7) throw new Error("Massive form validation is incomplete");
+
+await page.getByRole("button", { name: "Promo Loyalty Coin Campaign" }).click();
+const loyaltyVisualBaseline = await page.evaluate(() => {
+  const style = selector => getComputedStyle(document.querySelector(selector));
+  return {
+    fontFamily: style(".list-screen td").fontFamily,
+    tableFontSize: style(".list-screen td").fontSize,
+    inputFontSize: style("#filterId").fontSize,
+    inputRadius: style("#filterId").borderRadius,
+    buttonFontSize: style("#addNew").fontSize,
+    buttonRadius: style("#addNew").borderRadius
+  };
+});
+if (JSON.stringify(loyaltyVisualBaseline) !== JSON.stringify(assetVisualBaseline)) throw new Error(`Loyalty Coin visual baseline differs from Promo Asset: ${JSON.stringify({ assetVisualBaseline, loyaltyVisualBaseline })}`);
 if (consoleErrors.length) throw new Error(`Console errors: ${consoleErrors.join(" | ")}`);
 
-console.log(JSON.stringify({ assetHeaders, choices, coinCreateFlow: "passed", sectionHeadings, validationCount, consoleErrors }, null, 2));
+console.log(JSON.stringify({ assetHeaders, choices, coinCreateFlow: "passed", visualBaseline: assetVisualBaseline, sectionHeadings, validationCount, consoleErrors }, null, 2));
 await browser.close();
