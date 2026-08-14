@@ -46,6 +46,7 @@ const viewEnabledControlCount = await page.locator("#campaignForm input:enabled,
 const viewPackageCount = await page.locator(".package-block").count();
 if (!viewUsesCreateForm || viewEnabledControlCount !== 0 || viewPackageCount < 1) throw new Error("View must reuse the create form in read-only mode");
 if (await page.locator(".pkg-present").count()) throw new Error("Draft must not display Present ID before generation");
+if (await page.locator(".pkg-consumed, .pkg-remaining").count()) throw new Error("Draft must not display consumption fields before distribution");
 await page.screenshot({ path: "demo-view.png", fullPage: true });
 await page.getByRole("button", { name: "Back" }).click();
 
@@ -58,33 +59,25 @@ if (!approvedLabelDisabled) throw new Error("Approved Label must be disabled");
 const approvedPresentId = await page.locator(".pkg-present").first().inputValue();
 if (approvedPresentId !== "1173") throw new Error("Approved package must display its generated Present ID");
 const packageFieldOrder = await page.locator(".package-block").first().locator(".field > span").allTextContents();
-const expectedPackageFieldOrder = ["Package Budget", "Consumed Budget", "Remaining Budget", "Coin Distribution Method", "Coin Per User", "Estimated Users", "Present ID"];
+const expectedPackageFieldOrder = ["Package Budget", "Coin Distribution Method", "Coin Per User", "Estimated Users", "Present ID"];
 if (JSON.stringify(packageFieldOrder) !== JSON.stringify(expectedPackageFieldOrder)) throw new Error("Package field order is incorrect");
 if (await page.getByText("Description", { exact: true }).count()) throw new Error("Campaign Description must not exist in Basic Information");
 const approvedPackageBudgetEnabled = await page.locator(".pkg-budget").first().isEnabled();
-const approvedPackageControlsDisabled = await page.locator(".pkg-consumed, .pkg-remaining, .pkg-method, .pkg-coin, .pkg-users, .pkg-present").evaluateAll(nodes => nodes.every(node => node.disabled));
-const approvedConsumedBudget = await page.locator(".pkg-consumed").first().inputValue();
-const approvedRemainingBudget = await page.locator(".pkg-remaining").first().inputValue();
+const approvedPackageControlsDisabled = await page.locator(".pkg-method, .pkg-coin, .pkg-users, .pkg-present").evaluateAll(nodes => nodes.every(node => node.disabled));
 if (!approvedPackageBudgetEnabled || !approvedPackageControlsDisabled) throw new Error("Approved must only allow Package Budget and Budget Alert editing");
-if (approvedConsumedBudget !== "120.000.000" || approvedRemainingBudget !== "180.000.000") throw new Error("Approved consumed/remaining budget is incorrect");
+if (await page.locator(".pkg-consumed, .pkg-remaining").count()) throw new Error("Approved must hide consumption fields before distribution starts");
 await page.locator(".pkg-budget").first().fill("290000000");
 await page.getByRole("button", { name: "Save changes" }).click();
 const extendOnlyError = await page.locator(".package-budget .field-error").textContent();
 if (extendOnlyError !== "Package Budget can only be increased.") throw new Error("Extend-only validation is incorrect");
 await page.locator(".pkg-budget").first().fill("330000000");
-const recalculatedRemaining = await page.locator(".pkg-remaining").first().inputValue();
-if (recalculatedRemaining !== "210.000.000") throw new Error("Remaining Budget must recalculate while editing");
 await page.waitForTimeout(3300);
 await page.screenshot({ path: "demo-edit-approved.png", fullPage: true });
 await page.getByRole("button", { name: "Save changes" }).click();
 await page.waitForTimeout(500);
 
 await rowFor("Auto Approved").getByRole("button", { name: "View" }).click();
-const campaignConsumedValues = await page.locator(".pkg-consumed").evaluateAll(nodes => nodes.map(node => node.value));
-const campaignRemainingValues = await page.locator(".pkg-remaining").evaluateAll(nodes => nodes.map(node => node.value));
-if (campaignConsumedValues.some(value => value !== "13.000.000") || campaignRemainingValues.some(value => value !== "17.000.000")) {
-  throw new Error("Control by campaign must display shared campaign-level consumed/remaining budget");
-}
+if (await page.locator(".pkg-consumed, .pkg-remaining").count()) throw new Error("Auto Approved must hide consumption fields before distribution starts");
 await page.getByRole("button", { name: "Back" }).click();
 
 await rowFor("In Use").getByRole("button", { name: "Edit" }).click();
@@ -92,6 +85,12 @@ const inUseLabelDisabled = await page.locator("#campaignLabel").isDisabled();
 const inUseEditableIds = await page.locator("#campaignForm input:enabled, #campaignForm select:enabled").evaluateAll(nodes => nodes.map(node => node.id).filter(Boolean).sort());
 const inUsePackageBudgetEnabled = await page.locator(".pkg-budget").first().isEnabled();
 if (!inUseLabelDisabled || !inUsePackageBudgetEnabled || JSON.stringify(inUseEditableIds) !== JSON.stringify(["emailInput", "thresholdInput"].sort())) throw new Error("In Use must allow Package Budget and Budget Alert editing only");
+const inUseConsumedBudget = await page.locator(".pkg-consumed").first().inputValue();
+const inUseRemainingBudget = await page.locator(".pkg-remaining").first().inputValue();
+if (inUseConsumedBudget !== "11.000.000" || inUseRemainingBudget !== "1.000.000") throw new Error("In Use must display actual consumed/remaining budget");
+await page.locator(".pkg-budget").first().fill("13000000");
+const recalculatedRemaining = await page.locator(".pkg-remaining").first().inputValue();
+if (recalculatedRemaining !== "2.000.000") throw new Error("Remaining Budget must recalculate while editing");
 const disabledRangeBackground = await page.locator(".time-field .range-field").evaluate(node => getComputedStyle(node).backgroundColor);
 const disabledRangeInputBackgrounds = await page.locator(".time-field input").evaluateAll(nodes => nodes.map(node => getComputedStyle(node).backgroundColor));
 if (disabledRangeBackground !== "rgb(243, 244, 246)" || disabledRangeInputBackgrounds.some(color => color !== "rgba(0, 0, 0, 0)")) throw new Error("Disabled distribute time must use one continuous grey background");
@@ -113,6 +112,7 @@ await page.getByRole("button", { name: "Cancel" }).click();
 await page.getByRole("button", { name: "+ Add new" }).click();
 const defaultPackageCount = await page.locator(".package-block").count();
 if (defaultPackageCount !== 1) throw new Error("Add new must start with exactly one package");
+if (await page.locator(".pkg-consumed, .pkg-remaining").count()) throw new Error("Create must hide consumption fields");
 const initialBudgetMethodValue = await page.locator("#budgetMethod").inputValue();
 const initialBudgetMethodText = await page.locator("#budgetMethod option:checked").textContent();
 const initialBudgetMethodDisabled = await page.locator("#budgetMethod").isDisabled();
@@ -208,12 +208,10 @@ const result = {
   disabledRangeBackground,
   approvedPresentId,
   approvedPackageBudgetEnabled,
-  approvedConsumedBudget,
-  approvedRemainingBudget,
+  inUseConsumedBudget,
+  inUseRemainingBudget,
   extendOnlyError,
   recalculatedRemaining,
-  campaignConsumedValues,
-  campaignRemainingValues,
   packageFieldOrder,
   generatedPresentIds,
   draftPackageCoinEnabled,

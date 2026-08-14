@@ -120,8 +120,11 @@ body.asset-mode .time-field { grid-column: auto; }
 .suffix-input b { display: grid; place-items: center; border: 1px solid var(--control-border); border-left: 0; border-radius: 0 3px 3px 0; color: var(--placeholder); background: #f3f4f6; font-weight: 400; }
 .package-block { position: relative; }
 .package-inner { border: 1px solid #f0f0f0; border-radius: 4px; margin: 22px 24px 24px; padding: 24px; }
-.package-fields { display: grid; grid-template-columns: repeat(6, minmax(125px, 1fr)); gap: 18px 16px; align-items: start; }
-.package-fields:has(.pkg-present) { grid-template-columns: repeat(7, minmax(112px, 1fr)); }
+.package-fields { display: grid; gap: 18px 16px; align-items: start; }
+.package-fields.without-consumption.without-present { grid-template-columns: repeat(4, minmax(160px, 1fr)); }
+.package-fields.without-consumption.with-present { grid-template-columns: repeat(5, minmax(140px, 1fr)); }
+.package-fields.with-consumption.without-present { grid-template-columns: repeat(6, minmax(125px, 1fr)); }
+.package-fields.with-consumption.with-present { grid-template-columns: repeat(7, minmax(112px, 1fr)); }
 .package-fields .package-budget { grid-column: 1; }
 .remove-package { position: absolute; top: 12px; right: 16px; width: 28px; height: 28px; border: 1px solid #ffc8cd; color: var(--danger); background: white; border-radius: 3px; }
 .add-package { width: auto; margin: 0 0 20px 6px; }

@@ -41,6 +41,7 @@ await dialog.getByRole("button", { name: "OK" }).click();
 await page.locator("#campaignForm").waitFor({ state: "visible" });
 if (!await page.getByRole("button", { name: "Promo Asset Campaign" }).evaluate(node => node.classList.contains("active"))) throw new Error("Promo Asset navigation must remain active in coin create flow");
 if (await page.locator(".package-block").count() !== 1) throw new Error("Coin form must start with one package");
+if (await page.locator(".pkg-consumed, .pkg-remaining").count()) throw new Error("Coin create form must hide consumption fields");
 if (await page.locator("#coinDistributionType").inputValue() !== "coin-trigger") throw new Error("Coin create form must show its selected Distribution Type");
 await page.locator("#coinDistributionType").selectOption("massive");
 await page.locator("#assetMassiveForm").waitFor({ state: "visible" });

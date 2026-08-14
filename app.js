@@ -445,7 +445,9 @@ function renderPackages() {
   const editable = canEditAll();
   const campaign = getEditingCampaign();
   const limitedBudgetEdit = canEditPackageBudget(campaign);
-  const showPresentId = campaign && ["Auto Approved", "Approved", "In Use", "Ended"].includes(campaign.status);
+  const showConsumption = campaign && ["In Use", "Distributing", "Ended"].includes(campaign.status);
+  const showPresentId = campaign && ["Auto Approved", "Approved", "In Use", "Distributing", "Ended"].includes(campaign.status);
+  const packageLayout = `${showConsumption ? "with-consumption" : "without-consumption"} ${showPresentId ? "with-present" : "without-present"}`;
   const holder = document.getElementById("packages");
   holder.innerHTML = state.packages.map(pkg => {
     const packageBudgetEnabled = hasMkt && control === "package" && (editable || limitedBudgetEdit);
@@ -453,10 +455,10 @@ function renderPackages() {
     const users = number(pkg.coin) ? Math.floor(packageBudget / number(pkg.coin)) : 0;
     return `<section class="crm-section package-block" data-id="${pkg.id}">
       <h1>Distribute Loyalty Coin</h1>${editable && state.packages.length > 1 ? "<button type='button' class='remove-package'>×</button>" : ""}
-      <div class="package-inner"><div class="package-fields">
+      <div class="package-inner"><div class="package-fields ${packageLayout}">
         <label class="field package-budget ${control === "package" ? "required" : ""}"><span>Package Budget</span><div class="suffix-input"><input class="pkg-budget" inputmode="numeric" value="${formattedNumber(packageBudget)}" ${packageBudgetEnabled ? "" : "disabled"} placeholder="Package Budget"><b>VND</b></div></label>
-        <label class="field"><span>Consumed Budget</span><div class="suffix-input"><input class="pkg-consumed" value="${money(consumedBudget)}" disabled><b>VND</b></div></label>
-        <label class="field"><span>Remaining Budget</span><div class="suffix-input"><input class="pkg-remaining" value="${money(remainingBudget)}" disabled><b>VND</b></div></label>
+        ${showConsumption ? `<label class="field"><span>Consumed Budget</span><div class="suffix-input"><input class="pkg-consumed" value="${money(consumedBudget)}" disabled><b>VND</b></div></label>
+        <label class="field"><span>Remaining Budget</span><div class="suffix-input"><input class="pkg-remaining" value="${money(remainingBudget)}" disabled><b>VND</b></div></label>` : ""}
         <label class="field required"><span>Coin Distribution Method</span><select class="pkg-method" disabled><option value="budget" selected>By Budget</option></select></label>
         <label class="field required"><span>Coin Per User</span><input class="pkg-coin" inputmode="numeric" value="${formattedNumber(pkg.coin)}" ${editable ? "" : "disabled"}></label>
         <label class="field"><span>Estimated Users</span><input class="pkg-users" value="${money(users)}" disabled></label>
