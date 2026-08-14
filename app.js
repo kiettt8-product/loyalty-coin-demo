@@ -56,8 +56,8 @@ const assetCampaigns = [
   { id: 1027, name: "quantm6_CB2_15", code: "quantm6_CB2", budget: 300000000, rewards: "1157, 1138", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved", label: "", owner: "nghiatn" },
   { id: 1017, name: "Voucher_Discount_721", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1007", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Auto Approved", label: "", owner: "nghiatn" },
   { id: 1018, name: "Voucher_Discount_703", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1108", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Approved", label: "", owner: "nghiatn" },
-  { id: 1019, name: "Voucher_Discount_725", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1108", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Approved", label: "", owner: "nghiatn" },
-  { id: 1024, name: "quantm6_CB2_22", code: "quantm6_CB2", budget: 300000000, rewards: "1007, 1162", type: "Massive", time: "01/02/2027 00:00", target: "TestSQL", status: "Approved", label: "", owner: "nghiatn" }
+  { id: 2893, name: "[28/05/2026][DLS_260528_563][BAU]", code: "DLS_260528_563", budget: 30000000, rewards: "20535, 20711", type: "Loyalty Coin", time: "15/05/2027 00:00", target: "Trigger Campaign", status: "Auto Approved", label: "BAU", owner: "kiettt8" },
+  { id: 998, name: "New_User_Coin", code: "ZPI_290426_118", budget: 18000000, rewards: "19882", type: "Loyalty Coin", time: "31/12/2026 23:59", target: "Trigger Campaign", status: "In Use", label: "Growth", owner: "linhnt22" }
 ];
 
 state.campaigns = state.campaigns.map((campaign, campaignIndex) => {

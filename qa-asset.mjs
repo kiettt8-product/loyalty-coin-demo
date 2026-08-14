@@ -18,6 +18,9 @@ if (JSON.stringify(assetHeaders) !== JSON.stringify(expectedHeaders)) throw new 
 if (await page.locator(".asset-table tbody tr").count() !== 10) throw new Error("Promo Asset list must render 10 mock rows");
 const firstAssetRowCells = (await page.locator(".asset-table tbody tr").first().locator("td").allTextContents()).map(value => value.trim());
 if (firstAssetRowCells[9] !== "annhg_test_icon, ZPO_a, Enablers" || firstAssetRowCells[10] !== "trongdd2") throw new Error("Promo Asset Label/Created by data is missing");
+const distributionTypeOptions = await page.locator("#assetFilterType option").allTextContents();
+if (JSON.stringify(distributionTypeOptions) !== JSON.stringify(["Distribution Type", "Massive", "Trigger Base", "Direct Discount", "Loyalty Coin"])) throw new Error("Distribution Type options are incorrect");
+if (await page.locator(".asset-table tbody tr").filter({ hasText: "Loyalty Coin" }).count() !== 2) throw new Error("Loyalty Coin mock campaigns are missing");
 const assetVisualBaseline = await page.evaluate(() => {
   const style = selector => getComputedStyle(document.querySelector(selector));
   return {
@@ -95,5 +98,5 @@ const loyaltyVisualBaseline = await page.evaluate(() => {
 if (JSON.stringify(loyaltyVisualBaseline) !== JSON.stringify(assetVisualBaseline)) throw new Error(`Loyalty Coin visual baseline differs from Promo Asset: ${JSON.stringify({ assetVisualBaseline, loyaltyVisualBaseline })}`);
 if (consoleErrors.length) throw new Error(`Console errors: ${consoleErrors.join(" | ")}`);
 
-console.log(JSON.stringify({ assetHeaders, firstAssetRowCells, choices, coinCreateFlow: "passed", visualBaseline: assetVisualBaseline, sectionHeadings, validationCount, consoleErrors }, null, 2));
+console.log(JSON.stringify({ assetHeaders, firstAssetRowCells, distributionTypeOptions, choices, coinCreateFlow: "passed", visualBaseline: assetVisualBaseline, sectionHeadings, validationCount, consoleErrors }, null, 2));
 await browser.close();
