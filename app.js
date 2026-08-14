@@ -475,7 +475,7 @@ function renderPackages() {
           <div class="coin-history-preview-head"><strong>Preview on Zalopay app</strong><span>Tích xu</span></div>
           <div class="coin-history-month"><strong>Tháng 08/2026</strong><span>Tổng: 4.844 xu</span></div>
           <div class="coin-history-row">
-            <span class="coin-history-icon" aria-hidden="true"><i>₫</i></span>
+            <img class="coin-history-icon" src="assets/loyalty-coin.svg" alt="">
             <span class="coin-history-copy"><strong class="pkg-history-preview ${historyContent ? "" : "is-placeholder"}">${escapeHtml(previewContent)}</strong><small>10:09 - 12/08/2026</small></span>
             <strong class="pkg-coin-preview">+${money(pkg.coin)} xu</strong>
           </div>

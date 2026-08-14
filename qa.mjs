@@ -19,6 +19,10 @@ for (const status of definedStatuses) if (!listedStatuses.includes(status)) thro
 const userManagementClosed = await page.locator("#userManagementMenu").isHidden();
 const userProfileClosed = await page.locator("#userProfileMenu").isHidden();
 if (!userManagementClosed || !userProfileClosed) throw new Error("User menus must be closed by default");
+const othersMenu = page.getByRole("button", { name: "Others" });
+const othersGridColumns = await othersMenu.evaluate(node => getComputedStyle(node).gridTemplateColumns);
+const othersChevronVisible = await othersMenu.locator("span").evaluate(node => getComputedStyle(node, "::before").content !== "none");
+if (!othersChevronVisible || othersGridColumns.split(" ").length !== 2) throw new Error("Others menu must use text + chevron layout without a fake icon");
 
 const rowFor = status => page.locator("tbody tr").filter({ has: page.locator(`.status.${status.toLowerCase().replaceAll(" ", "-")}`) }).first();
 const statusActions = {};
@@ -125,7 +129,9 @@ await page.locator(".pkg-coin").first().fill("300");
 await page.locator(".pkg-history-content").first().fill("Nhận xu từ chương trình Chào bạn mới");
 const liveHistoryPreview = await page.locator(".pkg-history-preview").first().textContent();
 const liveCoinPreview = await page.locator(".pkg-coin-preview").first().textContent();
+const coinIconSource = await page.locator(".coin-history-icon").first().getAttribute("src");
 if (liveHistoryPreview !== "Nhận xu từ chương trình Chào bạn mới" || liveCoinPreview !== "+300 xu") throw new Error("Coin history preview must update in realtime");
+if (coinIconSource !== "assets/loyalty-coin.svg") throw new Error("Coin history preview must use the Figma Loyalty Coin asset");
 await page.getByRole("button", { name: "Save Draft" }).click();
 const mktCodeErrorText = await page.locator("#mktCode").locator("xpath=ancestor::label").locator(".field-error").textContent();
 const initialInlineErrorCount = await page.locator(".field-error").count();
@@ -207,6 +213,8 @@ const result = {
   statusActions,
   userManagementClosed,
   userProfileClosed,
+  othersGridColumns,
+  othersChevronVisible,
   viewUsesCreateForm,
   viewEnabledControlCount,
   limitedEditableIds,
@@ -227,6 +235,7 @@ const result = {
   draftHistoryContentEnabled,
   liveHistoryPreview,
   liveCoinPreview,
+  coinIconSource,
   distributionMethods,
   distributionMethodsDisabled,
   disabledDistributionArrowVisible: disabledDistributionArrow !== "none",
