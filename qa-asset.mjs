@@ -49,6 +49,10 @@ if (await page.locator("#assetDistributionType").inputValue() !== "massive") thr
 await page.locator("#assetDistributionType").selectOption("coin-trigger");
 await page.locator("#campaignForm").waitFor({ state: "visible" });
 if (await page.locator("#coinDistributionType").inputValue() !== "coin-trigger") throw new Error("Distribution Type did not switch back to Coin");
+await page.locator(".pkg-history-content").fill("Nhận xu từ chương trình Quét mã nhận quà");
+await page.locator(".pkg-coin").fill("300");
+if (await page.locator(".pkg-history-preview").textContent() !== "Nhận xu từ chương trình Quét mã nhận quà") throw new Error("Coin history content preview is incorrect");
+if (await page.locator(".pkg-coin-preview").textContent() !== "+300 xu") throw new Error("Coin history amount preview is incorrect");
 await page.screenshot({ path: "demo-asset-coin-create.png", fullPage: true });
 await page.getByRole("button", { name: "Cancel" }).click();
 await page.locator(".asset-list-screen").waitFor({ state: "visible" });

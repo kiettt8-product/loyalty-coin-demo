@@ -42,7 +42,7 @@ await page.screenshot({ path: "demo-list.png", fullPage: true });
 
 await rowFor("Draft").getByRole("button", { name: "View" }).click();
 const viewUsesCreateForm = await page.locator("#campaignForm").isVisible();
-const viewEnabledControlCount = await page.locator("#campaignForm input:enabled, #campaignForm select:enabled").count();
+const viewEnabledControlCount = await page.locator("#campaignForm input:enabled, #campaignForm select:enabled, #campaignForm textarea:enabled").count();
 const viewPackageCount = await page.locator(".package-block").count();
 if (!viewUsesCreateForm || viewEnabledControlCount !== 0 || viewPackageCount < 1) throw new Error("View must reuse the create form in read-only mode");
 if (await page.locator(".pkg-present").count()) throw new Error("Draft must not display Present ID before generation");
@@ -59,12 +59,13 @@ if (!approvedLabelDisabled) throw new Error("Approved Label must be disabled");
 const approvedPresentId = await page.locator(".pkg-present").first().inputValue();
 if (approvedPresentId !== "1173") throw new Error("Approved package must display its generated Present ID");
 const packageFieldOrder = await page.locator(".package-block").first().locator(".field > span").allTextContents();
-const expectedPackageFieldOrder = ["Package Budget", "Coin Distribution Method", "Coin Per User", "Estimated Users", "Present ID"];
+const expectedPackageFieldOrder = ["Package Budget", "Coin Distribution Method", "Coin Per User", "Estimated Users", "Present ID", "Coin History Content"];
 if (JSON.stringify(packageFieldOrder) !== JSON.stringify(expectedPackageFieldOrder)) throw new Error("Package field order is incorrect");
 if (await page.getByText("Description", { exact: true }).count()) throw new Error("Campaign Description must not exist in Basic Information");
 const approvedPackageBudgetEnabled = await page.locator(".pkg-budget").first().isEnabled();
 const approvedPackageControlsDisabled = await page.locator(".pkg-method, .pkg-coin, .pkg-users, .pkg-present").evaluateAll(nodes => nodes.every(node => node.disabled));
 if (!approvedPackageBudgetEnabled || !approvedPackageControlsDisabled) throw new Error("Approved must only allow Package Budget and Budget Alert editing");
+if (!await page.locator(".pkg-history-content").first().isDisabled()) throw new Error("Approved Coin History Content must be read-only");
 if (await page.locator(".pkg-consumed, .pkg-remaining").count()) throw new Error("Approved must hide consumption fields before distribution starts");
 await page.locator(".pkg-budget").first().fill("290000000");
 await page.getByRole("button", { name: "Save changes" }).click();
@@ -99,8 +100,9 @@ await page.getByRole("button", { name: "Cancel" }).click();
 
 await rowFor("Draft").getByRole("button", { name: "Edit" }).click();
 const draftPackageCoinEnabled = await page.locator(".pkg-coin").first().isEnabled();
+const draftHistoryContentEnabled = await page.locator(".pkg-history-content").first().isEnabled();
 const draftAddPackageVisible = await page.getByRole("button", { name: "Add new Package" }).isVisible();
-if (!draftPackageCoinEnabled || !draftAddPackageVisible) throw new Error("Draft package config must be editable");
+if (!draftPackageCoinEnabled || !draftHistoryContentEnabled || !draftAddPackageVisible) throw new Error("Draft package config must be editable");
 const distributionMethods = await page.locator(".pkg-method option").allTextContents();
 if (distributionMethods.some(option => option === "By Quantity") || distributionMethods.some(option => option !== "By Budget")) throw new Error("Only By Budget must be available");
 const distributionMethodsDisabled = await page.locator(".pkg-method").evaluateAll(nodes => nodes.every(node => node.disabled));
@@ -120,6 +122,10 @@ if (initialBudgetMethodValue !== "" || initialBudgetMethodText !== "Select Budge
 await page.locator("#startTime").fill("2026-08-01T00:00");
 await page.locator("#endTime").fill("2026-12-31T23:59");
 await page.locator(".pkg-coin").first().fill("300");
+await page.locator(".pkg-history-content").first().fill("Nhận xu từ chương trình Chào bạn mới");
+const liveHistoryPreview = await page.locator(".pkg-history-preview").first().textContent();
+const liveCoinPreview = await page.locator(".pkg-coin-preview").first().textContent();
+if (liveHistoryPreview !== "Nhận xu từ chương trình Chào bạn mới" || liveCoinPreview !== "+300 xu") throw new Error("Coin history preview must update in realtime");
 await page.getByRole("button", { name: "Save Draft" }).click();
 const mktCodeErrorText = await page.locator("#mktCode").locator("xpath=ancestor::label").locator(".field-error").textContent();
 const initialInlineErrorCount = await page.locator(".field-error").count();
@@ -155,14 +161,16 @@ await page.locator("#startTime").fill("2026-08-01T00:00");
 await page.locator("#endTime").fill("2026-12-31T23:59");
 await page.getByRole("button", { name: "Save & Submit" }).click();
 const addedPackageInvalidFieldCount = await packages.nth(1).locator(".field.invalid").count();
-if (addedPackageInvalidFieldCount !== 2) throw new Error("Added package validation feedback is missing");
+if (addedPackageInvalidFieldCount !== 3) throw new Error("Added package validation feedback is missing");
 const invalidPackageControlTops = await packages.nth(1).locator(".package-fields input, .package-fields select").evaluateAll(nodes => nodes.map(node => Math.round(node.getBoundingClientRect().top)));
 if (new Set(invalidPackageControlTops).size !== 1) throw new Error("Package controls must remain top-aligned when inline errors are displayed");
 await page.screenshot({ path: "demo-validation.png", fullPage: true });
 await packages.nth(0).locator(".pkg-budget").fill("2500000");
 await packages.nth(0).locator(".pkg-coin").fill("304");
+await packages.nth(0).locator(".pkg-history-content").fill("Nhận xu từ chương trình Quét mã nhận quà");
 await packages.nth(1).locator(".pkg-budget").fill("2500000");
 await packages.nth(1).locator(".pkg-coin").fill("300");
+await packages.nth(1).locator(".pkg-history-content").fill("Nhận xu từ chương trình Thành viên mới");
 if (await packages.nth(0).locator(".pkg-budget").inputValue() !== "2.500.000") throw new Error("Package budget is not formatted in vi-VN format");
 if (await packages.nth(0).locator(".pkg-coin").inputValue() !== "304") throw new Error("Coin per user is not formatted in vi-VN format");
 await page.locator("#campaignLabel").selectOption("Growth");
@@ -177,6 +185,7 @@ const createdAutoApprovedRow = page.locator("tbody tr").filter({ hasText: "Auto 
 await createdAutoApprovedRow.getByRole("button", { name: "Edit" }).click();
 const generatedPresentIds = await page.locator(".pkg-present").evaluateAll(nodes => nodes.map(node => node.value));
 if (generatedPresentIds.length !== 2 || generatedPresentIds.some(value => !value)) throw new Error("Auto Approved Edit must display generated Present ID for every package");
+if (!await page.locator(".pkg-history-content").first().isDisabled()) throw new Error("Auto Approved Coin History Content must be read-only");
 await page.getByRole("button", { name: "Cancel" }).click();
 
 await page.getByRole("button", { name: "Trigger Based Campaign" }).click();
@@ -215,6 +224,9 @@ const result = {
   packageFieldOrder,
   generatedPresentIds,
   draftPackageCoinEnabled,
+  draftHistoryContentEnabled,
+  liveHistoryPreview,
+  liveCoinPreview,
   distributionMethods,
   distributionMethodsDisabled,
   disabledDistributionArrowVisible: disabledDistributionArrow !== "none",

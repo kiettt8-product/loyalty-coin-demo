@@ -40,6 +40,14 @@ Quen thuộc, chính xác, tiết chế. UI phải nhìn như một phần có s
 - Khi Business edit Package Budget, UI preview Remaining Budget ngay nhưng Save phải revalidate bằng latest consumed snapshot.
 - Không hiển thị Estimated Budget hoặc Budget dư.
 
+## Coin History Content
+
+- Mỗi distribution package có một field mandatory `Coin History Content`, tối đa 100 ký tự.
+- Đây là nội dung End-user nhìn thấy tại màn `Tích xu` trên Zalopay app; không dùng lại campaign description nội bộ.
+- UI preview realtime nội dung và `Coin Per User` để Business kiểm tra trước khi Save.
+- Field editable tại Create, Draft, Rejected; read-only từ `FA Review`, `Approved`, `Auto Approved`, `In Use`, `Distributing`, `Ended`.
+- Khi Submit mà bỏ trống, chặn lưu và hiển thị inline error `Coin History Content is required`.
+
 ## Accessibility & Inclusion
 
 Keyboard usable, focus visible, label không thay bằng placeholder, semantic status không chỉ dựa vào màu và hỗ trợ reduced motion.

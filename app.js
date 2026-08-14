@@ -3,13 +3,15 @@ function number(value) { return Number(String(value || "").replace(/[^0-9]/g, ""
 function formattedNumber(value) { return number(value) ? money(number(value)) : ""; }
 function statusClass(value) { return value.toLowerCase().replaceAll(" ", "-"); }
 function packageId() { return `pkg-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
-function newPackage() { return { id: packageId(), method: "budget", budget: "", originalBudget: "", consumedBudget: "0", coin: "" }; }
+function escapeHtml(value) { return String(value || "").replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }
+function newPackage() { return { id: packageId(), method: "budget", budget: "", originalBudget: "", consumedBudget: "0", coin: "", historyContent: "" }; }
 function clonePackages(packages) {
   return packages.map(pkg => ({
     ...pkg,
     id: packageId(),
     originalBudget: String(pkg.budget || pkg.originalBudget || ""),
-    consumedBudget: String(pkg.consumedBudget || 0)
+    consumedBudget: String(pkg.consumedBudget || 0),
+    historyContent: String(pkg.historyContent || "")
   }));
 }
 function displayToIso(value) {
@@ -76,7 +78,8 @@ state.campaigns = state.campaigns.map((campaign, campaignIndex) => {
       originalBudget: String(campaign.packageBudgets?.[packageIndex] ?? packageBudget),
       consumedBudget: String(campaign.consumedBudgets?.[packageIndex] ?? 0),
       coin: String(coin),
-      presentId: campaign.presents[packageIndex] || ""
+      presentId: campaign.presents[packageIndex] || "",
+      historyContent: campaign.historyContents?.[packageIndex] || `Nhận xu từ chương trình ${campaign.name}`
     })),
     ...campaign
   };
@@ -381,7 +384,7 @@ function hydrateCampaignForm(campaign) {
 
 function applyFormAccess(campaign) {
   const form = document.getElementById("campaignForm");
-  const allControls = form.querySelectorAll("input, select");
+  const allControls = form.querySelectorAll("input, select, textarea");
   if (state.formMode === "view") {
     allControls.forEach(control => control.disabled = true);
   } else if (state.formMode === "edit" && !canEditAll()) {
@@ -453,6 +456,8 @@ function renderPackages() {
     const packageBudgetEnabled = hasMkt && control === "package" && (editable || limitedBudgetEdit);
     const { budget: packageBudget, consumedBudget, remainingBudget } = budgetSnapshot(control, pkg);
     const users = number(pkg.coin) ? Math.floor(packageBudget / number(pkg.coin)) : 0;
+    const historyContent = pkg.historyContent.trim();
+    const previewContent = historyContent || "Nội dung lịch sử nhận xu sẽ hiển thị tại đây";
     return `<section class="crm-section package-block" data-id="${pkg.id}">
       <h1>Distribute Loyalty Coin</h1>${editable && state.packages.length > 1 ? "<button type='button' class='remove-package'>×</button>" : ""}
       <div class="package-inner"><div class="package-fields ${packageLayout}">
@@ -463,6 +468,18 @@ function renderPackages() {
         <label class="field required"><span>Coin Per User</span><input class="pkg-coin" inputmode="numeric" value="${formattedNumber(pkg.coin)}" ${editable ? "" : "disabled"}></label>
         <label class="field"><span>Estimated Users</span><input class="pkg-users" value="${money(users)}" disabled></label>
         ${showPresentId ? `<label class="field"><span>Present ID</span><input class="pkg-present" value="${pkg.presentId}" disabled></label>` : ""}
+      </div>
+      <div class="package-experience">
+        <label class="field required coin-history-field"><span>Coin History Content</span><textarea class="pkg-history-content" maxlength="100" rows="3" ${editable ? "" : "disabled"} placeholder="Nhập nội dung hiển thị trong lịch sử nhận xu">${escapeHtml(pkg.historyContent)}</textarea><small><span>Hiển thị tại màn Tích xu trên Zalopay app</span><span class="pkg-history-count">${pkg.historyContent.length} / 100</span></small></label>
+        <div class="coin-history-preview" aria-label="Preview nội dung lịch sử nhận xu">
+          <div class="coin-history-preview-head"><strong>Preview on Zalopay app</strong><span>Tích xu</span></div>
+          <div class="coin-history-month"><strong>Tháng 08/2026</strong><span>Tổng: 4.844 xu</span></div>
+          <div class="coin-history-row">
+            <span class="coin-history-icon" aria-hidden="true"><i>₫</i></span>
+            <span class="coin-history-copy"><strong class="pkg-history-preview ${historyContent ? "" : "is-placeholder"}">${escapeHtml(previewContent)}</strong><small>10:09 - 12/08/2026</small></span>
+            <strong class="pkg-coin-preview">+${money(pkg.coin)} xu</strong>
+          </div>
+        </div>
       </div></div>
     </section>`;
   }).join("");
@@ -484,6 +501,11 @@ function bindPackage(block) {
     }
     updatePackage(block, pkg);
   }));
+  block.querySelector(".pkg-history-content")?.addEventListener("input", event => {
+    pkg.historyContent = event.target.value;
+    if (pkg.historyContent.trim()) clearFieldError(event.target);
+    updatePackage(block, pkg);
+  });
 }
 
 function updatePackage(block, pkg) {
@@ -492,6 +514,14 @@ function updatePackage(block, pkg) {
   const users = number(pkg.coin) ? Math.floor(budget / number(pkg.coin)) : 0;
   if (block.querySelector(".pkg-users")) block.querySelector(".pkg-users").value = money(users);
   if (block.querySelector(".pkg-remaining")) block.querySelector(".pkg-remaining").value = money(remainingBudget);
+  const preview = block.querySelector(".pkg-history-preview");
+  const historyContent = pkg.historyContent.trim();
+  if (preview) {
+    preview.textContent = historyContent || "Nội dung lịch sử nhận xu sẽ hiển thị tại đây";
+    preview.classList.toggle("is-placeholder", !historyContent);
+  }
+  if (block.querySelector(".pkg-coin-preview")) block.querySelector(".pkg-coin-preview").textContent = `+${money(pkg.coin)} xu`;
+  if (block.querySelector(".pkg-history-count")) block.querySelector(".pkg-history-count").textContent = `${pkg.historyContent.length} / 100`;
 }
 
 function bindTagInput(id, type) {
@@ -554,7 +584,7 @@ function setFieldError(control, message) {
 }
 
 function bindValidationClear() {
-  document.querySelectorAll("#campaignForm input, #campaignForm select").forEach(control => {
+  document.querySelectorAll("#campaignForm input, #campaignForm select, #campaignForm textarea").forEach(control => {
     const clear = () => { if (control.value) clearFieldError(control); };
     control.addEventListener("input", clear);
     control.addEventListener("change", clear);
@@ -639,7 +669,8 @@ function validateCampaign() {
     const block = document.querySelector(`.package-block[data-id="${pkg.id}"]`);
     const rules = [
       [".pkg-coin", !number(pkg.coin), "Coin Per User is required"],
-      [".pkg-budget", control === "package" && !number(pkg.budget), "Budget is required"]
+      [".pkg-budget", control === "package" && !number(pkg.budget), "Budget is required"],
+      [".pkg-history-content", !pkg.historyContent.trim(), "Coin History Content is required"]
     ];
     rules.forEach(([selector, invalid, message]) => {
       const input = block?.querySelector(selector);
