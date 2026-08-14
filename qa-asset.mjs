@@ -51,6 +51,19 @@ if (!await dialog.isVisible()) throw new Error("Add new distribution modal is mi
 const choices = await dialog.locator('input[name="distributionChoice"]').count();
 if (choices !== 4 || !await dialog.locator('input[value="massive"]').isChecked()) throw new Error("Distribution options do not match the expected Promo Asset flow");
 if (!await dialog.getByText("Distribute coin based on action trigger", { exact: true }).isVisible()) throw new Error("Coin distribution wording is incorrect");
+await dialog.locator('input[value="massive"]').click();
+const selectedRadioStyle = await dialog.locator('input[value="massive"]').evaluate(node => {
+  const style = getComputedStyle(node);
+  return { outlineStyle: style.outlineStyle, borderRadius: style.borderRadius, boxShadow: style.boxShadow };
+});
+if (selectedRadioStyle.outlineStyle !== "none" || selectedRadioStyle.borderRadius !== "50%" || selectedRadioStyle.boxShadow !== "none") throw new Error(`Selected radio still has a rectangular focus ring: ${JSON.stringify(selectedRadioStyle)}`);
+await page.keyboard.press("ArrowDown");
+const keyboardFocusedRadioStyle = await dialog.locator('input[name="distributionChoice"]:focus').evaluate(node => {
+  const style = getComputedStyle(node);
+  return { borderRadius: style.borderRadius, boxShadow: style.boxShadow };
+});
+if (keyboardFocusedRadioStyle.borderRadius !== "50%" || keyboardFocusedRadioStyle.boxShadow === "none") throw new Error(`Keyboard focus must remain visible and circular: ${JSON.stringify(keyboardFocusedRadioStyle)}`);
+await dialog.locator('input[value="massive"]').click();
 await page.screenshot({ path: "demo-asset-add-new.png", fullPage: true });
 
 await dialog.locator('input[value="coin-trigger"]').check();
