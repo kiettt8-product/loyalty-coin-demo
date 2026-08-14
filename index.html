@@ -29,7 +29,7 @@
       <div class="nav-sub campaign-menu">
         <button>Notification Campaign</button>
         <button>ZMS Campaign</button>
-        <button>Promo Asset Campaign</button>
+        <button data-route="asset-list">Promo Asset Campaign</button>
         <button>Promo Store Campaign</button>
         <button data-route="trigger">Trigger Based Campaign</button>
         <button>Promotion Code</button>
@@ -75,6 +75,93 @@
         <div class="pagination"><span id="itemCount">1-10 of 733 items</span><button>‹</button><button class="active">1</button><button>2</button><button>3</button><span>...</span><button>74</button><button>›</button><span>10 / page</span></div>
       </section>
     </div>
+  </template>
+
+  <template id="assetListTemplate">
+    <div class="screen asset-screen asset-list-screen">
+      <section class="asset-filter-panel">
+        <div class="asset-filter-grid" id="assetFilterGrid">
+          <input id="assetFilterId" aria-label="Campaign ID hoặc Reward ID" placeholder="Campaign ID/Reward ID">
+          <input id="assetFilterMkt" aria-label="MKT Name hoặc MKT Code" placeholder="MKT Name/MKT Code">
+          <select id="assetFilterType" aria-label="Distribution Type"><option value="">Distribution Type</option><option>Massive</option><option>Action trigger</option><option>Direct Discount</option></select>
+          <div class="asset-date-range" aria-label="Distribute time"><input id="assetFilterFrom" placeholder="From" aria-label="From"><span>→</span><input id="assetFilterTo" placeholder="To" aria-label="To"><span class="calendar-mark" aria-hidden="true"></span></div>
+          <select id="assetFilterStatus" aria-label="Status"><option value="">Status</option><option>Draft</option><option>Approved</option><option>Auto Approved</option></select>
+          <select id="assetFilterLabel" aria-label="Label"><option value="">Label</option><option>ZPO</option><option>BAU</option></select>
+          <select id="assetFilterOwner" aria-label="Created by"><option value="">Created by</option><option>kiettt8</option><option>nghiatn</option></select>
+          <div class="asset-filter-actions">
+            <button class="asset-btn secondary" id="assetResetFilter">Reset</button>
+            <button class="asset-btn primary" id="assetSearchFilter">Search</button>
+            <button class="asset-collapse" id="assetCollapseFilter">Collapse <span aria-hidden="true">⌃</span></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="asset-list-panel">
+        <div class="asset-list-toolbar"><button class="asset-btn primary" id="assetAddNew"><span class="plus-mark" aria-hidden="true"></span>Add new</button></div>
+        <div class="asset-table-wrap">
+          <table class="asset-table">
+            <thead><tr><th>ID <span class="sort-mark">◆</span></th><th>MKT Name</th><th>MKT Code</th><th>Total Budget</th><th>Reward ID</th><th>Distribution Type</th><th>Distribute time <span class="sort-mark">◆</span></th><th>Distribute to</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="assetCampaignRows"></tbody>
+          </table>
+        </div>
+        <div class="asset-pagination">
+          <span id="assetItemCount">1-10 of 940 items</span>
+          <button aria-label="Previous page">‹</button><button class="active">1</button><button>2</button><button>3</button><span>•••</span><button>94</button><button aria-label="Next page">›</button>
+          <select aria-label="Items per page"><option>10 / page</option></select>
+        </div>
+      </section>
+
+      <dialog class="asset-choice-dialog" id="assetChoiceDialog" aria-labelledby="assetChoiceTitle">
+        <form method="dialog">
+          <div class="asset-dialog-heading"><h1 id="assetChoiceTitle">How you want to distribute the voucher</h1><button value="cancel" aria-label="Close dialog" class="asset-dialog-close">×</button></div>
+          <label class="asset-choice"><input type="radio" name="distributionChoice" value="massive" checked><span><strong>Distribute Massive</strong><small>Schedule to distribute reward to a specific user segment!</small></span></label>
+          <label class="asset-choice"><input type="radio" name="distributionChoice" value="trigger"><span><strong>Distribute based on action trigger</strong><small>After user perform an action, distribute reward to user!</small></span></label>
+          <label class="asset-choice"><input type="radio" name="distributionChoice" value="direct-discount"><span><strong>Direct Discount</strong><small>Users only see and apply discount at checkout page.</small></span></label>
+          <div class="asset-dialog-actions"><button value="cancel" class="asset-btn secondary">Cancel</button><button value="confirm" class="asset-btn primary" id="confirmAssetType">OK</button></div>
+        </form>
+      </dialog>
+    </div>
+  </template>
+
+  <template id="assetMassiveTemplate">
+    <form class="screen asset-screen asset-massive-screen" id="assetMassiveForm" novalidate>
+      <section class="asset-form-section">
+        <h1>Basic Information</h1>
+        <div class="asset-section-body asset-basic-grid">
+          <label class="asset-field required"><span>Distribution Type</span><select id="assetDistributionType"><option>Distribute massive</option></select></label>
+          <label class="asset-field required"><span>Distribute to</span><select id="assetDistributeTo"><option value="">Distribute to</option><option>Segment</option><option>Upload user list</option></select></label>
+          <label class="asset-field required"><span>Size</span><input id="assetSize" type="number" min="1" placeholder="Size"></label>
+          <label class="asset-field required"><span>Distribute time</span><div class="asset-control-icon"><input id="assetDistributeTime" type="text" placeholder="Distribute time"><span class="calendar-mark" aria-hidden="true"></span></div></label>
+          <label class="asset-field required"><span>MKT Code</span><select id="assetMktCode"><option value="">MKT Code</option><option value="ZPI_060426_341">ZPI_060426_341</option><option value="TRONG_260526_TEST">TRONG_260526_TEST</option></select></label>
+          <label class="asset-field"><span>MKT Name</span><select id="assetMktName" disabled><option>MKT Name</option></select></label>
+          <label class="asset-field"><span>Budget control</span><select id="assetBudgetControl" disabled><option>Control budget by campaign</option></select></label>
+          <label class="asset-field"><span>Campaign budget</span><div class="asset-suffix"><input id="assetCampaignBudget" placeholder="Campaign budget" disabled><b>VND</b></div></label>
+          <label class="asset-field asset-group-name"><span>Group name <span class="help-mark" title="Optional group name">?</span></span><div class="asset-counted-input"><input id="assetGroupName" maxlength="100" placeholder="Group name"><small id="assetGroupCount">0 / 100</small></div></label>
+        </div>
+      </section>
+
+      <section class="asset-form-section">
+        <h1>Reward Package</h1>
+        <div class="asset-section-body asset-package-summary">
+          <label class="asset-field"><span>Package Budget</span><div class="asset-suffix"><input class="asset-package-budget" placeholder="Package Budget" disabled><b>VND</b></div></label>
+          <label class="asset-field required"><span>Budget sponsor <span class="help-mark" title="Budget sponsor">?</span></span><select class="asset-budget-sponsor"><option value="">Budget sponsor</option><option>Zalopay</option><option>Merchant</option></select></label>
+        </div>
+        <div class="asset-reward-list" id="assetRewardList"></div>
+        <button type="button" class="asset-btn secondary asset-add-reward" id="assetAddReward"><span class="plus-mark" aria-hidden="true"></span>Add More Reward</button>
+      </section>
+
+      <button type="button" class="asset-btn secondary asset-add-package" id="assetAddPackage"><span class="plus-mark" aria-hidden="true"></span>Add More Package</button>
+
+      <section class="asset-form-section asset-alert-section">
+        <h1>Budget Alert</h1>
+        <div class="asset-section-body asset-alert-grid">
+          <label class="asset-field"><span>Alert to</span><select><option>domain@vng.com.vn</option></select></label>
+          <label class="asset-field"><span>Alert when budget low %</span><div class="asset-tag-select"><span>10 <button type="button" aria-label="Remove threshold">×</button></span><i aria-hidden="true"></i></div></label>
+        </div>
+      </section>
+
+      <div class="asset-form-actions"><button type="button" class="asset-btn secondary" id="cancelAssetMassive">Cancel</button><button type="button" class="asset-btn primary" id="saveAssetMassive">Save</button><button type="submit" class="asset-btn primary">Save &amp; Submit</button></div>
+    </form>
   </template>
 
   <template id="formTemplate">

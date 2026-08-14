@@ -44,6 +44,19 @@ const state = {
   ]
 };
 
+const assetCampaigns = [
+  { id: 1371, name: "TRONG_260526_TEST_62", code: "TRONG_260526_TEST", budget: 3000000, rewards: "2134", type: "Massive", time: "01/07/2027 00:00", target: "test tier", status: "Draft" },
+  { id: 1570, name: "TRONG_260526_TEST_79", code: "TRONG_260526_TEST", budget: 3000000, rewards: "1827", type: "Massive", time: "01/07/2027 00:00", target: "test tier", status: "Approved" },
+  { id: 1023, name: "quantm6_CB2_21", code: "quantm6_CB2", budget: 300000000, rewards: "1157, 1136", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved" },
+  { id: 1025, name: "quantm6_CB2_20", code: "quantm6_CB2", budget: 300000000, rewards: "1162, 1007, 1108", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved" },
+  { id: 1026, name: "quantm6_CB2_14", code: "quantm6_CB2", budget: 300000000, rewards: "1157, 1108", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved" },
+  { id: 1027, name: "quantm6_CB2_15", code: "quantm6_CB2", budget: 300000000, rewards: "1157, 1138", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved" },
+  { id: 1017, name: "Voucher_Discount_721", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1007", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Auto Approved" },
+  { id: 1018, name: "Voucher_Discount_703", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1108", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Approved" },
+  { id: 1019, name: "Voucher_Discount_725", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1108", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Approved" },
+  { id: 1024, name: "quantm6_CB2_22", code: "quantm6_CB2", budget: 300000000, rewards: "1007, 1162", type: "Massive", time: "01/02/2027 00:00", target: "TestSQL", status: "Approved" }
+];
+
 state.campaigns = state.campaigns.map((campaign, campaignIndex) => {
   const coins = campaign.coins.length ? campaign.coins : [300];
   const packageBudget = Math.floor(campaign.budget / coins.length);
@@ -72,7 +85,9 @@ const main = document.getElementById("mainContent");
 const templates = {
   list: document.getElementById("listTemplate"),
   form: document.getElementById("formTemplate"),
-  trigger: document.getElementById("triggerTemplate")
+  trigger: document.getElementById("triggerTemplate"),
+  "asset-list": document.getElementById("assetListTemplate"),
+  "asset-massive": document.getElementById("assetMassiveTemplate")
 };
 
 function toast(message, type = "") {
@@ -119,14 +134,137 @@ function budgetSnapshot(control, pkg) {
 
 function route(name, payload = {}) {
   state.route = name;
+  document.body.classList.toggle("asset-mode", name.startsWith("asset-"));
   main.onclick = null;
   main.replaceChildren(templates[name].content.cloneNode(true));
-  document.querySelectorAll("[data-route]").forEach(button => button.classList.toggle("active", button.dataset.route === name || (name === "form" && button.dataset.route === "list")));
+  document.querySelectorAll("[data-route]").forEach(button => button.classList.toggle("active", button.dataset.route === name || (name === "form" && button.dataset.route === "list") || (name === "asset-massive" && button.dataset.route === "asset-list")));
   if (name === "list") initList();
   if (name === "form") initForm(payload);
   if (name === "trigger") initTrigger();
+  if (name === "asset-list") initAssetList();
+  if (name === "asset-massive") initAssetMassive();
   document.getElementById("sidebar").classList.remove("open");
   main.focus();
+}
+
+function assetActionIcon(kind, label) {
+  const paths = {
+    approve: '<circle cx="9" cy="9" r="7"></circle><path d="m6 9 2 2 4-5"></path>',
+    stop: '<circle cx="9" cy="9" r="7"></circle><rect x="6.5" y="6.5" width="5" height="5"></rect>',
+    clone: '<path d="M6 3h6l3 3v9H6z"></path><path d="M12 3v3h3M3 6v9h3"></path>',
+    edit: '<path d="m4 13-.5 2.5L6 15l8-8-2-2z"></path><path d="M10.5 6.5 13 9M3 17h12"></path>',
+    delete: '<path d="M4 5h10M7 5V3h4v2M5.5 5l.6 11h5.8l.6-11"></path>'
+  };
+  return `<button class="asset-icon-button ${kind}" aria-label="${label}" title="${label}"><svg viewBox="0 0 18 18" aria-hidden="true">${paths[kind]}</svg></button>`;
+}
+
+function renderAssetRows(rows = assetCampaigns) {
+  const body = document.getElementById("assetCampaignRows");
+  body.innerHTML = rows.map(item => `<tr>
+    <td>${item.id}</td><td>${item.name}</td><td>${item.code}</td><td>${money(item.budget)}</td><td>${item.rewards}</td><td>${item.type}</td><td>${item.time}</td><td><a href="#">${item.target}</a></td><td><span class="status ${statusClass(item.status)}">${item.status}</span></td>
+    <td><div class="asset-row-actions">${assetActionIcon(item.status === "Draft" ? "approve" : "stop", item.status === "Draft" ? "Approve" : "Stop")}${assetActionIcon("clone", "Clone")}${assetActionIcon("edit", "Edit")}${item.status === "Draft" ? assetActionIcon("delete", "Delete") : ""}</div></td>
+  </tr>`).join("");
+  document.getElementById("assetItemCount").textContent = rows.length ? `1-${rows.length} of 940 items` : "0 items";
+}
+
+function initAssetList() {
+  renderAssetRows();
+  const dialog = document.getElementById("assetChoiceDialog");
+  document.getElementById("assetAddNew").onclick = () => dialog.showModal();
+  dialog.addEventListener("close", () => {
+    if (dialog.returnValue !== "confirm") return;
+    const choice = dialog.querySelector('input[name="distributionChoice"]:checked')?.value;
+    if (choice === "massive") route("asset-massive");
+    else toast("Demo hiện tại tập trung flow Distribute Massive.");
+  });
+  document.getElementById("assetCollapseFilter").onclick = event => {
+    const controls = [...document.querySelectorAll("#assetFilterGrid > :not(.asset-filter-actions)")];
+    const hide = !controls[0].hidden;
+    controls.forEach(control => control.hidden = hide);
+    event.currentTarget.innerHTML = `${hide ? "Expand" : "Collapse"} <span aria-hidden="true">${hide ? "⌄" : "⌃"}</span>`;
+  };
+  document.getElementById("assetResetFilter").onclick = () => {
+    document.querySelectorAll(".asset-filter-panel input, .asset-filter-panel select").forEach(control => control.value = "");
+    renderAssetRows();
+  };
+  document.getElementById("assetSearchFilter").onclick = () => {
+    const id = document.getElementById("assetFilterId").value.toLowerCase().trim();
+    const mkt = document.getElementById("assetFilterMkt").value.toLowerCase().trim();
+    const type = document.getElementById("assetFilterType").value;
+    const status = document.getElementById("assetFilterStatus").value;
+    renderAssetRows(assetCampaigns.filter(item => (!id || String(item.id).includes(id) || item.rewards.includes(id)) && (!mkt || item.name.toLowerCase().includes(mkt) || item.code.toLowerCase().includes(mkt)) && (!type || item.type === type) && (!status || item.status === status)));
+  };
+  main.onclick = event => {
+    const action = event.target.closest(".asset-icon-button");
+    if (action) toast(`${action.getAttribute("aria-label")} action — demo only.`);
+  };
+}
+
+function assetRewardMarkup(index) {
+  return `<div class="asset-reward-block" data-reward-index="${index}">
+    <label class="asset-field required"><span>Reward ID</span><select class="asset-reward-id"><option value="">Reward ID</option><option>2134 - Voucher 50K</option><option>1827 - Voucher 20K</option></select></label>
+    <label class="asset-field required"><span>Each user will receive <span class="help-mark" title="Voucher per user">?</span></span><div class="asset-reward-amount"><input class="asset-each-user" type="number" min="1" value="1"><b>vouchers</b></div></label>
+    <label class="asset-field required"><span>Available start date</span><select class="asset-start-date"><option>Available at the distributed time</option><option>Custom date</option></select></label>
+    <label class="asset-field required"><span>Expired time</span><select class="asset-expired-time"><option value="">Expired time</option><option>30 days after distributed time</option><option>31/12/2027 23:59</option></select></label>
+    <div class="asset-voucher-preview"><span>HSD: ../../..</span><strong>Dùng ngay</strong></div>
+    <button type="button" class="asset-icon-button delete asset-remove-reward" aria-label="Remove reward" title="Remove reward"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M4 5h10M7 5V3h4v2M5.5 5l.6 11h5.8l.6-11"></path></svg></button>
+  </div>`;
+}
+
+function clearAssetValidation() {
+  document.querySelectorAll(".asset-field.invalid").forEach(field => field.classList.remove("invalid"));
+  document.querySelectorAll(".asset-field-error").forEach(error => error.remove());
+}
+
+function validateAssetMassive() {
+  clearAssetValidation();
+  const required = [
+    ["assetDistributeTo", "Distribute to is required"], ["assetSize", "Size is required"], ["assetDistributeTime", "Distribute time is required"], ["assetMktCode", "MKT Code is required"]
+  ];
+  document.querySelectorAll(".asset-budget-sponsor").forEach((node, index) => required.push([node, `Budget sponsor is required`]));
+  document.querySelectorAll(".asset-reward-id").forEach(node => required.push([node, "Reward ID is required"]));
+  document.querySelectorAll(".asset-expired-time").forEach(node => required.push([node, "Expired time is required"]));
+  let firstInvalid = null;
+  required.forEach(([target, message]) => {
+    const control = typeof target === "string" ? document.getElementById(target) : target;
+    if (control?.value) return;
+    const field = control.closest(".asset-field");
+    field.classList.add("invalid");
+    field.insertAdjacentHTML("beforeend", `<small class="asset-field-error">${message}</small>`);
+    firstInvalid ||= control;
+  });
+  firstInvalid?.focus();
+  return !firstInvalid;
+}
+
+function initAssetMassive() {
+  const rewardList = document.getElementById("assetRewardList");
+  let rewardCount = 1;
+  const renderRewards = () => { rewardList.innerHTML = Array.from({ length: rewardCount }, (_, index) => assetRewardMarkup(index)).join(""); };
+  renderRewards();
+  document.getElementById("assetGroupName").oninput = event => document.getElementById("assetGroupCount").textContent = `${event.target.value.length} / 100`;
+  document.getElementById("assetMktCode").onchange = event => {
+    const selected = event.target.value;
+    const name = document.getElementById("assetMktName");
+    name.innerHTML = selected ? `<option>${selected === "TRONG_260526_TEST" ? "TRONG_260526_TEST_62" : "ZPI_060426_341_campaign"}</option>` : "<option>MKT Name</option>";
+    document.getElementById("assetCampaignBudget").value = selected ? money(selected === "TRONG_260526_TEST" ? 3000000 : 5000000) : "";
+    document.querySelectorAll(".asset-package-budget").forEach(input => input.value = selected ? document.getElementById("assetCampaignBudget").value : "");
+  };
+  document.getElementById("assetAddReward").onclick = () => { rewardCount += 1; renderRewards(); };
+  document.getElementById("assetAddPackage").onclick = () => { rewardCount += 1; renderRewards(); toast(`Đã thêm package ${rewardCount}.`); };
+  rewardList.onclick = event => {
+    if (!event.target.closest(".asset-remove-reward")) return;
+    rewardCount = Math.max(1, rewardCount - 1);
+    renderRewards();
+  };
+  document.getElementById("cancelAssetMassive").onclick = () => route("asset-list");
+  document.getElementById("saveAssetMassive").onclick = () => toast("Promo Asset Campaign đã Save Draft.");
+  document.getElementById("assetMassiveForm").onsubmit = event => {
+    event.preventDefault();
+    if (!validateAssetMassive()) return toast("Vui lòng nhập đủ mandatory field.", "error");
+    toast("Promo Asset Campaign đã Save & Submit.");
+  };
+  document.querySelectorAll("[data-route]").forEach(button => button.onclick = () => route(button.dataset.route));
 }
 
 function actionButtons(item) {
