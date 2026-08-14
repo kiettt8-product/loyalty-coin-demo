@@ -118,6 +118,15 @@ tbody tr:hover { background: #fbfdff; }
 .field.invalid .suffix-input b { border-color: var(--danger); }
 .time-field { grid-column: 1 / 2; }
 body.asset-mode .time-field { grid-column: auto; }
+.time-range-control { display: grid; grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr); align-items: center; border-radius: 4px; }
+.time-range-control .asset-control-icon { min-width: 0; }
+.time-range-control input { min-width: 0; padding-right: 34px; border-color: #d9d9d9; border-radius: 4px; }
+.time-range-control input::-webkit-calendar-picker-indicator { opacity: 0; }
+.time-range-control .calendar-mark { position: absolute; top: 9px; right: 12px; pointer-events: none; }
+.time-range-separator { width: 16px; height: 16px; justify-self: center; background: url("assets/icon-swap-right.svg") center / 16px 16px no-repeat; }
+.time-range-control:has(input:disabled) { background: #f3f4f6; }
+.time-range-control:has(input:disabled) input { background-color: transparent; }
+.field.invalid .time-range-control input { border-color: var(--danger); }
 .suffix-input { display: grid; grid-template-columns: 1fr 46px; }
 .suffix-input input { border-radius: 3px 0 0 3px; }
 .suffix-input b { display: grid; place-items: center; border: 1px solid var(--control-border); border-left: 0; border-radius: 0 3px 3px 0; color: var(--placeholder); background: #f3f4f6; font-weight: 400; }

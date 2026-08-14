@@ -96,7 +96,7 @@ if (inUseConsumedBudget !== "11.000.000" || inUseRemainingBudget !== "1.000.000"
 await page.locator(".pkg-budget").first().fill("13000000");
 const recalculatedRemaining = await page.locator(".pkg-remaining").first().inputValue();
 if (recalculatedRemaining !== "2.000.000") throw new Error("Remaining Budget must recalculate while editing");
-const disabledRangeBackground = await page.locator(".time-field .range-field").evaluate(node => getComputedStyle(node).backgroundColor);
+const disabledRangeBackground = await page.locator(".time-field .time-range-control").evaluate(node => getComputedStyle(node).backgroundColor);
 const disabledRangeInputBackgrounds = await page.locator(".time-field input").evaluateAll(nodes => nodes.map(node => getComputedStyle(node).backgroundColor));
 if (disabledRangeBackground !== "rgb(243, 244, 246)" || disabledRangeInputBackgrounds.some(color => color !== "rgba(0, 0, 0, 0)")) throw new Error("Disabled distribute time must use one continuous grey background");
 await page.screenshot({ path: "demo-edit-in-use.png", fullPage: true });
