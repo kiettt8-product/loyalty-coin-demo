@@ -13,9 +13,11 @@ if (await page.getByRole("button", { name: "Promo Loyalty Coin Campaign" }).coun
 if (!await page.getByRole("button", { name: "Promo Asset Campaign" }).evaluate(node => node.classList.contains("active"))) throw new Error("Promo Asset Campaign must be the default entry point");
 
 const assetHeaders = (await page.locator(".asset-table th").allTextContents()).map(value => value.trim());
-const expectedHeaders = ["ID", "MKT Name", "MKT Code", "Total Budget", "Reward ID", "Distribution Type", "Distribute time", "Distribute to", "Status", "Action"];
+const expectedHeaders = ["ID", "MKT Name", "MKT Code", "Total Budget", "Reward ID", "Distribution Type", "Distribute time", "Distribute to", "Status", "Label", "Created by", "Action"];
 if (JSON.stringify(assetHeaders) !== JSON.stringify(expectedHeaders)) throw new Error("Promo Asset listing columns do not match Figma");
 if (await page.locator(".asset-table tbody tr").count() !== 10) throw new Error("Promo Asset list must render 10 mock rows");
+const firstAssetRowCells = (await page.locator(".asset-table tbody tr").first().locator("td").allTextContents()).map(value => value.trim());
+if (firstAssetRowCells[9] !== "annhg_test_icon, ZPO_a, Enablers" || firstAssetRowCells[10] !== "trongdd2") throw new Error("Promo Asset Label/Created by data is missing");
 const assetVisualBaseline = await page.evaluate(() => {
   const style = selector => getComputedStyle(document.querySelector(selector));
   return {
@@ -28,6 +30,9 @@ const assetVisualBaseline = await page.evaluate(() => {
   };
 });
 await page.screenshot({ path: "demo-asset-list.png", fullPage: true });
+await page.locator(".asset-table-wrap").evaluate(node => { node.scrollLeft = node.scrollWidth; });
+await page.screenshot({ path: "demo-asset-list-end.png", fullPage: true });
+await page.locator(".asset-table-wrap").evaluate(node => { node.scrollLeft = 0; });
 
 await page.getByRole("button", { name: "Add new" }).click();
 const dialog = page.getByRole("dialog", { name: "How you want to distribute the voucher" });
@@ -90,5 +95,5 @@ const loyaltyVisualBaseline = await page.evaluate(() => {
 if (JSON.stringify(loyaltyVisualBaseline) !== JSON.stringify(assetVisualBaseline)) throw new Error(`Loyalty Coin visual baseline differs from Promo Asset: ${JSON.stringify({ assetVisualBaseline, loyaltyVisualBaseline })}`);
 if (consoleErrors.length) throw new Error(`Console errors: ${consoleErrors.join(" | ")}`);
 
-console.log(JSON.stringify({ assetHeaders, choices, coinCreateFlow: "passed", visualBaseline: assetVisualBaseline, sectionHeadings, validationCount, consoleErrors }, null, 2));
+console.log(JSON.stringify({ assetHeaders, firstAssetRowCells, choices, coinCreateFlow: "passed", visualBaseline: assetVisualBaseline, sectionHeadings, validationCount, consoleErrors }, null, 2));
 await browser.close();

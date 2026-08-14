@@ -48,16 +48,16 @@ const state = {
 };
 
 const assetCampaigns = [
-  { id: 1371, name: "TRONG_260526_TEST_62", code: "TRONG_260526_TEST", budget: 3000000, rewards: "2134", type: "Massive", time: "01/07/2027 00:00", target: "test tier", status: "Draft" },
-  { id: 1570, name: "TRONG_260526_TEST_79", code: "TRONG_260526_TEST", budget: 3000000, rewards: "1827", type: "Massive", time: "01/07/2027 00:00", target: "test tier", status: "Approved" },
-  { id: 1023, name: "quantm6_CB2_21", code: "quantm6_CB2", budget: 300000000, rewards: "1157, 1136", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved" },
-  { id: 1025, name: "quantm6_CB2_20", code: "quantm6_CB2", budget: 300000000, rewards: "1162, 1007, 1108", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved" },
-  { id: 1026, name: "quantm6_CB2_14", code: "quantm6_CB2", budget: 300000000, rewards: "1157, 1108", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved" },
-  { id: 1027, name: "quantm6_CB2_15", code: "quantm6_CB2", budget: 300000000, rewards: "1157, 1138", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved" },
-  { id: 1017, name: "Voucher_Discount_721", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1007", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Auto Approved" },
-  { id: 1018, name: "Voucher_Discount_703", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1108", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Approved" },
-  { id: 1019, name: "Voucher_Discount_725", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1108", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Approved" },
-  { id: 1024, name: "quantm6_CB2_22", code: "quantm6_CB2", budget: 300000000, rewards: "1007, 1162", type: "Massive", time: "01/02/2027 00:00", target: "TestSQL", status: "Approved" }
+  { id: 1371, name: "TRONG_260526_TEST_62", code: "TRONG_260526_TEST", budget: 3000000, rewards: "2134", type: "Massive", time: "01/07/2027 00:00", target: "test tier", status: "Draft", label: "annhg_test_icon, ZPO_a, Enablers", owner: "trongdd2" },
+  { id: 1570, name: "TRONG_260526_TEST_79", code: "TRONG_260526_TEST", budget: 3000000, rewards: "1827", type: "Massive", time: "01/07/2027 00:00", target: "test tier", status: "Approved", label: "annhg_test_icon, ZPO_a, Enablers", owner: "trongdd2" },
+  { id: 1023, name: "quantm6_CB2_21", code: "quantm6_CB2", budget: 300000000, rewards: "1157, 1136", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved", label: "", owner: "nghiatn" },
+  { id: 1025, name: "quantm6_CB2_20", code: "quantm6_CB2", budget: 300000000, rewards: "1162, 1007, 1108", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved", label: "", owner: "nghiatn" },
+  { id: 1026, name: "quantm6_CB2_14", code: "quantm6_CB2", budget: 300000000, rewards: "1157, 1108", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved", label: "", owner: "nghiatn" },
+  { id: 1027, name: "quantm6_CB2_15", code: "quantm6_CB2", budget: 300000000, rewards: "1157, 1138", type: "Massive", time: "28/02/2027 00:00", target: "TestSQL", status: "Approved", label: "", owner: "nghiatn" },
+  { id: 1017, name: "Voucher_Discount_721", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1007", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Auto Approved", label: "", owner: "nghiatn" },
+  { id: 1018, name: "Voucher_Discount_703", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1108", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Approved", label: "", owner: "nghiatn" },
+  { id: 1019, name: "Voucher_Discount_725", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1108", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Approved", label: "", owner: "nghiatn" },
+  { id: 1024, name: "quantm6_CB2_22", code: "quantm6_CB2", budget: 300000000, rewards: "1007, 1162", type: "Massive", time: "01/02/2027 00:00", target: "TestSQL", status: "Approved", label: "", owner: "nghiatn" }
 ];
 
 state.campaigns = state.campaigns.map((campaign, campaignIndex) => {
@@ -160,7 +160,7 @@ function assetActionIcon(kind, label) {
 function renderAssetRows(rows = assetCampaigns) {
   const body = document.getElementById("assetCampaignRows");
   body.innerHTML = rows.map(item => `<tr>
-    <td>${item.id}</td><td>${item.name}</td><td>${item.code}</td><td>${money(item.budget)}</td><td>${item.rewards}</td><td>${item.type}</td><td>${item.time}</td><td><a href="#">${item.target}</a></td><td><span class="status ${statusClass(item.status)}">${item.status}</span></td>
+    <td>${item.id}</td><td>${item.name}</td><td>${item.code}</td><td>${money(item.budget)}</td><td>${item.rewards}</td><td>${item.type}</td><td>${item.time}</td><td><a href="#">${item.target}</a></td><td><span class="status ${statusClass(item.status)}">${item.status}</span></td><td>${item.label}</td><td>${item.owner}</td>
     <td><div class="asset-row-actions">${assetActionIcon(item.status === "Draft" ? "approve" : "stop", item.status === "Draft" ? "Approve" : "Stop")}${assetActionIcon("clone", "Clone")}${assetActionIcon("edit", "Edit")}${item.status === "Draft" ? assetActionIcon("delete", "Delete") : ""}</div></td>
   </tr>`).join("");
   document.getElementById("assetItemCount").textContent = rows.length ? `1-${rows.length} of 940 items` : "0 items";
@@ -192,7 +192,9 @@ function initAssetList() {
     const mkt = document.getElementById("assetFilterMkt").value.toLowerCase().trim();
     const type = document.getElementById("assetFilterType").value;
     const status = document.getElementById("assetFilterStatus").value;
-    renderAssetRows(assetCampaigns.filter(item => (!id || String(item.id).includes(id) || item.rewards.includes(id)) && (!mkt || item.name.toLowerCase().includes(mkt) || item.code.toLowerCase().includes(mkt)) && (!type || item.type === type) && (!status || item.status === status)));
+    const label = document.getElementById("assetFilterLabel").value;
+    const owner = document.getElementById("assetFilterOwner").value;
+    renderAssetRows(assetCampaigns.filter(item => (!id || String(item.id).includes(id) || item.rewards.includes(id)) && (!mkt || item.name.toLowerCase().includes(mkt) || item.code.toLowerCase().includes(mkt)) && (!type || item.type === type) && (!status || item.status === status) && (!label || item.label.includes(label)) && (!owner || item.owner === owner)));
   };
   main.onclick = event => {
     const action = event.target.closest(".asset-icon-button");
