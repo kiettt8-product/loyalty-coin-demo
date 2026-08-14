@@ -151,14 +151,7 @@ function route(name, payload = {}) {
 }
 
 function assetActionIcon(kind, label) {
-  const paths = {
-    approve: '<circle cx="9" cy="9" r="7"></circle><path d="m6 9 2 2 4-5"></path>',
-    stop: '<circle cx="9" cy="9" r="7"></circle><rect x="6.5" y="6.5" width="5" height="5"></rect>',
-    clone: '<path d="M6 3h6l3 3v9H6z"></path><path d="M12 3v3h3M3 6v9h3"></path>',
-    edit: '<path d="m4 13-.5 2.5L6 15l8-8-2-2z"></path><path d="M10.5 6.5 13 9M3 17h12"></path>',
-    delete: '<path d="M4 5h10M7 5V3h4v2M5.5 5l.6 11h5.8l.6-11"></path>'
-  };
-  return `<button class="asset-icon-button ${kind}" aria-label="${label}" title="${label}"><svg viewBox="0 0 18 18" aria-hidden="true">${paths[kind]}</svg></button>`;
+  return `<button class="asset-icon-button ${kind}" aria-label="${label}" title="${label}"><img src="assets/action-${kind}.svg" alt="" aria-hidden="true"></button>`;
 }
 
 function renderAssetRows(rows = assetCampaigns) {

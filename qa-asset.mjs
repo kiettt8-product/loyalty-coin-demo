@@ -11,8 +11,8 @@ page.on("pageerror", error => consoleErrors.push(error.message));
 await page.goto("http://127.0.0.1:4173", { waitUntil: "networkidle" });
 await page.getByRole("button", { name: "Promo Asset Campaign" }).click();
 
-const assetHeaders = await page.locator(".asset-table th").allTextContents();
-const expectedHeaders = ["ID ◆", "MKT Name", "MKT Code", "Total Budget", "Reward ID", "Distribution Type", "Distribute time ◆", "Distribute to", "Status", "Action"];
+const assetHeaders = (await page.locator(".asset-table th").allTextContents()).map(value => value.trim());
+const expectedHeaders = ["ID", "MKT Name", "MKT Code", "Total Budget", "Reward ID", "Distribution Type", "Distribute time", "Distribute to", "Status", "Action"];
 if (JSON.stringify(assetHeaders) !== JSON.stringify(expectedHeaders)) throw new Error("Promo Asset listing columns do not match Figma");
 if (await page.locator(".asset-table tbody tr").count() !== 10) throw new Error("Promo Asset list must render 10 mock rows");
 const assetVisualBaseline = await page.evaluate(() => {

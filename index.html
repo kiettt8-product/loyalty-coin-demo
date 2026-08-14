@@ -11,18 +11,18 @@
 <body>
   <header class="topbar">
     <button class="menu-toggle" id="menuToggle" aria-label="Mở menu">☰</button>
-    <a class="zalopay-logo" href="#" aria-label="Zalopay"><span>Zalo</span><b>pay</b></a>
-    <div class="account"><span>Kiệt, Tô Thế (8)</span><i>K</i></div>
+    <a class="zalopay-logo" href="#" aria-label="Zalopay"><img src="assets/figma-logo.svg" alt="Zalopay"></a>
+    <div class="account"><span>Kiệt. Tô Thế (8)</span><i>K</i></div>
   </header>
 
   <aside class="sidebar" id="sidebar">
     <nav>
-      <button class="nav-parent" data-nav-target="userManagementMenu" aria-expanded="false">User Management<span>⌄</span></button>
+      <button class="nav-parent" data-nav-target="userManagementMenu" aria-expanded="false"><img class="nav-icon" src="assets/nav-dashboard.svg" alt="">User Management<span>⌄</span></button>
       <div class="nav-sub single" id="userManagementMenu" hidden><button>Label List</button></div>
-      <button class="nav-parent" data-nav-target="userProfileMenu" aria-expanded="false">User Profile<span>⌄</span></button>
+      <button class="nav-parent" data-nav-target="userProfileMenu" aria-expanded="false"><img class="nav-icon" src="assets/nav-user.svg" alt="">User Profile<span>⌄</span></button>
       <div class="nav-sub single" id="userProfileMenu" hidden><button>Segment</button></div>
-      <button class="nav-parent">Asset Management<span>⌄</span></button>
-      <button class="nav-parent">Campaign Management<span>⌃</span></button>
+      <button class="nav-parent" aria-expanded="false"><img class="nav-icon" src="assets/nav-asset.svg" alt="">Asset Management<span>⌄</span></button>
+      <button class="nav-parent" aria-expanded="true"><img class="nav-icon" src="assets/nav-campaign.svg" alt="">Campaign Management<span>⌃</span></button>
       <div class="nav-sub campaign-menu">
         <button>Notification Campaign</button>
         <button>ZMS Campaign</button>
@@ -33,8 +33,8 @@
         <button class="active" data-route="list">Promo Loyalty Coin Campaign</button>
         <button>Revoke Voucher</button>
       </div>
-      <button class="nav-parent">Inventory Management<span>⌄</span></button>
-      <button class="nav-parent">Budget Management<span>⌄</span></button>
+      <button class="nav-parent" aria-expanded="false"><img class="nav-icon" src="assets/nav-inventory.svg" alt="">Inventory Management<span>⌄</span></button>
+      <button class="nav-parent" aria-expanded="false"><img class="nav-icon" src="assets/nav-budget.svg" alt="">Budget Management<span>⌄</span></button>
       <button class="nav-parent">Others<span>⌄</span></button>
     </nav>
   </aside>
@@ -97,7 +97,7 @@
         <div class="asset-list-toolbar"><button class="asset-btn primary" id="assetAddNew"><span class="plus-mark" aria-hidden="true"></span>Add new</button></div>
         <div class="asset-table-wrap">
           <table class="asset-table">
-            <thead><tr><th>ID <span class="sort-mark">◆</span></th><th>MKT Name</th><th>MKT Code</th><th>Total Budget</th><th>Reward ID</th><th>Distribution Type</th><th>Distribute time <span class="sort-mark">◆</span></th><th>Distribute to</th><th>Status</th><th>Action</th></tr></thead>
+            <thead><tr><th>ID <span class="sort-mark" aria-hidden="true"><img src="assets/icon-sort-up.svg" alt=""><img src="assets/icon-sort-down.svg" alt=""></span></th><th>MKT Name</th><th>MKT Code</th><th>Total Budget</th><th>Reward ID</th><th>Distribution Type</th><th>Distribute time <span class="sort-mark" aria-hidden="true"><img src="assets/icon-sort-up.svg" alt=""><img src="assets/icon-sort-down.svg" alt=""></span></th><th>Distribute to</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="assetCampaignRows"></tbody>
           </table>
         </div>
