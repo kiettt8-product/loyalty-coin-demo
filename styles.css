@@ -101,6 +101,7 @@ tbody tr:hover { background: #fbfdff; }
 .section-content { padding: 24px 28px; }
 .basic-fields { display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 16px 24px; }
 .field { display: flex; flex-direction: column; gap: 8px; min-width: 0; color: #001f3e; }
+.field[hidden] { display: none; }
 .field > span { min-height: 17px; color: #001f3e; line-height: 17px; font-weight: 400; }
 .field.required > span::before { content: "* "; color: var(--danger); }
 .field small { color: var(--muted); font-size: 10px; min-height: 13px; }
@@ -109,6 +110,7 @@ tbody tr:hover { background: #fbfdff; }
 .field.invalid .range-field { border-color: var(--danger); }
 .field.invalid .suffix-input b { border-color: var(--danger); }
 .time-field { grid-column: 1 / 2; }
+body.asset-mode .time-field { grid-column: auto; }
 .suffix-input { display: grid; grid-template-columns: 1fr 46px; }
 .suffix-input input { border-radius: 3px 0 0 3px; }
 .suffix-input b { display: grid; place-items: center; border: 1px solid var(--control-border); border-left: 0; border-radius: 0 3px 3px 0; color: var(--placeholder); background: #f3f4f6; font-weight: 400; }

@@ -246,6 +246,9 @@ function initAssetMassive() {
   let rewardCount = 1;
   const renderRewards = () => { rewardList.innerHTML = Array.from({ length: rewardCount }, (_, index) => assetRewardMarkup(index)).join(""); };
   renderRewards();
+  document.getElementById("assetDistributionType").onchange = event => {
+    if (event.target.value === "coin-trigger") route("asset-coin-create");
+  };
   document.getElementById("assetGroupName").oninput = event => document.getElementById("assetGroupCount").textContent = `${event.target.value.length} / 100`;
   document.getElementById("assetMktCode").onchange = event => {
     const selected = event.target.value;
@@ -330,6 +333,15 @@ function initForm(options = {}) {
   state.editingCampaignId = options.id || null;
   const campaign = getEditingCampaign();
   if (state.formMode !== "create" && !campaign) return route("list");
+
+  const distributionTypeField = document.getElementById("coinDistributionTypeField");
+  const isAssetCoinCreate = state.route === "asset-coin-create";
+  distributionTypeField.hidden = !isAssetCoinCreate;
+  if (isAssetCoinCreate) {
+    document.getElementById("coinDistributionType").onchange = event => {
+      if (event.target.value === "massive") route("asset-massive");
+    };
+  }
 
   state.packages = campaign ? clonePackages(campaign.packages) : [newPackage()];
   state.emails = campaign ? [...campaign.emails] : [];

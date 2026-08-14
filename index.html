@@ -126,7 +126,7 @@
       <section class="asset-form-section">
         <h1>Basic Information</h1>
         <div class="asset-section-body asset-basic-grid">
-          <label class="asset-field required"><span>Distribution Type</span><select id="assetDistributionType"><option>Distribute massive</option></select></label>
+          <label class="asset-field required"><span>Distribution Type</span><select id="assetDistributionType"><option value="massive">Distribute Massive</option><option value="coin-trigger">Distribute coin based on action trigger</option></select></label>
           <label class="asset-field required"><span>Distribute to</span><select id="assetDistributeTo"><option value="">Distribute to</option><option>Segment</option><option>Upload user list</option></select></label>
           <label class="asset-field required"><span>Size</span><input id="assetSize" type="number" min="1" placeholder="Size"></label>
           <label class="asset-field required"><span>Distribute time</span><div class="asset-control-icon"><input id="assetDistributeTime" type="text" placeholder="Distribute time"><span class="calendar-mark" aria-hidden="true"></span></div></label>
@@ -167,6 +167,7 @@
       <section class="crm-section">
         <h1 class="section-title-row"><span id="formTitle">Basic Information</span><span id="formStatus"></span></h1>
         <div class="section-content basic-fields">
+          <label class="field required" id="coinDistributionTypeField" hidden><span>Distribution Type</span><select id="coinDistributionType"><option value="coin-trigger">Distribute coin based on action trigger</option><option value="massive">Distribute Massive</option></select></label>
           <label class="field required"><span>Select MKT Code</span><select id="mktCode"><option value="">Select MKT Code</option><option value="shared">2893 - [28/05/2026][DLS_260528_563][BAU]</option><option value="campaign">ZPI_060426_341</option><option value="package">ZPI_060426_342</option></select></label>
           <label class="field required"><span>Select MKT Name</span><select id="mktName" disabled><option>Select MKT Name</option></select></label>
           <label class="field required"><span>Budget Control Method</span><select id="budgetMethod" disabled><option value="">Select Budget Control Method</option></select></label>
