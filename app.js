@@ -479,6 +479,28 @@ const promotionState = {
   ]
 };
 
+promotionState.campaigns.splice(2, 0,
+  {
+    ...clonePromotionCampaign(promotionState.campaigns[1]),
+    id: 1026,
+    mktName: "quantm6_CB2_14",
+    rewardId: "1157",
+    rawCode: "BAYHE10K-A72C",
+    numbersOfCode: "100000",
+    status: "Approved",
+    exportState: "ready"
+  },
+  {
+    ...clonePromotionCampaign(promotionState.campaigns[0]),
+    id: 1025,
+    mktCode: "quantm6_CB2",
+    mktName: "quantm6_CB2_20",
+    rewardId: "1162, 1007, 1108",
+    codeValue: "BAYHE20K",
+    rawCode: "BAYHE20K"
+  }
+);
+
 const main = document.getElementById("mainContent");
 const templates = {
   list: document.getElementById("listTemplate"),
@@ -535,7 +557,7 @@ function budgetSnapshot(control, pkg) {
 
 function route(name, payload = {}) {
   state.route = name;
-  document.body.classList.toggle("asset-mode", name.startsWith("asset-"));
+  document.body.classList.toggle("asset-mode", name.startsWith("asset-") || name.startsWith("promotion-"));
   main.onclick = null;
   main.replaceChildren(templates[name].content.cloneNode(true));
   document.querySelectorAll("[data-route]").forEach(button => button.classList.toggle("active",
@@ -1265,7 +1287,7 @@ function renderPromotionRows(rows = promotionState.campaigns) {
     <td><div class="row-actions">${promotionActionButtons(item)}</div></td>
   </tr>`).join("");
   document.getElementById("promoEmptyState").hidden = ordered.length > 0;
-  document.getElementById("promoItemCount").textContent = ordered.length ? `1-${ordered.length} of ${ordered.length} items` : "0 items";
+  document.getElementById("promoItemCount").textContent = ordered.length ? `1-${Math.min(ordered.length, 10)} of 733 items` : "0 items";
 }
 
 function initPromotionList() {
@@ -1274,7 +1296,7 @@ function initPromotionList() {
   document.querySelectorAll("#promoStatusFilterBox input").forEach(input => input.addEventListener("change", promotionUpdateStatusSummary));
   document.getElementById("promoAddNew").onclick = () => route("promotion-form", { mode: "create" });
   document.getElementById("promoCollapseFilter").onclick = event => {
-    const controls = [...document.querySelectorAll("#promoFilterGrid > :not(.promo-filter-actions)")];
+    const controls = [...document.querySelectorAll("#promoFilterGrid > :not(.asset-filter-actions)")];
     const hide = !controls[0].hidden;
     controls.forEach(control => { control.hidden = hide; });
     event.currentTarget.innerHTML = `${hide ? "Expand" : "Collapse"} <span>${hide ? "⌄" : "⌃"}</span>`;
@@ -1349,7 +1371,7 @@ function promotionRenderRewardPreview() {
   const holder = document.getElementById("promoRewardPreview");
   const reward = promotionCatalog.rewards[promotionState.form.rewardId];
   if (!reward) {
-    holder.innerHTML = '<div class="promo-preview-card empty"><strong>Reward preview</strong><span>Chọn Reward ID để xem preview card.</span></div>';
+    holder.innerHTML = "";
     return;
   }
   holder.innerHTML = `<div class="promo-preview-card ${reward.status === "expired" ? "expired" : ""}">
@@ -1368,16 +1390,14 @@ function promotionRenderCodeMeta() {
   const showExport = promotionState.form.codeType === "Unique Code" && campaign && ["Approved", "Auto Approved"].includes(campaign.status);
   if (showExport) {
     if (campaign.exportState === "processing") {
-      holder.innerHTML = '<button type="button" class="btn secondary promo-code-button warning" id="promoExportCode" disabled>Processing codes...</button>';
+      holder.innerHTML = '<button type="button" class="asset-btn secondary promo-code-button warning" id="promoExportCode" disabled>Processing</button>';
     } else if (campaign.exportState === "failed") {
-      holder.innerHTML = '<div class="promo-code-feedback"><small class="promo-inline-error">Generate code failed at 30%. Retry to continue.</small><button type="button" class="btn secondary" id="promoRetryCode">Retry</button></div>';
+      holder.innerHTML = '<div class="promo-code-feedback"><small class="promo-inline-error">Generate code failed</small><button type="button" class="asset-btn secondary" id="promoRetryCode">Retry</button></div>';
     } else {
-      holder.innerHTML = '<button type="button" class="btn primary promo-code-button" id="promoExportCode">Export Code</button>';
+      holder.innerHTML = '<button type="button" class="asset-btn primary promo-code-button" id="promoExportCode">Export Code</button>';
     }
-  } else if (promotionState.form.codeType === "Unique Code") {
-    holder.innerHTML = '<small class="promo-field-note">Tối đa 1.000.000 code. Sau Approved/Auto Approved sẽ hiển thị trạng thái generate/export.</small>';
   } else {
-    holder.innerHTML = '<small class="promo-field-note">FE tự động đưa code về chữ in hoa trên list.</small>';
+    holder.innerHTML = "";
   }
   document.getElementById("promoExportCode")?.addEventListener("click", () => toast(`Đã export ${campaign.numbersOfCode || 0} unique codes.`));
   document.getElementById("promoRetryCode")?.addEventListener("click", () => {
@@ -1857,11 +1877,11 @@ function savePromotionEdit() {
 function renderPromotionFormActions() {
   const holder = document.getElementById("promoFormActions");
   if (promotionState.formMode === "view") {
-    holder.innerHTML = '<button type="button" class="btn secondary" id="promoCancelForm">Back</button>';
+    holder.innerHTML = '<button type="button" class="asset-btn secondary" id="promoCancelForm">Back</button>';
   } else if (promotionState.formMode === "edit") {
-    holder.innerHTML = '<button type="button" class="btn secondary" id="promoCancelForm">Cancel</button><button type="button" class="btn primary" id="promoSaveChanges">Save changes</button>';
+    holder.innerHTML = '<button type="button" class="asset-btn secondary" id="promoCancelForm">Cancel</button><button type="button" class="asset-btn primary" id="promoSaveChanges">Save changes</button>';
   } else {
-    holder.innerHTML = '<button type="button" class="btn secondary" id="promoCancelForm">Cancel</button><button type="button" class="btn primary" id="promoSaveDraft">Save</button><button type="submit" class="btn primary">Save &amp; Submit</button>';
+    holder.innerHTML = '<button type="button" class="asset-btn secondary" id="promoCancelForm">Cancel</button><button type="button" class="asset-btn primary" id="promoSaveDraft">Save</button><button type="submit" class="asset-btn primary">Save &amp; Submit</button>';
   }
   document.getElementById("promoCancelForm").onclick = () => route("promotion-list");
   if (promotionState.formMode === "create") {
@@ -1881,9 +1901,7 @@ function initPromotionForm(options = {}) {
   const campaign = getPromotionCampaign();
   if (promotionState.formMode !== "create" && !campaign) return route("promotion-list");
   promotionState.form = campaign ? clonePromotionCampaign(campaign) : defaultPromotionForm();
-  document.getElementById("promoFormTitle").textContent = promotionState.formMode === "create"
-    ? "Create Promotion Code"
-    : `${promotionState.formMode === "view" ? "View" : "Edit"} Promotion Code #${campaign.id}`;
+  document.getElementById("promoFormTitle").textContent = "Basic Information";
   document.getElementById("promoFormStatus").innerHTML = campaign ? `<span class="status ${statusClass(campaign.status)}">${campaign.status}</span>` : "";
   promotionPopulateForm();
   promotionBindForm();

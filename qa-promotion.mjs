@@ -22,7 +22,7 @@ const firstCodeType = await page.locator("#promoCampaignRows tr").nth(1).locator
 const firstDisplayedCode = await page.locator("#promoCampaignRows tr").nth(1).locator("td").nth(5).textContent();
 if (firstCodeType !== "Unique Code" || firstDisplayedCode !== "BAYHE") throw new Error("Unique code list display must truncate to 5 characters");
 
-await page.getByRole("button", { name: "+ Add new" }).click();
+await page.getByRole("button", { name: "Add new" }).click();
 await page.getByRole("button", { name: "Save", exact: true }).click();
 const requiredErrors = await page.locator(".field-error").allTextContents();
 for (const message of ["MKT Code is required", "MKT Name is required", "Budget Control is required", "Code Value is required", "Budget Sponsor is Required", "Reward ID is Required", "Segment is required", "Reward Active Time is required"]) {
@@ -60,7 +60,7 @@ if (!await page.locator("#promoActiveStart").isDisabled() || await page.locator(
 await page.getByRole("button", { name: "Cancel" }).click();
 await page.locator("#promoCampaignRows tr").filter({ hasText: "1023" }).getByRole("button", { name: "Edit" }).click();
 const processingButton = await page.locator("#promoExportCode").textContent();
-if (processingButton !== "Processing codes...") throw new Error("Processing state for unique code export is missing");
+if (processingButton !== "Processing") throw new Error("Processing state for unique code export is missing");
 await page.getByRole("button", { name: "Cancel" }).click();
 
 await page.locator("#promoCampaignRows tr").filter({ hasText: "1019" }).getByRole("button", { name: "Edit" }).click();
@@ -72,6 +72,7 @@ await page.locator("#promoCampaignRows tr").filter({ hasText: "1020" }).getByRol
 if (await page.locator("#promoCampaignRows tr").filter({ hasText: "1020" }).count()) throw new Error("Ended campaign delete must soft remove row");
 
 if (consoleErrors.length) throw new Error(`Console errors detected: ${consoleErrors.join(" | ")}`);
+await page.goto("http://127.0.0.1:4173", { waitUntil: "networkidle" });
 await page.screenshot({ path: "promotion-demo-final.png", fullPage: true });
 
 await browser.close();
