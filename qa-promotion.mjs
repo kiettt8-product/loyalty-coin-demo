@@ -91,4 +91,18 @@ if (consoleErrors.length) throw new Error(`Console errors detected: ${consoleErr
 await page.goto("http://127.0.0.1:4173", { waitUntil: "networkidle" });
 await page.screenshot({ path: "promotion-demo-final.png", fullPage: true });
 
+await page.setViewportSize({ width: 768, height: 900 });
+await page.goto("http://127.0.0.1:4173", { waitUntil: "networkidle" });
+await page.getByRole("button", { name: "Add new" }).click();
+if (await page.evaluate(() => document.body.scrollWidth > document.body.clientWidth)) throw new Error("Promotion form must not overflow horizontally on tablet");
+if ((await page.locator(".promo-display-grid").evaluate(node => getComputedStyle(node).gridTemplateColumns.split(" ").length)) !== 2) throw new Error("Promotion form must use a two-column tablet layout");
+if ((await page.locator(".promo-basic-grid").evaluate(node => getComputedStyle(node).gridTemplateColumns.split(" ").length)) !== 2) throw new Error("Basic Information must use a two-column tablet layout");
+if ((await page.locator(".promo-form-screen .asset-alert-grid").evaluate(node => getComputedStyle(node).gridTemplateColumns.split(" ").length)) !== 2) throw new Error("Budget Alert must use a two-column tablet layout");
+if ((await page.locator(".promo-user-type-field").evaluate(node => getComputedStyle(node).gridColumnEnd)) !== "-1") throw new Error("User Type must span the tablet row");
+
+await page.setViewportSize({ width: 390, height: 844 });
+if (await page.evaluate(() => document.body.scrollWidth > document.body.clientWidth)) throw new Error("Promotion form must not overflow horizontally on mobile");
+if ((await page.locator(".promo-display-grid").evaluate(node => getComputedStyle(node).gridTemplateColumns.split(" ").length)) !== 1) throw new Error("Promotion form must use a one-column mobile layout");
+if (await page.locator(".promo-reward-preview:visible").count()) throw new Error("Empty reward preview must not reserve mobile space");
+
 await browser.close();
