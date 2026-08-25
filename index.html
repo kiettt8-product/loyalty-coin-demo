@@ -29,7 +29,7 @@
         <button data-route="asset-list">Promo Asset Campaign</button>
         <button>Promo Store Campaign</button>
         <button data-route="trigger">Trigger Based Campaign</button>
-        <button>Promotion Code</button>
+        <button data-route="promotion-list">Promotion Code</button>
         <button>Revoke Voucher</button>
       </div>
       <button class="nav-parent" aria-expanded="false"><img class="nav-icon" src="assets/nav-inventory.svg" alt="">Inventory Management<span>⌄</span></button>
@@ -238,6 +238,176 @@
       </div>
 
       <div class="trigger-actions"><button type="button" class="btn secondary" data-route="asset-list">Cancel</button><button type="button" class="btn primary">Save Draft</button><button type="submit" class="btn primary">Approve and Distribute</button></div>
+    </form>
+  </template>
+
+  <template id="promotionListTemplate">
+    <div class="screen promo-screen promo-list-screen">
+      <section class="filter-panel promo-filter-panel">
+        <div class="filter-grid promo-filter-grid" id="promoFilterGrid">
+          <input id="promoFilterId" aria-label="Campaign ID hoặc Reward ID" placeholder="Campaign ID/Reward ID">
+          <input id="promoFilterMkt" aria-label="MKT Name hoặc MKT Code" placeholder="MKT Name/MKT Code">
+          <input id="promoFilterCode" aria-label="Search by Code" placeholder="Search by Code">
+          <div class="range-field promo-range-field" aria-label="Active Time">
+            <input id="promoFilterFrom" type="date" aria-label="From date">
+            <span>→</span>
+            <input id="promoFilterTo" type="date" aria-label="To date">
+          </div>
+          <details class="details-select" id="promoStatusFilterBox">
+            <summary id="promoStatusSummary">Status</summary>
+            <div class="checklist-panel">
+              <label><input type="checkbox" value="Draft">Draft</label>
+              <label><input type="checkbox" value="FA Review">FA Review</label>
+              <label><input type="checkbox" value="Auto Approved">Auto Approved</label>
+              <label><input type="checkbox" value="Approved">Approved</label>
+              <label><input type="checkbox" value="Rejected">Rejected</label>
+              <label><input type="checkbox" value="In Use">In Use</label>
+              <label><input type="checkbox" value="Ended">Ended</label>
+            </div>
+          </details>
+          <select id="promoFilterLabel" aria-label="Label">
+            <option value="">Label</option>
+            <option>ZPO</option>
+            <option>BAU</option>
+            <option>Growth</option>
+          </select>
+          <select id="promoFilterOwner" aria-label="Created by">
+            <option value="">Created by</option>
+            <option>nghiatn</option>
+            <option>kiettt8</option>
+            <option>linhnt22</option>
+          </select>
+          <div class="filter-actions promo-filter-actions">
+            <button class="btn secondary" id="promoResetFilter">Reset</button>
+            <button class="btn primary" id="promoSearchFilter">Search</button>
+            <button class="text-action" id="promoCollapseFilter">Collapse <span>⌃</span></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="list-panel promo-list-panel">
+        <div class="list-toolbar promo-list-toolbar"><button class="btn primary" id="promoAddNew">+ Add new</button></div>
+        <div class="table-scroll promo-table-scroll">
+          <table class="promo-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>MKT Name</th>
+                <th>MKT Code</th>
+                <th>Total Budget</th>
+                <th>Reward ID</th>
+                <th>Code</th>
+                <th>Code Type</th>
+                <th>Active Time</th>
+                <th>Status</th>
+                <th>Label</th>
+                <th>Created by</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="promoCampaignRows"></tbody>
+          </table>
+          <div class="empty-state" id="promoEmptyState" hidden><strong>No data found</strong><span>Không có promotion code phù hợp với filter.</span></div>
+        </div>
+        <div class="pagination promo-pagination">
+          <span id="promoItemCount">1-10 of 733 items</span>
+          <button aria-label="Previous page">‹</button>
+          <button class="active">1</button>
+          <button>2</button>
+          <button>3</button>
+          <span>...</span>
+          <button>74</button>
+          <button aria-label="Next page">›</button>
+          <span>10 / page</span>
+        </div>
+      </section>
+    </div>
+  </template>
+
+  <template id="promotionFormTemplate">
+    <form class="screen promo-screen promo-form-screen" id="promotionForm" novalidate>
+      <section class="crm-section">
+        <h1 class="section-title-row"><span id="promoFormTitle">Create Promotion Code</span><span id="promoFormStatus"></span></h1>
+        <div class="section-content promo-basic-grid">
+          <label class="field required"><span>MKT Code</span><select id="promoMktCode"><option value="">MKT Code</option><option value="shared">DLS_260528_563</option><option value="campaign">quantm6_CB3</option><option value="package">quantm6_CB2</option></select></label>
+          <label class="field required"><span>MKT Name</span><select id="promoMktName" disabled><option value="">MKT Name</option></select></label>
+          <label class="field required"><span>Budget Control</span><select id="promoBudgetControl" disabled><option value="">Control budget by campaign</option></select></label>
+          <label class="field"><span>Allocated Budget</span><div class="suffix-input"><input id="promoAllocatedBudget" placeholder="Allocated Budget" disabled><b>VND</b></div></label>
+          <label class="field"><span>Type</span><select id="promoCampaignType" disabled><option value="Single Reward">Single Reward</option></select></label>
+          <label class="field required"><span>Code Type</span><select id="promoCodeType"><option value="Mass Code">Mass Code</option><option value="Unique Code">Unique Code</option></select></label>
+          <label class="field required" id="promoCodeValueField"><span>Code Value</span><input id="promoCodeValue" maxlength="50" placeholder="Enter code value"></label>
+          <label class="field required" id="promoNumberOfCodeField" hidden><span>Numbers of Code</span><input id="promoNumberOfCode" inputmode="numeric" placeholder="Enter numbers of code"></label>
+          <div class="promo-code-meta" id="promoCodeMeta"></div>
+        </div>
+      </section>
+
+      <section class="crm-section">
+        <h1>Reward #1 Configuration</h1>
+        <div class="section-content promo-reward-layout">
+          <div class="promo-reward-group">
+            <h2>Reward Info</h2>
+            <div class="promo-reward-grid">
+              <label class="field" id="promoRewardBudgetField"><span id="promoRewardBudgetLabel">Campaign Budget</span><div class="suffix-input"><input id="promoRewardBudget" inputmode="numeric" placeholder="Campaign Budget"><b>VND</b></div></label>
+              <label class="field required"><span>Budget Sponsor</span><select id="promoBudgetSponsor"><option value="">Budget sponsor</option><option>ZaloPay</option><option>Merchant</option><option>Partnership</option></select></label>
+              <label class="field required promo-reward-id-field"><span>Reward ID (only apply for Voucher Discount)</span><select id="promoRewardId"><option value="">Reward ID</option><option value="1173">1173 - Voucher 50K</option><option value="1157">1157 - Voucher 30K</option><option value="1151">1151 - Voucher 70K</option><option value="1108">1108 - Voucher 20K</option></select></label>
+              <div class="promo-reward-preview" id="promoRewardPreview" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <div class="promo-reward-group">
+            <h2>Display Users</h2>
+            <div class="promo-display-grid">
+              <label class="field required"><span>Segment</span><select id="promoSegment"><option value="">Select Segment</option><option>New User</option><option>Retention</option><option>Merchant Partner</option><option>Campus Segment</option></select></label>
+              <label class="field required"><span>Risk Control</span><select id="promoRiskControl" disabled><option value="Đánh giá rủi ro toàn hệ thống">Đánh giá rủi ro toàn hệ thống</option></select></label>
+              <label class="field required"><span>User Type</span><div class="choice-pills" id="promoUserTypes"></div><small>Normal User là mandatory.</small></label>
+            </div>
+          </div>
+
+          <div class="promo-bottom-grid">
+            <div class="promo-reward-group">
+              <h2>Reward Active Time</h2>
+              <div class="promo-active-grid">
+                <label class="field required time-field"><span>Reward Active Time</span><div class="time-range-control"><div class="asset-control-icon"><input id="promoActiveStart" type="datetime-local"><span class="calendar-mark" aria-hidden="true"></span></div><span class="time-range-separator" aria-hidden="true"></span><div class="asset-control-icon"><input id="promoActiveEnd" type="datetime-local"><span class="calendar-mark" aria-hidden="true"></span></div></div></label>
+                <label class="field required"><span>Recurring Period</span><select id="promoRecurringPeriod"><option value="Display Continuously">Display continuously</option><option value="Recur Daily">Recur Daily</option><option value="Recur Weekly">Recur Weekly</option><option value="Recur Monthly">Recur Monthly</option><option value="Recur in Some Days in a Week">Recur in Some Days in a Week</option><option value="Recur in Some Days in a Month">Recur in Some Days in a Month</option></select></label>
+              </div>
+              <div id="promoRecurringDetail"></div>
+            </div>
+
+            <div class="promo-reward-group">
+              <h2>Apply Limit</h2>
+              <div class="promo-apply-grid">
+                <div class="promo-apply-row">
+                  <select id="promoMaxApplyLabel" disabled><option>Maximum Apply</option></select>
+                  <select id="promoMaxApplyScope" disabled><option>Per user</option></select>
+                  <input id="promoMaxApplyQty" inputmode="numeric" placeholder="Input number">
+                  <select id="promoMaxApplyPeriod"><option>Each Hour</option><option>Each Day</option><option>Each Week</option><option>Each Month</option><option selected>Each Campaign</option></select>
+                </div>
+                <div class="promo-apply-row">
+                  <select id="promoStockLimitLabel" disabled><option>Stock Limit</option></select>
+                  <input id="promoStockLimitQty" inputmode="numeric" placeholder="Input number">
+                  <select id="promoStockLimitPeriod"><option>Each Hour</option><option selected>Each Day</option><option>Each Week</option><option>Each Month</option><option>Each Campaign</option></select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="btn primary promo-add-reward" id="promoAddReward">Add more reward</button>
+        </div>
+      </section>
+
+      <section class="crm-section budget-alert">
+        <h1>Budget Alert</h1>
+        <div class="section-content alert-fields">
+          <label class="field"><span>Alert to</span><div class="tag-control" id="promoEmailControl"><div class="tags"></div><input id="promoEmailInput" placeholder="domain@vng.com.vn"></div></label>
+          <label class="field"><span>Alert when budget low %</span><div class="tag-control" id="promoThresholdControl"><div class="tags"></div><input id="promoThresholdInput" placeholder="%"></div></label>
+        </div>
+      </section>
+
+      <div class="form-actions" id="promoFormActions">
+        <button type="button" class="btn secondary" id="promoCancelForm">Cancel</button>
+        <button type="button" class="btn primary" id="promoSaveDraft">Save</button>
+        <button type="submit" class="btn primary">Save &amp; Submit</button>
+      </div>
     </form>
   </template>
 

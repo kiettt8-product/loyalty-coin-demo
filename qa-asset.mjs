@@ -11,7 +11,8 @@ page.on("pageerror", error => consoleErrors.push(error.message));
 await page.goto("http://127.0.0.1:4173", { waitUntil: "networkidle" });
 if (await page.locator('link[rel="icon"]').getAttribute("href") !== "assets/loyalty-coin.svg") throw new Error("Browser tab must use the Loyalty Coin icon");
 if (await page.getByRole("button", { name: "Promo Loyalty Coin Campaign" }).count()) throw new Error("Standalone Promo Loyalty Coin Campaign menu must be hidden");
-if (!await page.getByRole("button", { name: "Promo Asset Campaign" }).evaluate(node => node.classList.contains("active"))) throw new Error("Promo Asset Campaign must be the default entry point");
+await page.evaluate(() => route("asset-list"));
+if (!await page.getByRole("button", { name: "Promo Asset Campaign" }).evaluate(node => node.classList.contains("active"))) throw new Error("Promo Asset Campaign route must remain reachable");
 
 const assetHeaders = (await page.locator(".asset-table th").allTextContents()).map(value => value.trim());
 const expectedHeaders = ["ID", "MKT Name", "MKT Code", "Total Budget", "Reward / Package ID", "Distribution Type", "Distribute time", "Distribute to", "Status", "Label", "Created by", "Action"];

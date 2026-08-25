@@ -85,6 +85,400 @@ state.campaigns = state.campaigns.map((campaign, campaignIndex) => {
   };
 });
 
+const promotionCatalog = {
+  riskControl: "Đánh giá rủi ro toàn hệ thống",
+  userTypes: ["Normal User", "Casual Abuser", "Malicious"],
+  recurringPeriods: [
+    "Display Continuously",
+    "Recur Daily",
+    "Recur Weekly",
+    "Recur Monthly",
+    "Recur in Some Days in a Week",
+    "Recur in Some Days in a Month"
+  ],
+  periodOptions: ["Each Hour", "Each Day", "Each Week", "Each Month", "Each Campaign"],
+  weekDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+  monthDays: Array.from({ length: 31 }, (_, index) => String(index + 1)),
+  mkts: {
+    shared: {
+      code: "DLS_260528_563",
+      allocatedBudget: 30000000,
+      names: [
+        { value: "[28/05/2026][DLS_260528_563][BAU]", label: "[28/05/2026][DLS_260528_563][BAU]" }
+      ]
+    },
+    campaign: {
+      code: "quantm6_CB3",
+      allocatedBudget: 300000000,
+      names: [
+        { value: "quantm6_CB3_22", label: "quantm6_CB3_22" },
+        { value: "quantm6_CB3_21", label: "quantm6_CB3_21 (used by Direct Discount)", disabled: true }
+      ]
+    },
+    package: {
+      code: "quantm6_CB2",
+      allocatedBudget: 200000,
+      names: [
+        { value: "Voucher_Discount_721", label: "Voucher_Discount_721" },
+        { value: "Voucher_Discount_703", label: "Voucher_Discount_703 (used by Promo Store)", disabled: true }
+      ]
+    }
+  },
+  rewards: {
+    "1173": { id: "1173", title: "Voucher 50K", description: "Giảm 50.000đ cho hóa đơn đủ điều kiện", expiry: "HSD 31/12/2026", approvalCap: 50000, status: "active" },
+    "1157": { id: "1157", title: "Voucher 30K", description: "Giảm 30.000đ cho user mới", expiry: "HSD 28/02/2027", approvalCap: 30000, status: "active" },
+    "1151": { id: "1151", title: "Voucher 70K", description: "Giảm 70.000đ cho merchant partner", expiry: "HSD 01/02/2027", approvalCap: 70000, status: "expired" },
+    "1108": { id: "1108", title: "Voucher 20K", description: "Giảm 20.000đ cho chiến dịch retention", expiry: "HSD 01/02/2027", approvalCap: 20000, status: "active" }
+  }
+};
+
+function promotionCodeDisplay(campaign) {
+  const raw = String(campaign.rawCode || campaign.codeValue || "").toUpperCase();
+  return campaign.codeType === "Unique Code" ? raw.slice(0, 5) : raw;
+}
+
+function promotionListTime(campaign) {
+  return isoToDisplay(campaign.activeEnd || campaign.rewardActiveEnd || campaign.endTime || "");
+}
+
+function clonePromotionCampaign(campaign) {
+  return JSON.parse(JSON.stringify(campaign));
+}
+
+function defaultPromotionForm() {
+  return {
+    mktType: "",
+    mktCode: "",
+    mktName: "",
+    budgetControl: "",
+    allocatedBudget: "",
+    rewardBudget: "",
+    consumedBudget: "0",
+    type: "Single Reward",
+    codeType: "Mass Code",
+    codeValue: "",
+    rawCode: "",
+    numbersOfCode: "",
+    rewardId: "",
+    budgetSponsor: "",
+    segment: "",
+    riskControl: promotionCatalog.riskControl,
+    userTypes: ["Normal User"],
+    activeStart: "",
+    activeEnd: "",
+    recurringPeriod: "Display Continuously",
+    recurringConfig: {
+      timeStart: "09:00",
+      timeEnd: "21:00",
+      startDay: "Monday",
+      endDay: "Friday",
+      monthStartDay: "1",
+      monthEndDay: "30",
+      selectedWeekDays: ["Tuesday", "Thursday"],
+      selectedMonthDays: ["10", "20", "30"]
+    },
+    maxApplyQty: "",
+    maxApplyPeriod: "Each Campaign",
+    stockLimitQty: "",
+    stockLimitPeriod: "Each Day",
+    emails: [],
+    thresholds: [],
+    label: "ZPO",
+    owner: "kiettt8",
+    status: "Draft",
+    exportState: "ready"
+  };
+}
+
+const promotionState = {
+  formMode: "create",
+  editingId: null,
+  form: defaultPromotionForm(),
+  campaigns: [
+    {
+      id: 1098,
+      mktType: "campaign",
+      mktCode: "quantm6_CB3",
+      mktName: "quantm6_CB3_22",
+      budgetControl: "campaign",
+      allocatedBudget: "300000000",
+      rewardBudget: "300000000",
+      consumedBudget: "0",
+      type: "Single Reward",
+      codeType: "Mass Code",
+      codeValue: "BAYHE50K",
+      rawCode: "BAYHE50K",
+      numbersOfCode: "",
+      rewardId: "1173",
+      budgetSponsor: "ZaloPay",
+      segment: "Campus Segment",
+      riskControl: promotionCatalog.riskControl,
+      userTypes: ["Normal User"],
+      activeStart: "2026-08-01T00:00",
+      activeEnd: "2029-03-31T00:00",
+      recurringPeriod: "Display Continuously",
+      recurringConfig: defaultPromotionForm().recurringConfig,
+      maxApplyQty: "1",
+      maxApplyPeriod: "Each Campaign",
+      stockLimitQty: "3000",
+      stockLimitPeriod: "Each Campaign",
+      label: "ZPO",
+      owner: "nghiatn",
+      status: "Approved",
+      emails: ["nghiatn@vng.com.vn"],
+      thresholds: [10],
+      exportState: "ready"
+    },
+    {
+      id: 1023,
+      mktType: "campaign",
+      mktCode: "quantm6_CB2",
+      mktName: "quantm6_CB2_21",
+      budgetControl: "campaign",
+      allocatedBudget: "300000000",
+      rewardBudget: "300000000",
+      consumedBudget: "0",
+      type: "Single Reward",
+      codeType: "Unique Code",
+      codeValue: "",
+      rawCode: "BAYHE30K-9F2D",
+      numbersOfCode: "600000",
+      rewardId: "1157",
+      budgetSponsor: "ZaloPay",
+      segment: "New User",
+      riskControl: promotionCatalog.riskControl,
+      userTypes: ["Normal User", "Casual Abuser"],
+      activeStart: "2026-08-01T00:00",
+      activeEnd: "2027-02-28T00:00",
+      recurringPeriod: "Display Continuously",
+      recurringConfig: defaultPromotionForm().recurringConfig,
+      maxApplyQty: "1",
+      maxApplyPeriod: "Each Day",
+      stockLimitQty: "2000",
+      stockLimitPeriod: "Each Campaign",
+      label: "BAU",
+      owner: "nghiatn",
+      status: "Auto Approved",
+      emails: ["nghiatn@vng.com.vn"],
+      thresholds: [10, 20],
+      exportState: "processing"
+    },
+    {
+      id: 1020,
+      mktType: "package",
+      mktCode: "quantm6_Voucher_discount7",
+      mktName: "Voucher_Discount_706",
+      budgetControl: "package",
+      allocatedBudget: "200000",
+      rewardBudget: "150000",
+      consumedBudget: "120000",
+      type: "Single Reward",
+      codeType: "Mass Code",
+      codeValue: "BAYHE70K",
+      rawCode: "BAYHE70K",
+      numbersOfCode: "",
+      rewardId: "1151",
+      budgetSponsor: "Merchant",
+      segment: "Merchant Partner",
+      riskControl: promotionCatalog.riskControl,
+      userTypes: ["Normal User"],
+      activeStart: "2026-08-01T00:00",
+      activeEnd: "2027-02-01T00:00",
+      recurringPeriod: "Recur Daily",
+      recurringConfig: {
+        timeStart: "09:00",
+        timeEnd: "20:00",
+        startDay: "Monday",
+        endDay: "Friday",
+        monthStartDay: "1",
+        monthEndDay: "30",
+        selectedWeekDays: ["Tuesday", "Thursday"],
+        selectedMonthDays: ["10", "20", "30"]
+      },
+      maxApplyQty: "1",
+      maxApplyPeriod: "Each Campaign",
+      stockLimitQty: "80",
+      stockLimitPeriod: "Each Day",
+      label: "ZPO",
+      owner: "nghiatn",
+      status: "Ended",
+      emails: ["nghiatn@vng.com.vn"],
+      thresholds: [10],
+      exportState: "ready"
+    },
+    {
+      id: 1019,
+      mktType: "package",
+      mktCode: "quantm6_Voucher_discount7",
+      mktName: "Voucher_Discount_725",
+      budgetControl: "package",
+      allocatedBudget: "200000",
+      rewardBudget: "200000",
+      consumedBudget: "0",
+      type: "Single Reward",
+      codeType: "Unique Code",
+      codeValue: "",
+      rawCode: "BAYHE60K-A12D",
+      numbersOfCode: "950000",
+      rewardId: "1151",
+      budgetSponsor: "Partnership",
+      segment: "Retention",
+      riskControl: promotionCatalog.riskControl,
+      userTypes: ["Normal User"],
+      activeStart: "2026-09-01T00:00",
+      activeEnd: "2027-02-01T00:00",
+      recurringPeriod: "Display Continuously",
+      recurringConfig: defaultPromotionForm().recurringConfig,
+      maxApplyQty: "1",
+      maxApplyPeriod: "Each Campaign",
+      stockLimitQty: "100",
+      stockLimitPeriod: "Each Day",
+      label: "Growth",
+      owner: "nghiatn",
+      status: "Approved",
+      emails: ["nghiatn@vng.com.vn"],
+      thresholds: [15],
+      exportState: "failed"
+    },
+    {
+      id: 1011,
+      mktType: "campaign",
+      mktCode: "quantm6_CB3",
+      mktName: "quantm6_CB3_19",
+      budgetControl: "campaign",
+      allocatedBudget: "300000000",
+      rewardBudget: "300000000",
+      consumedBudget: "0",
+      type: "Single Reward",
+      codeType: "Mass Code",
+      codeValue: "FAPENDING",
+      rawCode: "FAPENDING",
+      numbersOfCode: "",
+      rewardId: "1151",
+      budgetSponsor: "Merchant",
+      segment: "Retention",
+      riskControl: promotionCatalog.riskControl,
+      userTypes: ["Normal User"],
+      activeStart: "2026-09-10T00:00",
+      activeEnd: "2027-02-28T00:00",
+      recurringPeriod: "Display Continuously",
+      recurringConfig: defaultPromotionForm().recurringConfig,
+      maxApplyQty: "1",
+      maxApplyPeriod: "Each Campaign",
+      stockLimitQty: "300",
+      stockLimitPeriod: "Each Week",
+      label: "BAU",
+      owner: "kiettt8",
+      status: "FA Review",
+      emails: ["kiettt8@vng.com.vn"],
+      thresholds: [20],
+      exportState: "ready"
+    },
+    {
+      id: 1008,
+      mktType: "shared",
+      mktCode: "DLS_260528_563",
+      mktName: "[28/05/2026][DLS_260528_563][BAU]",
+      budgetControl: "campaign",
+      allocatedBudget: "30000000",
+      rewardBudget: "30000000",
+      consumedBudget: "4500000",
+      type: "Single Reward",
+      codeType: "Mass Code",
+      codeValue: "DLS2026",
+      rawCode: "DLS2026",
+      numbersOfCode: "",
+      rewardId: "1108",
+      budgetSponsor: "ZaloPay",
+      segment: "New User",
+      riskControl: promotionCatalog.riskControl,
+      userTypes: ["Normal User"],
+      activeStart: "2026-08-01T00:00",
+      activeEnd: "2026-12-31T23:59",
+      recurringPeriod: "Display Continuously",
+      recurringConfig: defaultPromotionForm().recurringConfig,
+      maxApplyQty: "1",
+      maxApplyPeriod: "Each Day",
+      stockLimitQty: "500",
+      stockLimitPeriod: "Each Day",
+      label: "BAU",
+      owner: "kiettt8",
+      status: "In Use",
+      emails: ["kiettt8@vng.com.vn"],
+      thresholds: [10, 30],
+      exportState: "ready"
+    },
+    {
+      id: 1002,
+      mktType: "campaign",
+      mktCode: "quantm6_CB3",
+      mktName: "quantm6_CB3_20",
+      budgetControl: "campaign",
+      allocatedBudget: "300000000",
+      rewardBudget: "300000000",
+      consumedBudget: "0",
+      type: "Single Reward",
+      codeType: "Mass Code",
+      codeValue: "SUMMER30",
+      rawCode: "SUMMER30",
+      numbersOfCode: "",
+      rewardId: "1157",
+      budgetSponsor: "ZaloPay",
+      segment: "Campus Segment",
+      riskControl: promotionCatalog.riskControl,
+      userTypes: ["Normal User", "Malicious"],
+      activeStart: "2026-09-01T00:00",
+      activeEnd: "2027-03-31T00:00",
+      recurringPeriod: "Display Continuously",
+      recurringConfig: defaultPromotionForm().recurringConfig,
+      maxApplyQty: "1",
+      maxApplyPeriod: "Each Campaign",
+      stockLimitQty: "3000",
+      stockLimitPeriod: "Each Campaign",
+      label: "ZPO",
+      owner: "linhnt22",
+      status: "Rejected",
+      emails: ["linhnt22@vng.com.vn"],
+      thresholds: [10],
+      exportState: "ready"
+    },
+    {
+      id: 999,
+      mktType: "campaign",
+      mktCode: "quantm6_CB3",
+      mktName: "quantm6_CB3_18",
+      budgetControl: "campaign",
+      allocatedBudget: "300000000",
+      rewardBudget: "300000000",
+      consumedBudget: "0",
+      type: "Single Reward",
+      codeType: "Mass Code",
+      codeValue: "DRAFT50",
+      rawCode: "DRAFT50",
+      numbersOfCode: "",
+      rewardId: "1173",
+      budgetSponsor: "ZaloPay",
+      segment: "New User",
+      riskControl: promotionCatalog.riskControl,
+      userTypes: ["Normal User"],
+      activeStart: "2026-09-01T00:00",
+      activeEnd: "2026-12-31T23:59",
+      recurringPeriod: "Display Continuously",
+      recurringConfig: defaultPromotionForm().recurringConfig,
+      maxApplyQty: "1",
+      maxApplyPeriod: "Each Campaign",
+      stockLimitQty: "1000",
+      stockLimitPeriod: "Each Day",
+      label: "ZPO",
+      owner: "kiettt8",
+      status: "Draft",
+      emails: ["kiettt8@vng.com.vn"],
+      thresholds: [],
+      exportState: "ready"
+    }
+  ]
+};
+
 const main = document.getElementById("mainContent");
 const templates = {
   list: document.getElementById("listTemplate"),
@@ -92,7 +486,9 @@ const templates = {
   trigger: document.getElementById("triggerTemplate"),
   "asset-list": document.getElementById("assetListTemplate"),
   "asset-massive": document.getElementById("assetMassiveTemplate"),
-  "asset-coin-create": document.getElementById("formTemplate")
+  "asset-coin-create": document.getElementById("formTemplate"),
+  "promotion-list": document.getElementById("promotionListTemplate"),
+  "promotion-form": document.getElementById("promotionFormTemplate")
 };
 
 function toast(message, type = "") {
@@ -142,13 +538,20 @@ function route(name, payload = {}) {
   document.body.classList.toggle("asset-mode", name.startsWith("asset-"));
   main.onclick = null;
   main.replaceChildren(templates[name].content.cloneNode(true));
-  document.querySelectorAll("[data-route]").forEach(button => button.classList.toggle("active", button.dataset.route === name || (name === "form" && button.dataset.route === "list") || (["asset-massive", "asset-coin-create"].includes(name) && button.dataset.route === "asset-list")));
+  document.querySelectorAll("[data-route]").forEach(button => button.classList.toggle("active",
+    button.dataset.route === name
+    || (name === "form" && button.dataset.route === "list")
+    || (["asset-massive", "asset-coin-create"].includes(name) && button.dataset.route === "asset-list")
+    || (name.startsWith("promotion-") && button.dataset.route === "promotion-list")
+  ));
   if (name === "list") initList();
   if (name === "form") initForm(payload);
   if (name === "trigger") initTrigger();
   if (name === "asset-list") initAssetList();
   if (name === "asset-massive") initAssetMassive();
   if (name === "asset-coin-create") initForm({ mode: "create", returnRoute: "asset-list" });
+  if (name === "promotion-list") initPromotionList();
+  if (name === "promotion-form") initPromotionForm(payload);
   document.getElementById("sidebar").classList.remove("open");
   main.focus();
 }
@@ -780,6 +1183,713 @@ function initTrigger() {
   document.querySelectorAll("[data-route]").forEach(button => button.onclick = () => route(button.dataset.route));
 }
 
+function getPromotionCampaign() {
+  return promotionState.campaigns.find(item => item.id === promotionState.editingId);
+}
+
+function promotionCanEditCore(campaign = getPromotionCampaign()) {
+  return !campaign || ["Draft", "Rejected"].includes(campaign.status);
+}
+
+function promotionCanEditRewardBudget(campaign = getPromotionCampaign()) {
+  return !campaign || campaign.status !== "Ended";
+}
+
+function promotionCanEditSegment(campaign = getPromotionCampaign()) {
+  return !campaign || ["Draft", "Rejected", "Approved", "Auto Approved", "In Use"].includes(campaign.status);
+}
+
+function promotionCanEditUserTypes(campaign = getPromotionCampaign()) {
+  return !campaign || ["Draft", "Rejected", "Approved", "Auto Approved"].includes(campaign.status);
+}
+
+function promotionCanEditActiveTime(campaign = getPromotionCampaign()) {
+  return !campaign || ["Draft", "Rejected", "Approved", "Auto Approved", "In Use"].includes(campaign.status);
+}
+
+function promotionCanEditRecurring(campaign = getPromotionCampaign()) {
+  return !campaign || ["Draft", "Rejected"].includes(campaign.status);
+}
+
+function promotionCanEditApplyLimit(campaign = getPromotionCampaign()) {
+  return !campaign || ["Draft", "Rejected"].includes(campaign.status);
+}
+
+function promotionCanEditBudgetAlert(campaign = getPromotionCampaign()) {
+  return !campaign || campaign.status !== "Ended";
+}
+
+function promotionCanDelete(campaign) {
+  return ["Draft", "Ended"].includes(campaign.status);
+}
+
+function promotionCanEdit(campaign) {
+  return campaign.status !== "Ended";
+}
+
+function promotionActiveExtendOnly(campaign = getPromotionCampaign()) {
+  return Boolean(campaign && ["Approved", "Auto Approved", "In Use"].includes(campaign.status));
+}
+
+function promotionSelectedFilterStatuses() {
+  return [...document.querySelectorAll("#promoStatusFilterBox input:checked")].map(input => input.value);
+}
+
+function promotionUpdateStatusSummary() {
+  const selected = promotionSelectedFilterStatuses();
+  document.getElementById("promoStatusSummary").textContent = selected.length ? `Status (${selected.length})` : "Status";
+}
+
+function promotionActionButtons(campaign) {
+  const actions = [`<button type="button" data-promo-view="${campaign.id}">View</button>`];
+  if (promotionCanEdit(campaign)) actions.push(`<button type="button" data-promo-edit="${campaign.id}">Edit</button>`);
+  if (promotionCanDelete(campaign)) actions.push(`<button type="button" class="danger-action" data-promo-delete="${campaign.id}">Delete</button>`);
+  return actions.join("");
+}
+
+function renderPromotionRows(rows = promotionState.campaigns) {
+  const ordered = [...rows].sort((left, right) => right.id - left.id);
+  const body = document.getElementById("promoCampaignRows");
+  body.innerHTML = ordered.map(item => `<tr>
+    <td>${item.id}</td>
+    <td title="${escapeHtml(item.mktName)}">${escapeHtml(item.mktName)}</td>
+    <td title="${escapeHtml(item.mktCode)}">${escapeHtml(item.mktCode)}</td>
+    <td>${money(item.allocatedBudget)}</td>
+    <td>${escapeHtml(item.rewardId)}</td>
+    <td>${escapeHtml(promotionCodeDisplay(item))}</td>
+    <td>${escapeHtml(item.codeType)}</td>
+    <td>${promotionListTime(item)}</td>
+    <td><span class="status ${statusClass(item.status)}">${item.status}</span></td>
+    <td>${escapeHtml(item.label)}</td>
+    <td>${escapeHtml(item.owner)}</td>
+    <td><div class="row-actions">${promotionActionButtons(item)}</div></td>
+  </tr>`).join("");
+  document.getElementById("promoEmptyState").hidden = ordered.length > 0;
+  document.getElementById("promoItemCount").textContent = ordered.length ? `1-${ordered.length} of ${ordered.length} items` : "0 items";
+}
+
+function initPromotionList() {
+  renderPromotionRows();
+  promotionUpdateStatusSummary();
+  document.querySelectorAll("#promoStatusFilterBox input").forEach(input => input.addEventListener("change", promotionUpdateStatusSummary));
+  document.getElementById("promoAddNew").onclick = () => route("promotion-form", { mode: "create" });
+  document.getElementById("promoCollapseFilter").onclick = event => {
+    const controls = [...document.querySelectorAll("#promoFilterGrid > :not(.promo-filter-actions)")];
+    const hide = !controls[0].hidden;
+    controls.forEach(control => { control.hidden = hide; });
+    event.currentTarget.innerHTML = `${hide ? "Expand" : "Collapse"} <span>${hide ? "⌄" : "⌃"}</span>`;
+  };
+  document.getElementById("promoResetFilter").onclick = () => {
+    document.querySelectorAll(".promo-filter-panel input, .promo-filter-panel select").forEach(control => { control.value = ""; });
+    document.querySelectorAll("#promoStatusFilterBox input").forEach(input => { input.checked = false; });
+    promotionUpdateStatusSummary();
+    renderPromotionRows();
+  };
+  document.getElementById("promoSearchFilter").onclick = () => {
+    const idValue = document.getElementById("promoFilterId").value.trim();
+    const rewardId = number(idValue);
+    const id = Number.isInteger(rewardId) && rewardId > 0 ? String(rewardId) : "";
+    const mkt = document.getElementById("promoFilterMkt").value.trim().toLowerCase();
+    const code = document.getElementById("promoFilterCode").value.trim().toUpperCase();
+    const from = document.getElementById("promoFilterFrom").value;
+    const to = document.getElementById("promoFilterTo").value;
+    const statuses = promotionSelectedFilterStatuses();
+    const label = document.getElementById("promoFilterLabel").value;
+    const owner = document.getElementById("promoFilterOwner").value;
+    renderPromotionRows(promotionState.campaigns.filter(item => {
+      const activeDate = String(item.activeStart || "").slice(0, 10);
+      return (!id || String(item.id) === id || String(item.rewardId) === id)
+        && (!mkt || item.mktName.toLowerCase().includes(mkt) || item.mktCode.toLowerCase().includes(mkt))
+        && (!code || promotionCodeDisplay(item) === code || String(item.rawCode || "").toUpperCase() === code)
+        && (!from || activeDate >= from)
+        && (!to || activeDate <= to)
+        && (!statuses.length || statuses.includes(item.status))
+        && (!label || item.label === label)
+        && (!owner || item.owner === owner);
+    }));
+  };
+  main.onclick = event => {
+    const action = event.target.closest("button");
+    if (!action) return;
+    if (action.dataset.promoView) route("promotion-form", { mode: "view", id: Number(action.dataset.promoView) });
+    if (action.dataset.promoEdit) route("promotion-form", { mode: "edit", id: Number(action.dataset.promoEdit) });
+    if (action.dataset.promoDelete) {
+      const id = Number(action.dataset.promoDelete);
+      promotionState.campaigns = promotionState.campaigns.filter(item => item.id !== id);
+      renderPromotionRows();
+      toast(`Promotion Code ${id} đã soft delete.`);
+    }
+  };
+}
+
+function promotionRenderChoicePills(containerId, values, selectedValues, options = {}) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const selected = new Set(selectedValues);
+  const locked = new Set(options.locked || []);
+  container.innerHTML = values.map(value => `<button type="button" class="choice-pill ${selected.has(value) ? "active" : ""}" data-value="${escapeHtml(value)}" ${options.disabled ? "disabled" : ""}>${escapeHtml(value)}</button>`).join("");
+  if (options.disabled) return;
+  container.querySelectorAll("button").forEach(button => button.onclick = () => {
+    const value = button.dataset.value;
+    const next = new Set(selected);
+    if (options.multiple === false) {
+      next.clear();
+      next.add(value);
+    } else if (next.has(value) && !locked.has(value)) {
+      next.delete(value);
+    } else {
+      next.add(value);
+    }
+    locked.forEach(item => next.add(item));
+    options.onChange?.([...next]);
+  });
+}
+
+function promotionRenderRewardPreview() {
+  const holder = document.getElementById("promoRewardPreview");
+  const reward = promotionCatalog.rewards[promotionState.form.rewardId];
+  if (!reward) {
+    holder.innerHTML = '<div class="promo-preview-card empty"><strong>Reward preview</strong><span>Chọn Reward ID để xem preview card.</span></div>';
+    return;
+  }
+  holder.innerHTML = `<div class="promo-preview-card ${reward.status === "expired" ? "expired" : ""}">
+    <div class="promo-preview-copy">
+      <strong>${escapeHtml(reward.title)}</strong>
+      <span>${escapeHtml(reward.description)}</span>
+      <small>${escapeHtml(reward.expiry)}</small>
+    </div>
+    <span class="promo-preview-badge">${reward.status === "expired" ? "Expired" : "Active"}</span>
+  </div>`;
+}
+
+function promotionRenderCodeMeta() {
+  const holder = document.getElementById("promoCodeMeta");
+  const campaign = getPromotionCampaign();
+  const showExport = promotionState.form.codeType === "Unique Code" && campaign && ["Approved", "Auto Approved"].includes(campaign.status);
+  if (showExport) {
+    if (campaign.exportState === "processing") {
+      holder.innerHTML = '<button type="button" class="btn secondary promo-code-button warning" id="promoExportCode" disabled>Processing codes...</button>';
+    } else if (campaign.exportState === "failed") {
+      holder.innerHTML = '<div class="promo-code-feedback"><small class="promo-inline-error">Generate code failed at 30%. Retry to continue.</small><button type="button" class="btn secondary" id="promoRetryCode">Retry</button></div>';
+    } else {
+      holder.innerHTML = '<button type="button" class="btn primary promo-code-button" id="promoExportCode">Export Code</button>';
+    }
+  } else if (promotionState.form.codeType === "Unique Code") {
+    holder.innerHTML = '<small class="promo-field-note">Tối đa 1.000.000 code. Sau Approved/Auto Approved sẽ hiển thị trạng thái generate/export.</small>';
+  } else {
+    holder.innerHTML = '<small class="promo-field-note">FE tự động đưa code về chữ in hoa trên list.</small>';
+  }
+  document.getElementById("promoExportCode")?.addEventListener("click", () => toast(`Đã export ${campaign.numbersOfCode || 0} unique codes.`));
+  document.getElementById("promoRetryCode")?.addEventListener("click", () => {
+    campaign.exportState = "ready";
+    promotionRenderCodeMeta();
+    toast("Retry generate code thành công.");
+  });
+}
+
+function promotionSyncMktOptions() {
+  const mktName = document.getElementById("promoMktName");
+  const budgetControl = document.getElementById("promoBudgetControl");
+  if (!promotionState.form.mktType) {
+    promotionState.form.mktCode = "";
+    promotionState.form.allocatedBudget = "";
+    promotionState.form.rewardBudget = "";
+    mktName.innerHTML = '<option value="">MKT Name</option>';
+    mktName.disabled = true;
+    budgetControl.innerHTML = '<option value="">Control budget by campaign</option>';
+    budgetControl.disabled = true;
+    document.getElementById("promoAllocatedBudget").value = "";
+    document.getElementById("promoRewardBudget").value = "";
+    return;
+  }
+  const selected = promotionCatalog.mkts[promotionState.form.mktType];
+  promotionState.form.mktCode = selected.code;
+  promotionState.form.allocatedBudget = String(selected.allocatedBudget);
+  mktName.disabled = false;
+  mktName.innerHTML = `<option value="">MKT Name</option>${selected.names.map(item => `<option value="${escapeHtml(item.value)}" ${item.disabled ? "disabled" : ""}>${escapeHtml(item.label)}</option>`).join("")}`;
+  if (!selected.names.some(item => item.value === promotionState.form.mktName && !item.disabled)) {
+    promotionState.form.mktName = "";
+  }
+  mktName.value = promotionState.form.mktName;
+  budgetControl.innerHTML = promotionState.form.mktType === "shared"
+    ? '<option value="campaign">Control budget by campaign</option>'
+    : '<option value="campaign">Control budget by campaign</option><option value="package">Control budget by package</option>';
+  if (promotionState.form.mktType === "shared") {
+    promotionState.form.budgetControl = "campaign";
+  } else if (!promotionState.form.budgetControl) {
+    promotionState.form.budgetControl = "campaign";
+  }
+  budgetControl.disabled = false;
+  budgetControl.value = promotionState.form.budgetControl;
+  if (!promotionState.form.rewardBudget || promotionState.form.budgetControl === "campaign") {
+    promotionState.form.rewardBudget = String(selected.allocatedBudget);
+  }
+  document.getElementById("promoAllocatedBudget").value = money(promotionState.form.allocatedBudget);
+}
+
+function promotionRenderRecurringDetail() {
+  const holder = document.getElementById("promoRecurringDetail");
+  const period = promotionState.form.recurringPeriod;
+  const config = promotionState.form.recurringConfig;
+  if (period === "Display Continuously") {
+    holder.innerHTML = "";
+    return;
+  }
+  if (period === "Recur Daily") {
+    holder.innerHTML = `<div class="promo-recurring-grid">
+      <label class="field required"><span>Start Time</span><input id="promoRecurringTimeStart" type="time" value="${config.timeStart}"></label>
+      <label class="field required"><span>End Time</span><input id="promoRecurringTimeEnd" type="time" value="${config.timeEnd}"></label>
+    </div>`;
+  }
+  if (period === "Recur Weekly") {
+    holder.innerHTML = `<div class="promo-recurring-grid">
+      <label class="field required"><span>Start Day</span><select id="promoRecurringWeekStart">${promotionCatalog.weekDays.map(day => `<option ${config.startDay === day ? "selected" : ""}>${day}</option>`).join("")}</select></label>
+      <label class="field required"><span>End Day</span><select id="promoRecurringWeekEnd">${promotionCatalog.weekDays.map(day => `<option ${config.endDay === day ? "selected" : ""}>${day}</option>`).join("")}</select></label>
+      <label class="field required"><span>Start Time</span><input id="promoRecurringTimeStart" type="time" value="${config.timeStart}"></label>
+      <label class="field required"><span>End Time</span><input id="promoRecurringTimeEnd" type="time" value="${config.timeEnd}"></label>
+    </div>`;
+  }
+  if (period === "Recur Monthly") {
+    holder.innerHTML = `<div class="promo-recurring-grid">
+      <label class="field required"><span>Start Day</span><select id="promoRecurringMonthStart">${promotionCatalog.monthDays.map(day => `<option ${config.monthStartDay === day ? "selected" : ""}>${day}</option>`).join("")}</select></label>
+      <label class="field required"><span>End Day</span><select id="promoRecurringMonthEnd">${promotionCatalog.monthDays.map(day => `<option ${config.monthEndDay === day ? "selected" : ""}>${day}</option>`).join("")}</select></label>
+      <label class="field required"><span>Start Time</span><input id="promoRecurringTimeStart" type="time" value="${config.timeStart}"></label>
+      <label class="field required"><span>End Time</span><input id="promoRecurringTimeEnd" type="time" value="${config.timeEnd}"></label>
+    </div>`;
+  }
+  if (period === "Recur in Some Days in a Week") {
+    holder.innerHTML = `<div class="promo-recurring-grid wide">
+      <label class="field required promo-pill-field"><span>Days of Week</span><div class="choice-pills" id="promoRecurringWeekDays"></div></label>
+      <label class="field required"><span>Start Time</span><input id="promoRecurringTimeStart" type="time" value="${config.timeStart}"></label>
+      <label class="field required"><span>End Time</span><input id="promoRecurringTimeEnd" type="time" value="${config.timeEnd}"></label>
+    </div>`;
+    promotionRenderChoicePills("promoRecurringWeekDays", promotionCatalog.weekDays, config.selectedWeekDays, {
+      onChange: values => {
+        promotionState.form.recurringConfig.selectedWeekDays = values;
+        promotionRenderRecurringDetail();
+        promotionApplyPromotionAccess();
+      }
+    });
+  }
+  if (period === "Recur in Some Days in a Month") {
+    holder.innerHTML = `<div class="promo-recurring-grid wide">
+      <label class="field required promo-pill-field"><span>Days of Month</span><div class="choice-pills compact" id="promoRecurringMonthDays"></div></label>
+      <label class="field required"><span>Start Time</span><input id="promoRecurringTimeStart" type="time" value="${config.timeStart}"></label>
+      <label class="field required"><span>End Time</span><input id="promoRecurringTimeEnd" type="time" value="${config.timeEnd}"></label>
+    </div>`;
+    promotionRenderChoicePills("promoRecurringMonthDays", promotionCatalog.monthDays, config.selectedMonthDays, {
+      onChange: values => {
+        promotionState.form.recurringConfig.selectedMonthDays = values;
+        promotionRenderRecurringDetail();
+        promotionApplyPromotionAccess();
+      }
+    });
+  }
+  holder.querySelector("#promoRecurringTimeStart")?.addEventListener("input", event => { promotionState.form.recurringConfig.timeStart = event.target.value; });
+  holder.querySelector("#promoRecurringTimeEnd")?.addEventListener("input", event => { promotionState.form.recurringConfig.timeEnd = event.target.value; });
+  holder.querySelector("#promoRecurringWeekStart")?.addEventListener("change", event => { promotionState.form.recurringConfig.startDay = event.target.value; });
+  holder.querySelector("#promoRecurringWeekEnd")?.addEventListener("change", event => { promotionState.form.recurringConfig.endDay = event.target.value; });
+  holder.querySelector("#promoRecurringMonthStart")?.addEventListener("change", event => { promotionState.form.recurringConfig.monthStartDay = event.target.value; });
+  holder.querySelector("#promoRecurringMonthEnd")?.addEventListener("change", event => { promotionState.form.recurringConfig.monthEndDay = event.target.value; });
+}
+
+function promotionRenderUserTypes() {
+  promotionRenderChoicePills("promoUserTypes", promotionCatalog.userTypes, promotionState.form.userTypes, {
+    locked: ["Normal User"],
+    disabled: promotionState.formMode === "view" || !promotionCanEditUserTypes(),
+    onChange: values => {
+      promotionState.form.userTypes = values;
+      promotionRenderUserTypes();
+    }
+  });
+}
+
+function promotionRenderAlertTags(type) {
+  const editable = promotionCanEditBudgetAlert() && promotionState.formMode !== "view";
+  const holder = type === "email"
+    ? document.querySelector("#promoEmailControl .tags")
+    : document.querySelector("#promoThresholdControl .tags");
+  const values = type === "email" ? promotionState.form.emails : promotionState.form.thresholds;
+  holder.innerHTML = values.map(value => `<span class="tag">${value}${type === "threshold" ? "%" : ""}${editable ? `<button type="button" data-value="${value}">×</button>` : ""}</span>`).join("");
+  if (!editable) return;
+  holder.querySelectorAll("button").forEach(button => button.onclick = () => {
+    if (type === "email") promotionState.form.emails = promotionState.form.emails.filter(value => value !== button.dataset.value);
+    else promotionState.form.thresholds = promotionState.form.thresholds.filter(value => value !== Number(button.dataset.value));
+    promotionRenderAlertTags(type);
+  });
+}
+
+function promotionApplyPromotionAccess() {
+  const campaign = getPromotionCampaign();
+  const isView = promotionState.formMode === "view";
+  const setDisabled = (id, disabled) => {
+    const node = document.getElementById(id);
+    if (node) node.disabled = disabled;
+  };
+  const disableGroup = (selector, disabled) => {
+    document.querySelectorAll(selector).forEach(node => { node.disabled = disabled; });
+  };
+  const coreEditable = !isView && promotionCanEditCore(campaign);
+  const rewardBudgetEditable = !isView && promotionCanEditRewardBudget(campaign) && promotionState.form.budgetControl === "package";
+  const activeEditable = !isView && promotionCanEditActiveTime(campaign);
+  const recurringEditable = !isView && promotionCanEditRecurring(campaign);
+  const extendOnly = promotionActiveExtendOnly(campaign);
+  setDisabled("promoMktCode", !coreEditable);
+  setDisabled("promoMktName", !coreEditable || !promotionState.form.mktType);
+  setDisabled("promoBudgetControl", !coreEditable || !promotionState.form.mktType || promotionState.form.mktType === "shared");
+  setDisabled("promoAllocatedBudget", true);
+  setDisabled("promoCampaignType", true);
+  setDisabled("promoCodeType", !coreEditable);
+  setDisabled("promoCodeValue", !coreEditable || promotionState.form.codeType !== "Mass Code");
+  setDisabled("promoNumberOfCode", !coreEditable || promotionState.form.codeType !== "Unique Code");
+  setDisabled("promoRewardBudget", !rewardBudgetEditable);
+  setDisabled("promoBudgetSponsor", !coreEditable);
+  setDisabled("promoRewardId", !coreEditable);
+  setDisabled("promoSegment", isView || !promotionCanEditSegment(campaign));
+  setDisabled("promoRiskControl", true);
+  setDisabled("promoActiveStart", !activeEditable || extendOnly);
+  setDisabled("promoActiveEnd", !activeEditable);
+  setDisabled("promoRecurringPeriod", !recurringEditable);
+  disableGroup("#promoRecurringDetail input, #promoRecurringDetail select", !recurringEditable);
+  document.querySelectorAll("#promoRecurringDetail .choice-pill").forEach(button => { button.disabled = !recurringEditable; });
+  setDisabled("promoMaxApplyQty", isView || !promotionCanEditApplyLimit(campaign));
+  setDisabled("promoMaxApplyPeriod", isView || !promotionCanEditApplyLimit(campaign));
+  setDisabled("promoStockLimitQty", isView || !promotionCanEditApplyLimit(campaign));
+  setDisabled("promoStockLimitPeriod", isView || !promotionCanEditApplyLimit(campaign));
+  setDisabled("promoEmailInput", isView || !promotionCanEditBudgetAlert(campaign));
+  setDisabled("promoThresholdInput", isView || !promotionCanEditBudgetAlert(campaign));
+  document.getElementById("promoEmailControl").classList.toggle("readonly", isView || !promotionCanEditBudgetAlert(campaign));
+  document.getElementById("promoThresholdControl").classList.toggle("readonly", isView || !promotionCanEditBudgetAlert(campaign));
+  document.getElementById("promoAddReward").disabled = true;
+  promotionRenderUserTypes();
+  promotionRenderAlertTags("email");
+  promotionRenderAlertTags("threshold");
+}
+
+function promotionPopulateForm() {
+  document.getElementById("promoMktCode").value = promotionState.form.mktType;
+  promotionSyncMktOptions();
+  document.getElementById("promoMktName").value = promotionState.form.mktName;
+  document.getElementById("promoBudgetControl").value = promotionState.form.budgetControl;
+  document.getElementById("promoAllocatedBudget").value = promotionState.form.allocatedBudget ? money(promotionState.form.allocatedBudget) : "";
+  document.getElementById("promoCampaignType").value = promotionState.form.type;
+  document.getElementById("promoCodeType").value = promotionState.form.codeType;
+  document.getElementById("promoCodeValue").value = promotionState.form.codeValue;
+  document.getElementById("promoNumberOfCode").value = promotionState.form.numbersOfCode;
+  document.getElementById("promoRewardBudget").value = promotionState.form.rewardBudget ? money(promotionState.form.rewardBudget) : "";
+  document.getElementById("promoBudgetSponsor").value = promotionState.form.budgetSponsor;
+  document.getElementById("promoRewardId").value = promotionState.form.rewardId;
+  document.getElementById("promoSegment").value = promotionState.form.segment;
+  document.getElementById("promoRiskControl").value = promotionState.form.riskControl;
+  document.getElementById("promoActiveStart").value = promotionState.form.activeStart;
+  document.getElementById("promoActiveEnd").value = promotionState.form.activeEnd;
+  document.getElementById("promoRecurringPeriod").value = promotionState.form.recurringPeriod;
+  document.getElementById("promoMaxApplyQty").value = promotionState.form.maxApplyQty;
+  document.getElementById("promoMaxApplyPeriod").value = promotionState.form.maxApplyPeriod;
+  document.getElementById("promoStockLimitQty").value = promotionState.form.stockLimitQty;
+  document.getElementById("promoStockLimitPeriod").value = promotionState.form.stockLimitPeriod;
+  document.getElementById("promoCodeValueField").hidden = promotionState.form.codeType !== "Mass Code";
+  document.getElementById("promoNumberOfCodeField").hidden = promotionState.form.codeType !== "Unique Code";
+  document.getElementById("promoRewardBudgetLabel").textContent = promotionState.form.budgetControl === "package" ? "Package Budget" : "Campaign Budget";
+  if (promotionState.form.budgetControl === "campaign") {
+    promotionState.form.rewardBudget = promotionState.form.allocatedBudget;
+    document.getElementById("promoRewardBudget").value = promotionState.form.rewardBudget ? money(promotionState.form.rewardBudget) : "";
+  }
+  promotionRenderCodeMeta();
+  promotionRenderRewardPreview();
+  promotionRenderUserTypes();
+  promotionRenderRecurringDetail();
+  promotionApplyPromotionAccess();
+}
+
+function promotionBindAlertInput(id, type) {
+  const input = document.getElementById(id);
+  input.onkeydown = event => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    const raw = event.target.value.trim();
+    if (!raw) return;
+    if (type === "email") {
+      const email = raw.includes("@") ? raw : `${raw}@vng.com.vn`;
+      if (!/@vng\.com\.vn$/i.test(email)) return toast("You must use email company", "error");
+      if (!promotionState.form.emails.includes(email)) promotionState.form.emails.push(email);
+    } else {
+      const value = Number(raw);
+      if (!Number.isInteger(value) || value <= 0 || value >= 100) return toast("Budget alert must be an integer between 1 and 99.", "error");
+      if (!promotionState.form.thresholds.includes(value)) promotionState.form.thresholds.push(value);
+    }
+    event.target.value = "";
+    promotionRenderAlertTags(type);
+  };
+}
+
+function promotionBindForm() {
+  document.getElementById("promoMktCode").addEventListener("change", event => {
+    promotionState.form.mktType = event.target.value;
+    promotionState.form.mktName = "";
+    promotionState.form.budgetControl = "";
+    promotionSyncMktOptions();
+    promotionPopulateForm();
+  });
+  document.getElementById("promoMktName").addEventListener("change", event => { promotionState.form.mktName = event.target.value; clearFieldError(event.target); });
+  document.getElementById("promoBudgetControl").addEventListener("change", event => {
+    promotionState.form.budgetControl = event.target.value;
+    if (event.target.value === "campaign") promotionState.form.rewardBudget = promotionState.form.allocatedBudget;
+    promotionPopulateForm();
+  });
+  document.getElementById("promoCodeType").addEventListener("change", event => {
+    promotionState.form.codeType = event.target.value;
+    promotionPopulateForm();
+  });
+  document.getElementById("promoCodeValue").addEventListener("input", event => {
+    const raw = event.target.value.toUpperCase();
+    const sanitized = raw.replace(/[^A-Z0-9]/g, "").slice(0, 50);
+    promotionState.form.codeValue = sanitized;
+    promotionState.form.rawCode = sanitized;
+    event.target.value = sanitized;
+    if (raw !== sanitized) setFieldError(event.target, "Only letters (A-Z) and numbers (0-9) are allowed");
+    else clearFieldError(event.target);
+  });
+  document.getElementById("promoNumberOfCode").addEventListener("input", event => {
+    const numeric = Math.min(number(event.target.value), 1000000);
+    promotionState.form.numbersOfCode = numeric ? String(numeric) : "";
+    event.target.value = promotionState.form.numbersOfCode;
+    if (numeric) clearFieldError(event.target);
+  });
+  document.getElementById("promoRewardBudget").addEventListener("input", event => {
+    const numeric = number(event.target.value);
+    promotionState.form.rewardBudget = numeric ? String(numeric) : "";
+    event.target.value = promotionState.form.rewardBudget ? money(promotionState.form.rewardBudget) : "";
+  });
+  document.getElementById("promoBudgetSponsor").addEventListener("change", event => { promotionState.form.budgetSponsor = event.target.value; clearFieldError(event.target); });
+  document.getElementById("promoRewardId").addEventListener("change", event => {
+    promotionState.form.rewardId = event.target.value;
+    promotionRenderRewardPreview();
+    clearFieldError(event.target);
+  });
+  document.getElementById("promoSegment").addEventListener("change", event => { promotionState.form.segment = event.target.value; clearFieldError(event.target); });
+  document.getElementById("promoActiveStart").addEventListener("change", event => { promotionState.form.activeStart = event.target.value; clearFieldError(event.target); });
+  document.getElementById("promoActiveEnd").addEventListener("change", event => { promotionState.form.activeEnd = event.target.value; clearFieldError(event.target); });
+  document.getElementById("promoRecurringPeriod").addEventListener("change", event => {
+    promotionState.form.recurringPeriod = event.target.value;
+    promotionRenderRecurringDetail();
+    promotionApplyPromotionAccess();
+  });
+  document.getElementById("promoMaxApplyQty").addEventListener("input", event => { promotionState.form.maxApplyQty = String(number(event.target.value) || ""); });
+  document.getElementById("promoMaxApplyPeriod").addEventListener("change", event => { promotionState.form.maxApplyPeriod = event.target.value; });
+  document.getElementById("promoStockLimitQty").addEventListener("input", event => { promotionState.form.stockLimitQty = String(number(event.target.value) || ""); });
+  document.getElementById("promoStockLimitPeriod").addEventListener("change", event => { promotionState.form.stockLimitPeriod = event.target.value; });
+  document.getElementById("promoAddReward").onclick = () => toast("Phase 1 chỉ hỗ trợ Single Reward.");
+  promotionBindAlertInput("promoEmailInput", "email");
+  promotionBindAlertInput("promoThresholdInput", "threshold");
+}
+
+function promotionDurationDays() {
+  const start = new Date(promotionState.form.activeStart);
+  const end = new Date(promotionState.form.activeEnd);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
+  return (end - start) / (1000 * 60 * 60 * 24);
+}
+
+function promotionValidateRecurring() {
+  const period = promotionState.form.recurringPeriod;
+  const startDate = new Date(promotionState.form.activeStart);
+  const endDate = new Date(promotionState.form.activeEnd);
+  const sameDay = promotionState.form.activeStart.slice(0, 10) === promotionState.form.activeEnd.slice(0, 10);
+  const config = promotionState.form.recurringConfig;
+  const recurringField = document.getElementById("promoRecurringPeriod");
+  if (!period) {
+    setFieldError(recurringField, "Recurring Period is required");
+    return false;
+  }
+  if (period === "Display Continuously") return true;
+  if (config.timeStart >= config.timeEnd) {
+    setFieldError(document.getElementById("promoRecurringTimeStart"), "Start time must be earlier than End time");
+    return false;
+  }
+  if (sameDay && period === "Recur Daily") {
+    const startSlot = `${promotionState.form.activeStart.slice(0, 10)}T${config.timeStart}`;
+    const endSlot = `${promotionState.form.activeEnd.slice(0, 10)}T${config.timeEnd}`;
+    if (new Date(startSlot) < startDate || new Date(endSlot) > endDate) {
+      setFieldError(document.getElementById("promoRecurringTimeStart"), "Time slot must be within the selected time range");
+      return false;
+    }
+  }
+  if (["Recur Weekly", "Recur in Some Days in a Week"].includes(period) && promotionDurationDays() < 7) {
+    setFieldError(recurringField, "Please select a duration of at least 7 days");
+    return false;
+  }
+  if (["Recur Monthly", "Recur in Some Days in a Month"].includes(period) && promotionDurationDays() < 30) {
+    setFieldError(recurringField, "Please select a duration of at least 30 days");
+    return false;
+  }
+  if (period === "Recur in Some Days in a Week" && !config.selectedWeekDays.length) {
+    const button = document.querySelector("#promoRecurringWeekDays .choice-pill");
+    setFieldError(button, "Please select at least one day");
+    return false;
+  }
+  if (period === "Recur in Some Days in a Month" && !config.selectedMonthDays.length) {
+    const button = document.querySelector("#promoRecurringMonthDays .choice-pill");
+    setFieldError(button, "Please select at least one day");
+    return false;
+  }
+  return true;
+}
+
+function validatePromotionForm() {
+  resetValidation();
+  let valid = true;
+  const setRequired = (id, condition, message) => {
+    const input = document.getElementById(id);
+    if (!condition) return;
+    setFieldError(input, message);
+    valid = false;
+  };
+  setRequired("promoMktCode", !promotionState.form.mktType, "MKT Code is required");
+  setRequired("promoMktName", !promotionState.form.mktName, "MKT Name is required");
+  setRequired("promoBudgetControl", !promotionState.form.budgetControl, "Budget Control is required");
+  if (promotionState.form.codeType === "Mass Code") setRequired("promoCodeValue", !promotionState.form.codeValue, "Code Value is required");
+  if (promotionState.form.codeType === "Unique Code") {
+    setRequired("promoNumberOfCode", !number(promotionState.form.numbersOfCode), "Number of code is required");
+    if (number(promotionState.form.numbersOfCode) <= 0) {
+      setFieldError(document.getElementById("promoNumberOfCode"), "Numbers of code must be > 0");
+      valid = false;
+    }
+  }
+  if (promotionState.form.budgetControl === "package") {
+    const rewardBudget = number(promotionState.form.rewardBudget);
+    const allocatedBudget = number(promotionState.form.allocatedBudget);
+    if (!rewardBudget) {
+      setFieldError(document.getElementById("promoRewardBudget"), "Package Budget is required");
+      valid = false;
+    } else if (rewardBudget > allocatedBudget) {
+      setFieldError(document.getElementById("promoRewardBudget"), "Package Budget cannot exceed Allocated Budget.");
+      valid = false;
+    } else if (rewardBudget < number(promotionState.form.consumedBudget)) {
+      setFieldError(document.getElementById("promoRewardBudget"), "Package Budget cannot be less than consumed budget.");
+      valid = false;
+    }
+  }
+  setRequired("promoBudgetSponsor", !promotionState.form.budgetSponsor, "Budget Sponsor is Required");
+  setRequired("promoRewardId", !promotionState.form.rewardId, "Reward ID is Required");
+  setRequired("promoSegment", !promotionState.form.segment, "Segment is required");
+  if (!promotionState.form.userTypes.length) {
+    setFieldError(document.querySelector("#promoUserTypes .choice-pill"), "User Type is required");
+    valid = false;
+  } else if (!promotionState.form.userTypes.includes("Normal User")) {
+    setFieldError(document.querySelector("#promoUserTypes .choice-pill"), "Normal User must be selected");
+    valid = false;
+  }
+  if (!promotionState.form.activeStart || !promotionState.form.activeEnd) {
+    setFieldError(document.getElementById("promoActiveStart"), "Reward Active Time is required");
+    valid = false;
+  } else if (promotionState.form.activeStart >= promotionState.form.activeEnd) {
+    setFieldError(document.getElementById("promoActiveStart"), "Start time must be earlier than End time");
+    valid = false;
+  } else if (promotionActiveExtendOnly()) {
+    const campaign = getPromotionCampaign();
+    const originalEnd = new Date(campaign.activeEnd);
+    const nextEnd = new Date(promotionState.form.activeEnd);
+    const maxEnd = new Date(originalEnd);
+    maxEnd.setMonth(maxEnd.getMonth() + 3);
+    if (nextEnd < originalEnd) {
+      setFieldError(document.getElementById("promoActiveEnd"), "Approved/In Use chỉ được extend end time.");
+      valid = false;
+    } else if (nextEnd > maxEnd) {
+      setFieldError(document.getElementById("promoActiveEnd"), "End time can only be extended up to 3 months.");
+      valid = false;
+    }
+  }
+  if (!promotionValidateRecurring()) valid = false;
+  if (promotionCanEditApplyLimit()) {
+    if (!number(promotionState.form.maxApplyQty)) {
+      setFieldError(document.getElementById("promoMaxApplyQty"), "Maximum Apply is required");
+      valid = false;
+    }
+    if (!number(promotionState.form.stockLimitQty)) {
+      setFieldError(document.getElementById("promoStockLimitQty"), "Stock Limit is required");
+      valid = false;
+    }
+  }
+  if (!valid) {
+    toast("Promotion Code chưa hợp lệ.", "error");
+    focusFirstInvalid();
+  }
+  return valid;
+}
+
+function collectPromotionForm() {
+  const reward = promotionCatalog.rewards[promotionState.form.rewardId];
+  const payload = clonePromotionCampaign(promotionState.form);
+  payload.rawCode = payload.codeType === "Mass Code" ? payload.codeValue : (payload.rawCode || `${payload.mktCode}-UNIQUE`);
+  payload.allocatedBudget = String(number(payload.allocatedBudget));
+  payload.rewardBudget = String(number(payload.budgetControl === "campaign" ? payload.allocatedBudget : payload.rewardBudget));
+  payload.consumedBudget = String(number(payload.consumedBudget || 0));
+  payload.exportState = payload.codeType === "Unique Code"
+    ? (number(payload.numbersOfCode) > 900000 ? "failed" : number(payload.numbersOfCode) > 500000 ? "processing" : "ready")
+    : "ready";
+  payload.label ||= "ZPO";
+  payload.owner ||= "kiettt8";
+  payload.rewardName = reward?.title || "";
+  return payload;
+}
+
+function submitPromotionForm(asDraft) {
+  if (!validatePromotionForm()) return;
+  const payload = collectPromotionForm();
+  const reward = promotionCatalog.rewards[payload.rewardId];
+  const status = asDraft ? "Draft" : reward && reward.approvalCap > 50000 ? "FA Review" : "Auto Approved";
+  const id = Math.max(...promotionState.campaigns.map(item => item.id)) + 1;
+  promotionState.campaigns.unshift({ ...payload, id, status });
+  toast(asDraft ? `Promotion Code ${id} đã Save.` : `Promotion Code ${id}: ${status}.`);
+  setTimeout(() => route("promotion-list"), 400);
+}
+
+function savePromotionEdit() {
+  if (!validatePromotionForm()) return;
+  const campaign = getPromotionCampaign();
+  const payload = collectPromotionForm();
+  Object.assign(campaign, payload);
+  toast(`Promotion Code ${campaign.id} đã cập nhật, status giữ nguyên ${campaign.status}.`);
+  setTimeout(() => route("promotion-list"), 400);
+}
+
+function renderPromotionFormActions() {
+  const holder = document.getElementById("promoFormActions");
+  if (promotionState.formMode === "view") {
+    holder.innerHTML = '<button type="button" class="btn secondary" id="promoCancelForm">Back</button>';
+  } else if (promotionState.formMode === "edit") {
+    holder.innerHTML = '<button type="button" class="btn secondary" id="promoCancelForm">Cancel</button><button type="button" class="btn primary" id="promoSaveChanges">Save changes</button>';
+  } else {
+    holder.innerHTML = '<button type="button" class="btn secondary" id="promoCancelForm">Cancel</button><button type="button" class="btn primary" id="promoSaveDraft">Save</button><button type="submit" class="btn primary">Save &amp; Submit</button>';
+  }
+  document.getElementById("promoCancelForm").onclick = () => route("promotion-list");
+  if (promotionState.formMode === "create") {
+    document.getElementById("promoSaveDraft").onclick = () => submitPromotionForm(true);
+    document.getElementById("promotionForm").onsubmit = event => { event.preventDefault(); submitPromotionForm(false); };
+  } else if (promotionState.formMode === "edit") {
+    document.getElementById("promotionForm").onsubmit = event => event.preventDefault();
+    document.getElementById("promoSaveChanges").onclick = savePromotionEdit;
+  } else {
+    document.getElementById("promotionForm").onsubmit = event => event.preventDefault();
+  }
+}
+
+function initPromotionForm(options = {}) {
+  promotionState.formMode = options.mode || "create";
+  promotionState.editingId = options.id || null;
+  const campaign = getPromotionCampaign();
+  if (promotionState.formMode !== "create" && !campaign) return route("promotion-list");
+  promotionState.form = campaign ? clonePromotionCampaign(campaign) : defaultPromotionForm();
+  document.getElementById("promoFormTitle").textContent = promotionState.formMode === "create"
+    ? "Create Promotion Code"
+    : `${promotionState.formMode === "view" ? "View" : "Edit"} Promotion Code #${campaign.id}`;
+  document.getElementById("promoFormStatus").innerHTML = campaign ? `<span class="status ${statusClass(campaign.status)}">${campaign.status}</span>` : "";
+  promotionPopulateForm();
+  promotionBindForm();
+  renderPromotionFormActions();
+}
+
 document.querySelectorAll("[data-route]").forEach(button => button.onclick = () => route(button.dataset.route));
 document.querySelectorAll("[data-nav-target]").forEach(button => button.onclick = () => {
   const target = document.getElementById(button.dataset.navTarget);
@@ -788,4 +1898,4 @@ document.querySelectorAll("[data-nav-target]").forEach(button => button.onclick 
   button.querySelector("span").textContent = target.hidden ? "⌄" : "⌃";
 });
 document.getElementById("menuToggle").onclick = () => document.getElementById("sidebar").classList.toggle("open");
-route("asset-list");
+route("promotion-list");
