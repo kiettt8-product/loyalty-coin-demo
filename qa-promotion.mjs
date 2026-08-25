@@ -28,6 +28,7 @@ if (actionLabels.some(label => label !== "View Edit")) throw new Error("Every Pr
 await page.getByRole("button", { name: "Add new" }).click();
 if (await page.locator("#promoCodeType").inputValue() !== "Unique Code") throw new Error("Add New must default to Unique Code per Figma");
 if (await page.locator(".field-error:visible").count()) throw new Error("Add New must not show validation errors before an action");
+if (await page.locator(".promo-user-type-field > span").textContent() !== "User Type") throw new Error("Required User Type label must be visible");
 await page.locator("#promoUserTypeSearch").click();
 if (!await page.locator("#promoUserTypeMenu").isVisible()) throw new Error("User Type menu must open from the search input");
 if (await page.locator("#promoUserTypeMenu .promo-user-type-option").count() !== 3) throw new Error("User Type menu must show all PRD options");

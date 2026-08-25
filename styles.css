@@ -205,7 +205,6 @@ body.asset-mode .time-field { grid-column: auto; }
 .choice-pills.compact { max-height: 116px; overflow-y: auto; padding-right: 4px; }
 .choice-pill { min-height: 24px; padding: 0 7px; border: 0; border-radius: 4px; background: transparent; color: #8da0b3; }
 .choice-pill.active { background: #f0f3f7; color: #20a766; }
-.promo-user-type-field { padding-top: 25px; }
 .promo-user-type-combobox { position: relative; }
 .promo-user-type-select { min-height: 32px; height: auto; gap: 4px; padding: 3px 34px 3px 4px; cursor: text; }
 .promo-user-type-select:focus-within { border-color: #165dff; box-shadow: 0 0 0 1px rgba(22, 93, 255, .16); }
