@@ -28,6 +28,17 @@ if (actionLabels.some(label => label !== "View Edit")) throw new Error("Every Pr
 await page.getByRole("button", { name: "Add new" }).click();
 if (await page.locator("#promoCodeType").inputValue() !== "Unique Code") throw new Error("Add New must default to Unique Code per Figma");
 if (await page.locator(".field-error:visible").count()) throw new Error("Add New must not show validation errors before an action");
+await page.locator("#promoUserTypeSearch").click();
+if (!await page.locator("#promoUserTypeMenu").isVisible()) throw new Error("User Type menu must open from the search input");
+if (await page.locator("#promoUserTypeMenu .promo-user-type-option").count() !== 3) throw new Error("User Type menu must show all PRD options");
+if (await page.getByRole("option", { name: "Normal User", exact: true }).getAttribute("aria-disabled") !== "true") throw new Error("Normal User must remain selected and locked");
+await page.locator("#promoUserTypeSearch").fill("casual");
+if (await page.locator("#promoUserTypeMenu .promo-user-type-option").count() !== 1) throw new Error("User Type search must filter options");
+await page.getByRole("option", { name: "Casual abuser" }).click();
+if (!await page.locator("#promoUserTypeTags .promo-user-type-tag.casual-abuser").isVisible()) throw new Error("Selected User Type must render as a tag");
+await page.locator("#promoUserTypeSearch").fill("");
+await page.keyboard.press("Escape");
+if (await page.locator("#promoUserTypeMenu").isVisible()) throw new Error("Escape must close the User Type menu");
 await page.getByRole("button", { name: "Save", exact: true }).click();
 const requiredErrors = await page.locator(".field-error").allTextContents();
 if (JSON.stringify(requiredErrors) !== JSON.stringify(["MKT Code is required"])) throw new Error("Save draft must only require MKT Code");
@@ -58,7 +69,7 @@ if (await newRow.locator("td").nth(8).textContent() !== "Auto Approved") throw n
 await page.locator("#promoCampaignRows tr").filter({ hasText: "1098" }).getByRole("button", { name: "Edit" }).click();
 if (!await page.locator("#promoMktCode").isDisabled()) throw new Error("Approved core fields must be locked");
 if (await page.locator("#promoSegment").isDisabled()) throw new Error("Approved Segment must remain editable");
-if (await page.locator("#promoUserTypes .choice-pill").first().isDisabled()) throw new Error("Approved User Type must remain editable");
+if (await page.locator("#promoUserTypeSearch").isDisabled()) throw new Error("Approved User Type must remain editable");
 if (!await page.locator("#promoActiveStart").isDisabled() || await page.locator("#promoActiveEnd").isDisabled()) throw new Error("Approved active time must be end-time extend only");
 
 await page.getByRole("button", { name: "Cancel" }).click();

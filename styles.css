@@ -205,11 +205,30 @@ body.asset-mode .time-field { grid-column: auto; }
 .choice-pills.compact { max-height: 116px; overflow-y: auto; padding-right: 4px; }
 .choice-pill { min-height: 24px; padding: 0 7px; border: 0; border-radius: 4px; background: transparent; color: #8da0b3; }
 .choice-pill.active { background: #f0f3f7; color: #20a766; }
-.promo-user-type-select { padding-right: 8px; }
-.promo-user-type-select::after { content: ""; width: 12px; height: 12px; margin-left: auto; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23364153' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px 12px no-repeat; }
-.promo-user-type-select .choice-pill:not(.active) { display: none; }
-.promo-user-type-select:focus-within .choice-pill { display: inline-flex; }
 .promo-user-type-field { padding-top: 25px; }
+.promo-user-type-combobox { position: relative; }
+.promo-user-type-select { min-height: 32px; height: auto; gap: 4px; padding: 3px 34px 3px 4px; cursor: text; }
+.promo-user-type-select:focus-within { border-color: #165dff; box-shadow: 0 0 0 1px rgba(22, 93, 255, .16); }
+.promo-user-type-select > .promo-user-type-tags { min-width: 0; height: auto; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding: 0; border-radius: 0; background: transparent; }
+.promo-user-type-tag { min-height: 24px; display: inline-flex; align-items: center; gap: 4px; padding: 0 7px; border-radius: 3px; background: #f0f3f7; color: #008a2e; white-space: nowrap; }
+.promo-user-type-tag.casual-abuser { color: #d66a00; }
+.promo-user-type-tag.malicious { color: #e3173c; }
+.promo-user-type-tag button { width: 14px; height: 14px; display: grid; place-items: center; font-size: 14px; line-height: 14px; }
+.promo-user-type-select > input { min-width: 28px; width: 32px; flex: 1 1 32px; height: 24px; padding: 0; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+.promo-user-type-select > input:focus { border: 0; box-shadow: none; }
+.promo-user-type-select > .promo-user-type-search-icon { position: absolute; top: 9px; right: 10px; width: 14px; height: 14px; display: block; padding: 0; border-radius: 0; pointer-events: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Ccircle cx='6.25' cy='6.25' r='3.75' stroke='%2399A1AF'/%3E%3Cpath d='M9 9L11.75 11.75' stroke='%2399A1AF' stroke-linecap='round'/%3E%3C/svg%3E") center / 14px 14px no-repeat; }
+.promo-user-type-menu { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 25; padding: 4px; border: 1px solid #e5e7eb; border-radius: 4px; background: #fff; box-shadow: 0 8px 20px rgba(0, 31, 62, .16); }
+.promo-user-type-menu[hidden] { display: none; }
+.promo-user-type-option.choice-pill { width: 100%; min-height: 32px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 2px; text-align: left; color: #008a2e; }
+.promo-user-type-option.choice-pill.casual-abuser { color: #d66a00; }
+.promo-user-type-option.choice-pill.malicious { color: #e3173c; }
+.promo-user-type-option.choice-pill:hover { background: #f5f8ff; }
+.promo-user-type-option.choice-pill.active { background: #e8f1ff; font-weight: 600; }
+.promo-user-type-option-check { width: 16px; color: #165dff; font-size: 18px; line-height: 16px; font-weight: 400; text-align: center; }
+.promo-user-type-empty { min-height: 32px; display: flex; align-items: center; padding: 0 12px; color: var(--placeholder); }
+.promo-user-type-combobox.readonly .promo-user-type-select { background: #f3f4f6; cursor: not-allowed; }
+.promo-user-type-combobox.readonly .promo-user-type-select > input { background: transparent; cursor: not-allowed; }
+.promo-user-type-field.invalid .promo-user-type-select { border-color: var(--danger); }
 .promo-pill-field { grid-column: 1 / -1; }
 
 .promo-bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; }

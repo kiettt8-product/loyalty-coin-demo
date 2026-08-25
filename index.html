@@ -360,7 +360,16 @@
             <div class="promo-display-grid">
               <label class="field asset-field required"><span>Segment</span><select id="promoSegment"><option value="">Select Segment</option><option>New User</option><option>Retention</option><option>Merchant Partner</option><option>Campus Segment</option></select></label>
               <label class="field asset-field required"><span>Risk Control</span><select id="promoRiskControl" disabled><option value="Đánh giá rủi ro toàn hệ thống">Đánh giá rủi ro toàn hệ thống</option></select></label>
-              <div class="field asset-field promo-user-type-field"><div class="asset-tag-select promo-user-type-select" id="promoUserTypes" role="listbox" aria-label="User Type" aria-required="true" aria-multiselectable="true" tabindex="0"></div></div>
+              <div class="field asset-field promo-user-type-field">
+                <div class="promo-user-type-combobox" id="promoUserTypeCombobox">
+                  <div class="asset-tag-select promo-user-type-select" id="promoUserTypes" role="combobox" aria-label="User Type" aria-required="true" aria-haspopup="listbox" aria-expanded="false" aria-controls="promoUserTypeMenu">
+                    <span class="promo-user-type-tags" id="promoUserTypeTags"></span>
+                    <input id="promoUserTypeSearch" aria-label="Search User Type" autocomplete="off">
+                    <span class="promo-user-type-search-icon" aria-hidden="true"></span>
+                  </div>
+                  <div class="promo-user-type-menu" id="promoUserTypeMenu" role="listbox" aria-label="User Type options" aria-multiselectable="true" hidden></div>
+                </div>
+              </div>
             </div>
           </div>
 

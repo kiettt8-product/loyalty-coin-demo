@@ -1496,15 +1496,95 @@ function promotionRenderRecurringDetail() {
   holder.querySelector("#promoRecurringMonthEnd")?.addEventListener("change", event => { promotionState.form.recurringConfig.monthEndDay = event.target.value; });
 }
 
-function promotionRenderUserTypes() {
-  promotionRenderChoicePills("promoUserTypes", promotionCatalog.userTypes, promotionState.form.userTypes, {
-    locked: ["Normal User"],
-    disabled: promotionState.formMode === "view" || !promotionCanEditUserTypes(),
-    onChange: values => {
-      promotionState.form.userTypes = values;
+function promotionUserTypeClass(value) {
+  return value.toLowerCase().replaceAll(" ", "-");
+}
+
+function promotionUserTypeLabel(value) {
+  return value === "Casual Abuser" ? "Casual abuser" : value;
+}
+
+function promotionCloseUserTypeMenu() {
+  const control = document.getElementById("promoUserTypes");
+  const menu = document.getElementById("promoUserTypeMenu");
+  if (!control || !menu) return;
+  control.setAttribute("aria-expanded", "false");
+  menu.hidden = true;
+}
+
+function promotionOpenUserTypeMenu() {
+  const control = document.getElementById("promoUserTypes");
+  const menu = document.getElementById("promoUserTypeMenu");
+  if (!control || !menu || document.getElementById("promoUserTypeSearch")?.disabled) return;
+  control.setAttribute("aria-expanded", "true");
+  menu.hidden = false;
+}
+
+function promotionRenderUserTypeOptions(query = "") {
+  const menu = document.getElementById("promoUserTypeMenu");
+  if (!menu) return;
+  const editable = promotionState.formMode !== "view" && promotionCanEditUserTypes();
+  const selected = new Set(promotionState.form.userTypes);
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleOptions = promotionCatalog.userTypes.filter(value => promotionUserTypeLabel(value).toLowerCase().includes(normalizedQuery));
+  menu.innerHTML = visibleOptions.length
+    ? visibleOptions.map(value => `<button type="button" class="choice-pill promo-user-type-option ${promotionUserTypeClass(value)} ${selected.has(value) ? "active" : ""}" data-value="${escapeHtml(value)}" role="option" aria-selected="${selected.has(value)}" ${value === "Normal User" ? 'aria-disabled="true"' : ""} ${editable ? "" : "disabled"}><span>${escapeHtml(promotionUserTypeLabel(value))}</span><span class="promo-user-type-option-check" aria-hidden="true">${selected.has(value) ? "✓" : ""}</span></button>`).join("")
+    : '<div class="promo-user-type-empty">No result</div>';
+  if (!editable) return;
+  menu.querySelectorAll(".promo-user-type-option").forEach(button => {
+    button.onclick = event => {
+      event.stopPropagation();
+      const value = button.dataset.value;
+      if (value === "Normal User") return;
+      const next = new Set(promotionState.form.userTypes);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      next.add("Normal User");
+      promotionState.form.userTypes = promotionCatalog.userTypes.filter(item => next.has(item));
+      clearFieldError(document.getElementById("promoUserTypes"));
       promotionRenderUserTypes();
-    }
+      document.getElementById("promoUserTypeSearch").focus();
+      promotionOpenUserTypeMenu();
+    };
   });
+}
+
+function promotionRenderUserTypes() {
+  const combobox = document.getElementById("promoUserTypeCombobox");
+  const control = document.getElementById("promoUserTypes");
+  const tags = document.getElementById("promoUserTypeTags");
+  const search = document.getElementById("promoUserTypeSearch");
+  if (!combobox || !control || !tags || !search) return;
+  const editable = promotionState.formMode !== "view" && promotionCanEditUserTypes();
+  promotionState.form.userTypes = promotionCatalog.userTypes.filter(value => promotionState.form.userTypes.includes(value));
+  tags.innerHTML = promotionState.form.userTypes.map(value => `<span class="promo-user-type-tag ${promotionUserTypeClass(value)}">${escapeHtml(promotionUserTypeLabel(value))}${editable && value !== "Normal User" ? `<button type="button" data-remove-user-type="${escapeHtml(value)}" aria-label="Remove ${escapeHtml(promotionUserTypeLabel(value))}">×</button>` : ""}</span>`).join("");
+  combobox.classList.toggle("readonly", !editable);
+  control.setAttribute("aria-disabled", String(!editable));
+  search.disabled = !editable;
+  if (!editable) promotionCloseUserTypeMenu();
+  promotionRenderUserTypeOptions(search.value);
+  tags.querySelectorAll("[data-remove-user-type]").forEach(button => {
+    button.onclick = event => {
+      event.stopPropagation();
+      promotionState.form.userTypes = promotionState.form.userTypes.filter(value => value !== button.dataset.removeUserType);
+      promotionRenderUserTypes();
+      search.focus();
+      promotionOpenUserTypeMenu();
+    };
+  });
+  control.onclick = () => { if (editable) search.focus(); };
+  search.onfocus = promotionOpenUserTypeMenu;
+  search.onclick = promotionOpenUserTypeMenu;
+  search.oninput = () => {
+    promotionRenderUserTypeOptions(search.value);
+    promotionOpenUserTypeMenu();
+  };
+  search.onkeydown = event => {
+    if (event.key === "Escape") {
+      promotionCloseUserTypeMenu();
+      search.blur();
+    }
+  };
 }
 
 function promotionRenderAlertTags(type) {
@@ -1629,6 +1709,9 @@ function promotionBindAlertInput(id, type) {
 }
 
 function promotionBindForm() {
+  document.addEventListener("click", event => {
+    if (!event.target.closest("#promoUserTypeCombobox")) promotionCloseUserTypeMenu();
+  });
   document.getElementById("promoMktCode").addEventListener("change", event => {
     promotionState.form.mktType = event.target.value;
     promotionState.form.mktName = "";
@@ -1779,10 +1862,10 @@ function validatePromotionForm() {
   setRequired("promoRewardId", !promotionState.form.rewardId, "Reward ID is Required");
   setRequired("promoSegment", !promotionState.form.segment, "Segment is required");
   if (!promotionState.form.userTypes.length) {
-    setFieldError(document.querySelector("#promoUserTypes .choice-pill"), "User Type is required");
+    setFieldError(document.getElementById("promoUserTypes"), "User Type is required");
     valid = false;
   } else if (!promotionState.form.userTypes.includes("Normal User")) {
-    setFieldError(document.querySelector("#promoUserTypes .choice-pill"), "Normal User must be selected");
+    setFieldError(document.getElementById("promoUserTypes"), "Normal User must be selected");
     valid = false;
   }
   if (!promotionState.form.activeStart || !promotionState.form.activeEnd) {
