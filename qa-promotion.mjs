@@ -22,15 +22,19 @@ const firstCodeType = await page.locator("#promoCampaignRows tr").nth(1).locator
 const firstDisplayedCode = await page.locator("#promoCampaignRows tr").nth(1).locator("td").nth(5).textContent();
 if (firstCodeType !== "Unique Code" || firstDisplayedCode !== "BAYHE") throw new Error("Unique code list display must truncate to 5 characters");
 
+const actionLabels = await page.locator("#promoCampaignRows tr td:last-child").evaluateAll(cells => cells.map(cell => [...cell.querySelectorAll("button")].map(button => button.textContent).join(" ")));
+if (actionLabels.some(label => label !== "View Edit")) throw new Error("Every Promotion Code row must expose View and Edit only");
+
 await page.getByRole("button", { name: "Add new" }).click();
+if (await page.locator("#promoCodeType").inputValue() !== "Unique Code") throw new Error("Add New must default to Unique Code per Figma");
+if (await page.locator(".field-error:visible").count()) throw new Error("Add New must not show validation errors before an action");
 await page.getByRole("button", { name: "Save", exact: true }).click();
 const requiredErrors = await page.locator(".field-error").allTextContents();
-for (const message of ["MKT Code is required", "MKT Name is required", "Budget Control is required", "Code Value is required", "Budget Sponsor is Required", "Reward ID is Required", "Segment is required", "Reward Active Time is required"]) {
-  if (!requiredErrors.includes(message)) throw new Error(`Missing create validation: ${message}`);
-}
+if (JSON.stringify(requiredErrors) !== JSON.stringify(["MKT Code is required"])) throw new Error("Save draft must only require MKT Code");
 
 await page.locator("#promoMktCode").selectOption("campaign");
 await page.locator("#promoMktName").selectOption("quantm6_CB3_22");
+await page.locator("#promoCodeType").selectOption("Mass Code");
 await page.locator("#promoCodeValue").fill("hello#promo");
 const sanitizedCode = await page.locator("#promoCodeValue").inputValue();
 if (sanitizedCode !== "HELLOPROMO") throw new Error("Mass Code must sanitize to uppercase A-Z0-9");
@@ -68,8 +72,8 @@ const retryVisible = await page.getByRole("button", { name: "Retry" }).isVisible
 if (!retryVisible) throw new Error("Failed unique code generation must expose Retry");
 await page.getByRole("button", { name: "Cancel" }).click();
 
-await page.locator("#promoCampaignRows tr").filter({ hasText: "1020" }).getByRole("button", { name: "Delete" }).click();
-if (await page.locator("#promoCampaignRows tr").filter({ hasText: "1020" }).count()) throw new Error("Ended campaign delete must soft remove row");
+await page.locator("#promoCampaignRows tr").filter({ hasText: "1020" }).getByRole("button", { name: "Edit" }).click();
+if (!await page.locator("#promoMktCode").isDisabled()) throw new Error("Ended campaign fields must remain locked in Edit view");
 
 if (consoleErrors.length) throw new Error(`Console errors detected: ${consoleErrors.join(" | ")}`);
 await page.goto("http://127.0.0.1:4173", { waitUntil: "networkidle" });

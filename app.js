@@ -155,7 +155,7 @@ function defaultPromotionForm() {
     rewardBudget: "",
     consumedBudget: "0",
     type: "Single Reward",
-    codeType: "Mass Code",
+    codeType: "Unique Code",
     codeValue: "",
     rawCode: "",
     numbersOfCode: "",
@@ -1241,14 +1241,6 @@ function promotionCanEditBudgetAlert(campaign = getPromotionCampaign()) {
   return !campaign || campaign.status !== "Ended";
 }
 
-function promotionCanDelete(campaign) {
-  return ["Draft", "Ended"].includes(campaign.status);
-}
-
-function promotionCanEdit(campaign) {
-  return campaign.status !== "Ended";
-}
-
 function promotionActiveExtendOnly(campaign = getPromotionCampaign()) {
   return Boolean(campaign && ["Approved", "Auto Approved", "In Use"].includes(campaign.status));
 }
@@ -1263,10 +1255,7 @@ function promotionUpdateStatusSummary() {
 }
 
 function promotionActionButtons(campaign) {
-  const actions = [`<button type="button" data-promo-view="${campaign.id}">View</button>`];
-  if (promotionCanEdit(campaign)) actions.push(`<button type="button" data-promo-edit="${campaign.id}">Edit</button>`);
-  if (promotionCanDelete(campaign)) actions.push(`<button type="button" class="danger-action" data-promo-delete="${campaign.id}">Delete</button>`);
-  return actions.join("");
+  return `<button type="button" data-promo-view="${campaign.id}">View</button><button type="button" data-promo-edit="${campaign.id}">Edit</button>`;
 }
 
 function renderPromotionRows(rows = promotionState.campaigns) {
@@ -1335,12 +1324,6 @@ function initPromotionList() {
     if (!action) return;
     if (action.dataset.promoView) route("promotion-form", { mode: "view", id: Number(action.dataset.promoView) });
     if (action.dataset.promoEdit) route("promotion-form", { mode: "edit", id: Number(action.dataset.promoEdit) });
-    if (action.dataset.promoDelete) {
-      const id = Number(action.dataset.promoDelete);
-      promotionState.campaigns = promotionState.campaigns.filter(item => item.id !== id);
-      renderPromotionRows();
-      toast(`Promotion Code ${id} đã soft delete.`);
-    }
   };
 }
 
@@ -1610,7 +1593,9 @@ function promotionPopulateForm() {
   document.getElementById("promoStockLimitPeriod").value = promotionState.form.stockLimitPeriod;
   document.getElementById("promoCodeValueField").hidden = promotionState.form.codeType !== "Mass Code";
   document.getElementById("promoNumberOfCodeField").hidden = promotionState.form.codeType !== "Unique Code";
-  document.getElementById("promoRewardBudgetLabel").textContent = promotionState.form.budgetControl === "package" ? "Package Budget" : "Campaign Budget";
+  const rewardBudgetLabel = promotionState.form.budgetControl === "campaign" ? "Campaign Budget" : "Package Budget";
+  document.getElementById("promoRewardBudgetLabel").textContent = rewardBudgetLabel;
+  document.getElementById("promoRewardBudget").placeholder = rewardBudgetLabel;
   if (promotionState.form.budgetControl === "campaign") {
     promotionState.form.rewardBudget = promotionState.form.allocatedBudget;
     document.getElementById("promoRewardBudget").value = promotionState.form.rewardBudget ? money(promotionState.form.rewardBudget) : "";
@@ -1838,6 +1823,15 @@ function validatePromotionForm() {
   return valid;
 }
 
+function validatePromotionDraft() {
+  resetValidation();
+  if (promotionState.form.mktType) return true;
+  const mktCode = document.getElementById("promoMktCode");
+  setFieldError(mktCode, "MKT Code is required");
+  focusFirstInvalid();
+  return false;
+}
+
 function collectPromotionForm() {
   const reward = promotionCatalog.rewards[promotionState.form.rewardId];
   const payload = clonePromotionCampaign(promotionState.form);
@@ -1855,7 +1849,7 @@ function collectPromotionForm() {
 }
 
 function submitPromotionForm(asDraft) {
-  if (!validatePromotionForm()) return;
+  if (asDraft ? !validatePromotionDraft() : !validatePromotionForm()) return;
   const payload = collectPromotionForm();
   const reward = promotionCatalog.rewards[payload.rewardId];
   const status = asDraft ? "Draft" : reward && reward.approvalCap > 50000 ? "FA Review" : "Auto Approved";
