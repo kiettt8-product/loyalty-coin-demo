@@ -341,60 +341,9 @@
         </div>
       </section>
 
-      <section class="asset-form-section">
-        <h1 id="promoRewardSectionTitle">Reward #1 Configuration</h1>
-        <div class="asset-section-body promo-reward-layout">
-          <div class="promo-reward-list" id="promoRewardList"></div>
-
-          <div class="promo-reward-group">
-            <h2>Display Users</h2>
-            <div class="promo-display-grid">
-              <label class="field asset-field required"><span>Segment</span><select id="promoSegment"><option value="">Select Segment</option><option>New User</option><option>Retention</option><option>Merchant Partner</option><option>Campus Segment</option></select></label>
-              <label class="field asset-field required"><span>Risk Control</span><select id="promoRiskControl" disabled><option value="Đánh giá rủi ro toàn hệ thống">Đánh giá rủi ro toàn hệ thống</option></select></label>
-              <div class="field asset-field required promo-user-type-field">
-                <span>User Type</span>
-                <div class="promo-user-type-combobox" id="promoUserTypeCombobox">
-                  <div class="asset-tag-select promo-user-type-select" id="promoUserTypes" role="combobox" aria-label="User Type" aria-required="true" aria-haspopup="listbox" aria-expanded="false" aria-controls="promoUserTypeMenu">
-                    <span class="promo-user-type-tags" id="promoUserTypeTags"></span>
-                    <input id="promoUserTypeSearch" aria-label="Search User Type" autocomplete="off">
-                    <span class="promo-user-type-search-icon" aria-hidden="true"></span>
-                  </div>
-                  <div class="promo-user-type-menu" id="promoUserTypeMenu" role="listbox" aria-label="User Type options" aria-multiselectable="true" hidden></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="promo-bottom-grid">
-            <div class="promo-reward-group">
-              <h2>Reward Active Time</h2>
-              <div class="promo-active-grid">
-                <label class="field asset-field required time-field"><span>Reward active time</span><div class="time-range-control"><div class="asset-control-icon"><input id="promoActiveStart" type="datetime-local"><span class="calendar-mark" aria-hidden="true"></span></div><span class="time-range-separator" aria-hidden="true"></span><div class="asset-control-icon"><input id="promoActiveEnd" type="datetime-local"><span class="calendar-mark" aria-hidden="true"></span></div></div></label>
-                <label class="field asset-field required"><span>Recurring period</span><select id="promoRecurringPeriod"><option value="Display Continuously">Display continuously</option><option value="Recur Daily">Recur Daily</option><option value="Recur Weekly">Recur Weekly</option><option value="Recur Monthly">Recur Monthly</option><option value="Recur in Some Days in a Week">Recur in Some Days in a Week</option><option value="Recur in Some Days in a Month">Recur in Some Days in a Month</option></select></label>
-              </div>
-              <div id="promoRecurringDetail"></div>
-            </div>
-
-            <div class="promo-reward-group">
-              <h2>Apply Limit</h2>
-              <div class="promo-apply-grid">
-                <div class="promo-apply-row">
-                  <select id="promoMaxApplyLabel" disabled><option>Maximum Apply</option></select>
-                  <select id="promoMaxApplyScope" disabled><option>Per user</option></select>
-                  <input id="promoMaxApplyQty" inputmode="numeric" placeholder="Input number">
-                  <select id="promoMaxApplyPeriod"><option>Each Hour</option><option>Each Day</option><option>Each Week</option><option>Each Month</option><option selected>Each Campaign</option></select>
-                </div>
-                <div class="promo-apply-row">
-                  <select id="promoStockLimitLabel" disabled><option>Stock Limit</option></select>
-                  <input id="promoStockLimitQty" inputmode="numeric" placeholder="Input number">
-                  <select id="promoStockLimitPeriod"><option>Each Hour</option><option selected>Each Day</option><option>Each Week</option><option>Each Month</option><option>Each Campaign</option></select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <button type="button" class="asset-btn primary promo-add-reward" id="promoAddReward">Add more reward</button>
-        </div>
+      <section class="promo-rewards-section">
+        <div class="promo-reward-list" id="promoRewardList"></div>
+        <button type="button" class="asset-btn primary promo-add-reward" id="promoAddReward">Add more reward</button>
       </section>
 
       <section class="asset-form-section asset-alert-section">
