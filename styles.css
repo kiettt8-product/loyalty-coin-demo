@@ -188,6 +188,11 @@ body.asset-mode .time-field { grid-column: auto; }
 .promo-code-tag-control .tag button { color: #667085; }
 
 .promo-rewards-section { margin-bottom: 16px; }
+.promo-rule-sets-section { margin-bottom: 16px; }
+.promo-rule-set-list { display: grid; }
+.promo-rule-set-config { margin-bottom: 16px; }
+.promo-rule-set-title { justify-content: space-between; }
+.promo-rule-set-title small { color: #66798b; font-size: 12px; font-weight: 400; }
 .promo-reward-layout { display: grid; gap: 0; }
 .promo-reward-list { display: grid; }
 .promo-reward-config { margin-bottom: 16px; }
@@ -250,6 +255,7 @@ body.asset-mode .time-field { grid-column: auto; }
 .promo-apply-row { display: grid; grid-template-columns: 170px 145px minmax(100px, 1fr) 150px; gap: 8px; }
 .promo-apply-row select:disabled { color: #364153; background-color: #fff; opacity: 1; }
 .promo-add-reward { width: 146px; margin-left: 24px; }
+.promo-add-rule-set { width: 126px; margin-left: 24px; }
 .promo-add-reward:disabled { opacity: 1; border-color: #bfd4ff; background: #edf4ff; color: #8da0b3; cursor: not-allowed; }
 
 .trigger-screen { padding-bottom: 54px; }
@@ -525,7 +531,8 @@ body.asset-mode .time-field { grid-column: auto; }
   .promo-reward-preview { grid-column: 1; }
   .promo-bottom-grid { gap: 24px; }
   .promo-preview-card { padding: 16px; }
-  .promo-add-reward { width: calc(100% - 32px); margin-left: 16px; }
+  .promo-add-reward,
+  .promo-add-rule-set { width: calc(100% - 32px); margin-left: 16px; }
 }
 
 @media (min-width: 601px) and (max-width: 780px) {
