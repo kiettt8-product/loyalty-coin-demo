@@ -27,6 +27,7 @@ if (actionLabels.some(label => label !== "View Edit")) throw new Error("Every Pr
 
 await page.getByRole("button", { name: "Add new" }).click();
 if (await page.locator("#promoCodeType").inputValue() !== "Unique Code") throw new Error("Add New must default to Unique Code per Figma");
+if (await page.locator("#promoCampaignType").count()) throw new Error("Promotion Type must be inferred from reward count, not shown as a field");
 if (await page.locator(".field-error:visible").count()) throw new Error("Add New must not show validation errors before an action");
 if (await page.locator(".promo-user-type-field > span").textContent() !== "User Type") throw new Error("Required User Type label must be visible");
 await page.locator("#promoUserTypeSearch").click();
@@ -40,6 +41,17 @@ if (!await page.locator("#promoUserTypeTags .promo-user-type-tag.casual-abuser")
 await page.locator("#promoUserTypeSearch").fill("");
 await page.keyboard.press("Escape");
 if (await page.locator("#promoUserTypeMenu").isVisible()) throw new Error("Escape must close the User Type menu");
+await page.locator("#promoCodeType").selectOption("Mass Code");
+await page.locator("#promoCodeValue").fill("hihi");
+await page.locator("#promoCodeValue").press("Enter");
+await page.locator("#promoCodeValue").fill("haha");
+await page.locator("#promoCodeValue").press("Enter");
+if (JSON.stringify(await page.locator("#promoCodeTags .tag").allTextContents()) !== JSON.stringify(["HIHI×", "HAHA×"])) throw new Error("Each Enter must create one Mass Code tag");
+await page.locator("#promoAddReward").click();
+if (await page.locator(".promo-reward-item").count() !== 2) throw new Error("Add more reward must generate another Reward Info block");
+if (await page.locator("#promoCodeType").inputValue() !== "Mass Code" || !await page.locator("#promoCodeType").isDisabled()) throw new Error("Multiple rewards must force and lock Mass Code");
+await page.locator(".promo-remove-reward").last().click();
+if (await page.locator(".promo-reward-item").count() !== 1 || await page.locator("#promoCodeType").isDisabled()) throw new Error("Removing back to one reward must unlock Code type");
 await page.getByRole("button", { name: "Save", exact: true }).click();
 const requiredErrors = await page.locator(".field-error").allTextContents();
 if (JSON.stringify(requiredErrors) !== JSON.stringify(["MKT Code is required"])) throw new Error("Save draft must only require MKT Code");
@@ -50,8 +62,12 @@ await page.locator("#promoCodeType").selectOption("Mass Code");
 await page.locator("#promoCodeValue").fill("hello#promo");
 const sanitizedCode = await page.locator("#promoCodeValue").inputValue();
 if (sanitizedCode !== "HELLOPROMO") throw new Error("Mass Code must sanitize to uppercase A-Z0-9");
+await page.locator("#promoCodeValue").press("Enter");
 await page.locator("#promoBudgetSponsor").selectOption("ZaloPay");
 await page.locator("#promoRewardId").selectOption("1173");
+await page.locator("#promoAddReward").click();
+await page.locator("#promoBudgetSponsor-2").selectOption("Merchant");
+await page.locator("#promoRewardId-2").selectOption("1157");
 await page.locator("#promoSegment").selectOption("New User");
 await page.locator("#promoActiveStart").fill("2026-09-01T00:00");
 await page.locator("#promoActiveEnd").fill("2026-12-31T23:59");
@@ -66,6 +82,8 @@ await page.waitForTimeout(500);
 
 const newRow = page.locator("#promoCampaignRows tr").first();
 if (await newRow.locator("td").nth(8).textContent() !== "Auto Approved") throw new Error("Submitted Promotion Code should auto approve for low-cap reward");
+if (await newRow.locator("td").nth(4).textContent() !== "1173, 1157") throw new Error("Submitted Promotion Code must persist all Reward IDs");
+if (await newRow.locator("td").nth(5).textContent() !== "HIHI, HAHA, HELLOPROMO") throw new Error("All Mass Codes must share the submitted reward rules");
 
 await page.locator("#promoCampaignRows tr").filter({ hasText: "1098" }).getByRole("button", { name: "Edit" }).click();
 if (!await page.locator("#promoMktCode").isDisabled()) throw new Error("Approved core fields must be locked");

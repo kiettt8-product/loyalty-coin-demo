@@ -133,7 +133,7 @@ const promotionCatalog = {
 };
 
 function promotionCodeDisplay(campaign) {
-  const raw = String(campaign.rawCode || campaign.codeValue || "").toUpperCase();
+  const raw = (campaign.massCodes?.length ? campaign.massCodes.join(", ") : String(campaign.rawCode || campaign.codeValue || "")).toUpperCase();
   return campaign.codeType === "Unique Code" ? raw.slice(0, 5) : raw;
 }
 
@@ -145,6 +145,26 @@ function clonePromotionCampaign(campaign) {
   return JSON.parse(JSON.stringify(campaign));
 }
 
+function newPromotionReward(source = {}) {
+  return {
+    rewardBudget: String(source.rewardBudget || ""),
+    consumedBudget: String(source.consumedBudget || "0"),
+    budgetSponsor: source.budgetSponsor || "",
+    rewardId: source.rewardId || ""
+  };
+}
+
+function promotionNormalizeCampaign(campaign) {
+  const normalized = clonePromotionCampaign(campaign);
+  normalized.massCodes = Array.isArray(normalized.massCodes)
+    ? normalized.massCodes
+    : (normalized.codeType === "Mass Code" && normalized.codeValue ? [normalized.codeValue] : []);
+  normalized.rewards = Array.isArray(normalized.rewards) && normalized.rewards.length
+    ? normalized.rewards.map(newPromotionReward)
+    : [newPromotionReward(normalized)];
+  return normalized;
+}
+
 function defaultPromotionForm() {
   return {
     mktType: "",
@@ -154,11 +174,12 @@ function defaultPromotionForm() {
     allocatedBudget: "",
     rewardBudget: "",
     consumedBudget: "0",
-    type: "Single Reward",
     codeType: "Unique Code",
     codeValue: "",
+    massCodes: [],
     rawCode: "",
     numbersOfCode: "",
+    rewards: [newPromotionReward()],
     rewardId: "",
     budgetSponsor: "",
     segment: "",
@@ -1350,14 +1371,10 @@ function promotionRenderChoicePills(containerId, values, selectedValues, options
   });
 }
 
-function promotionRenderRewardPreview() {
-  const holder = document.getElementById("promoRewardPreview");
-  const reward = promotionCatalog.rewards[promotionState.form.rewardId];
-  if (!reward) {
-    holder.innerHTML = "";
-    return;
-  }
-  holder.innerHTML = `<div class="promo-preview-card ${reward.status === "expired" ? "expired" : ""}">
+function promotionRewardPreviewMarkup(rewardId) {
+  const reward = promotionCatalog.rewards[rewardId];
+  if (!reward) return "";
+  return `<div class="promo-preview-card ${reward.status === "expired" ? "expired" : ""}">
     <div class="promo-preview-copy">
       <strong>${escapeHtml(reward.title)}</strong>
       <span>${escapeHtml(reward.description)}</span>
@@ -1365,6 +1382,79 @@ function promotionRenderRewardPreview() {
     </div>
     <span class="promo-preview-badge">${reward.status === "expired" ? "Expired" : "Active"}</span>
   </div>`;
+}
+
+function promotionRewardControlId(base, index) {
+  return index ? `${base}-${index + 1}` : base;
+}
+
+function promotionRenderRewards() {
+  const holder = document.getElementById("promoRewardList");
+  if (!holder) return;
+  const campaign = getPromotionCampaign();
+  const coreEditable = promotionState.formMode !== "view" && promotionCanEditCore(campaign);
+  const budgetEditable = promotionState.formMode !== "view" && promotionCanEditRewardBudget(campaign) && promotionState.form.budgetControl === "package";
+  const rewardBudgetLabel = promotionState.form.budgetControl === "campaign" ? "Campaign Budget" : "Package Budget";
+  document.getElementById("promoRewardSectionTitle").textContent = promotionState.form.rewards.length === 1 ? "Reward #1 Configuration" : "Reward Configuration";
+  holder.innerHTML = promotionState.form.rewards.map((item, index) => {
+    const budgetId = promotionRewardControlId("promoRewardBudget", index);
+    const sponsorId = promotionRewardControlId("promoBudgetSponsor", index);
+    const rewardId = promotionRewardControlId("promoRewardId", index);
+    return `<div class="promo-reward-group promo-reward-item" data-reward-index="${index}">
+      <div class="promo-reward-heading"><h2>Reward #${index + 1} Info</h2>${promotionState.form.rewards.length > 1 && coreEditable ? `<button type="button" class="promo-remove-reward" data-remove-reward="${index}">Remove</button>` : ""}</div>
+      <div class="promo-reward-grid">
+        <label class="field asset-field" id="${budgetId}Field"><span>${rewardBudgetLabel}</span><div class="asset-suffix"><input id="${budgetId}" class="promo-reward-budget" data-reward-index="${index}" inputmode="numeric" placeholder="${rewardBudgetLabel}" value="${item.rewardBudget ? money(item.rewardBudget) : ""}" ${budgetEditable ? "" : "disabled"}><b>VND</b></div></label>
+        <label class="field asset-field required"><span>Budget sponsor <span class="help-mark" title="Budget sponsor">?</span></span><select id="${sponsorId}" class="promo-budget-sponsor" data-reward-index="${index}" ${coreEditable ? "" : "disabled"}><option value="">Budget sponsor</option>${["ZaloPay", "Merchant", "Partnership"].map(value => `<option ${item.budgetSponsor === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+        <label class="field asset-field required promo-reward-id-field"><span>Reward ID (only apply for Voucher Discount)</span><select id="${rewardId}" class="promo-reward-id" data-reward-index="${index}" ${coreEditable ? "" : "disabled"}><option value="">Reward ID</option>${Object.values(promotionCatalog.rewards).map(reward => `<option value="${reward.id}" ${item.rewardId === reward.id ? "selected" : ""}>${reward.id} - ${escapeHtml(reward.title)}</option>`).join("")}</select></label>
+        <div class="promo-reward-preview" aria-live="polite">${promotionRewardPreviewMarkup(item.rewardId)}</div>
+      </div>
+    </div>`;
+  }).join("");
+  holder.querySelectorAll(".promo-reward-budget").forEach(input => {
+    input.oninput = event => {
+      const item = promotionState.form.rewards[Number(event.target.dataset.rewardIndex)];
+      const numeric = number(event.target.value);
+      item.rewardBudget = numeric ? String(numeric) : "";
+      event.target.value = item.rewardBudget ? money(item.rewardBudget) : "";
+    };
+  });
+  holder.querySelectorAll(".promo-budget-sponsor").forEach(select => {
+    select.onchange = event => {
+      promotionState.form.rewards[Number(event.target.dataset.rewardIndex)].budgetSponsor = event.target.value;
+      clearFieldError(event.target);
+    };
+  });
+  holder.querySelectorAll(".promo-reward-id").forEach(select => {
+    select.onchange = event => {
+      promotionState.form.rewards[Number(event.target.dataset.rewardIndex)].rewardId = event.target.value;
+      clearFieldError(event.target);
+      event.target.closest(".promo-reward-grid").querySelector(".promo-reward-preview").innerHTML = promotionRewardPreviewMarkup(event.target.value);
+    };
+  });
+  holder.querySelectorAll("[data-remove-reward]").forEach(button => {
+    button.onclick = () => {
+      promotionState.form.rewards.splice(Number(button.dataset.removeReward), 1);
+      promotionRenderRewards();
+      promotionApplyPromotionAccess();
+    };
+  });
+}
+
+function promotionRenderMassCodes() {
+  const tags = document.getElementById("promoCodeTags");
+  const control = document.getElementById("promoMassCodeControl");
+  if (!tags || !control) return;
+  const editable = promotionState.formMode !== "view" && promotionCanEditCore() && promotionState.form.codeType === "Mass Code";
+  tags.innerHTML = promotionState.form.massCodes.map(code => `<span class="tag">${escapeHtml(code)}${editable ? `<button type="button" data-code="${escapeHtml(code)}" aria-label="Remove ${escapeHtml(code)}">×</button>` : ""}</span>`).join("");
+  control.classList.toggle("readonly", !editable);
+  tags.querySelectorAll("button").forEach(button => {
+    button.onclick = () => {
+      promotionState.form.massCodes = promotionState.form.massCodes.filter(code => code !== button.dataset.code);
+      promotionState.form.codeValue = promotionState.form.massCodes.join(", ");
+      promotionState.form.rawCode = promotionState.form.codeValue;
+      promotionRenderMassCodes();
+    };
+  });
 }
 
 function promotionRenderCodeMeta() {
@@ -1396,13 +1486,12 @@ function promotionSyncMktOptions() {
   if (!promotionState.form.mktType) {
     promotionState.form.mktCode = "";
     promotionState.form.allocatedBudget = "";
-    promotionState.form.rewardBudget = "";
+    promotionState.form.rewards.forEach(reward => { reward.rewardBudget = ""; });
     mktName.innerHTML = '<option value="">MKT Name</option>';
     mktName.disabled = true;
     budgetControl.innerHTML = '<option value="">Control budget by campaign</option>';
     budgetControl.disabled = true;
     document.getElementById("promoAllocatedBudget").value = "";
-    document.getElementById("promoRewardBudget").value = "";
     return;
   }
   const selected = promotionCatalog.mkts[promotionState.form.mktType];
@@ -1424,9 +1513,9 @@ function promotionSyncMktOptions() {
   }
   budgetControl.disabled = false;
   budgetControl.value = promotionState.form.budgetControl;
-  if (!promotionState.form.rewardBudget || promotionState.form.budgetControl === "campaign") {
-    promotionState.form.rewardBudget = String(selected.allocatedBudget);
-  }
+  promotionState.form.rewards.forEach(reward => {
+    if (!reward.rewardBudget || promotionState.form.budgetControl === "campaign") reward.rewardBudget = String(selected.allocatedBudget);
+  });
   document.getElementById("promoAllocatedBudget").value = money(promotionState.form.allocatedBudget);
 }
 
@@ -1613,7 +1702,6 @@ function promotionApplyPromotionAccess() {
     document.querySelectorAll(selector).forEach(node => { node.disabled = disabled; });
   };
   const coreEditable = !isView && promotionCanEditCore(campaign);
-  const rewardBudgetEditable = !isView && promotionCanEditRewardBudget(campaign) && promotionState.form.budgetControl === "package";
   const activeEditable = !isView && promotionCanEditActiveTime(campaign);
   const recurringEditable = !isView && promotionCanEditRecurring(campaign);
   const extendOnly = promotionActiveExtendOnly(campaign);
@@ -1621,13 +1709,10 @@ function promotionApplyPromotionAccess() {
   setDisabled("promoMktName", !coreEditable || !promotionState.form.mktType);
   setDisabled("promoBudgetControl", !coreEditable || !promotionState.form.mktType || promotionState.form.mktType === "shared");
   setDisabled("promoAllocatedBudget", true);
-  setDisabled("promoCampaignType", true);
-  setDisabled("promoCodeType", !coreEditable);
+  setDisabled("promoCodeType", !coreEditable || promotionState.form.rewards.length > 1);
+  document.querySelector('#promoCodeType option[value="Unique Code"]').disabled = promotionState.form.rewards.length > 1;
   setDisabled("promoCodeValue", !coreEditable || promotionState.form.codeType !== "Mass Code");
   setDisabled("promoNumberOfCode", !coreEditable || promotionState.form.codeType !== "Unique Code");
-  setDisabled("promoRewardBudget", !rewardBudgetEditable);
-  setDisabled("promoBudgetSponsor", !coreEditable);
-  setDisabled("promoRewardId", !coreEditable);
   setDisabled("promoSegment", isView || !promotionCanEditSegment(campaign));
   setDisabled("promoRiskControl", true);
   setDisabled("promoActiveStart", !activeEditable || extendOnly);
@@ -1643,7 +1728,9 @@ function promotionApplyPromotionAccess() {
   setDisabled("promoThresholdInput", isView || !promotionCanEditBudgetAlert(campaign));
   document.getElementById("promoEmailControl").classList.toggle("readonly", isView || !promotionCanEditBudgetAlert(campaign));
   document.getElementById("promoThresholdControl").classList.toggle("readonly", isView || !promotionCanEditBudgetAlert(campaign));
-  document.getElementById("promoAddReward").disabled = true;
+  document.getElementById("promoAddReward").disabled = !coreEditable;
+  promotionRenderRewards();
+  promotionRenderMassCodes();
   promotionRenderUserTypes();
   promotionRenderAlertTags("email");
   promotionRenderAlertTags("threshold");
@@ -1655,13 +1742,9 @@ function promotionPopulateForm() {
   document.getElementById("promoMktName").value = promotionState.form.mktName;
   document.getElementById("promoBudgetControl").value = promotionState.form.budgetControl;
   document.getElementById("promoAllocatedBudget").value = promotionState.form.allocatedBudget ? money(promotionState.form.allocatedBudget) : "";
-  document.getElementById("promoCampaignType").value = promotionState.form.type;
   document.getElementById("promoCodeType").value = promotionState.form.codeType;
-  document.getElementById("promoCodeValue").value = promotionState.form.codeValue;
+  document.getElementById("promoCodeValue").value = "";
   document.getElementById("promoNumberOfCode").value = promotionState.form.numbersOfCode;
-  document.getElementById("promoRewardBudget").value = promotionState.form.rewardBudget ? money(promotionState.form.rewardBudget) : "";
-  document.getElementById("promoBudgetSponsor").value = promotionState.form.budgetSponsor;
-  document.getElementById("promoRewardId").value = promotionState.form.rewardId;
   document.getElementById("promoSegment").value = promotionState.form.segment;
   document.getElementById("promoRiskControl").value = promotionState.form.riskControl;
   document.getElementById("promoActiveStart").value = promotionState.form.activeStart;
@@ -1673,15 +1756,12 @@ function promotionPopulateForm() {
   document.getElementById("promoStockLimitPeriod").value = promotionState.form.stockLimitPeriod;
   document.getElementById("promoCodeValueField").hidden = promotionState.form.codeType !== "Mass Code";
   document.getElementById("promoNumberOfCodeField").hidden = promotionState.form.codeType !== "Unique Code";
-  const rewardBudgetLabel = promotionState.form.budgetControl === "campaign" ? "Campaign Budget" : "Package Budget";
-  document.getElementById("promoRewardBudgetLabel").textContent = rewardBudgetLabel;
-  document.getElementById("promoRewardBudget").placeholder = rewardBudgetLabel;
   if (promotionState.form.budgetControl === "campaign") {
-    promotionState.form.rewardBudget = promotionState.form.allocatedBudget;
-    document.getElementById("promoRewardBudget").value = promotionState.form.rewardBudget ? money(promotionState.form.rewardBudget) : "";
+    promotionState.form.rewards.forEach(reward => { reward.rewardBudget = promotionState.form.allocatedBudget; });
   }
   promotionRenderCodeMeta();
-  promotionRenderRewardPreview();
+  promotionRenderRewards();
+  promotionRenderMassCodes();
   promotionRenderUserTypes();
   promotionRenderRecurringDetail();
   promotionApplyPromotionAccess();
@@ -1722,38 +1802,39 @@ function promotionBindForm() {
   document.getElementById("promoMktName").addEventListener("change", event => { promotionState.form.mktName = event.target.value; clearFieldError(event.target); });
   document.getElementById("promoBudgetControl").addEventListener("change", event => {
     promotionState.form.budgetControl = event.target.value;
-    if (event.target.value === "campaign") promotionState.form.rewardBudget = promotionState.form.allocatedBudget;
+    if (event.target.value === "campaign") promotionState.form.rewards.forEach(reward => { reward.rewardBudget = promotionState.form.allocatedBudget; });
     promotionPopulateForm();
   });
   document.getElementById("promoCodeType").addEventListener("change", event => {
-    promotionState.form.codeType = event.target.value;
+    promotionState.form.codeType = promotionState.form.rewards.length > 1 ? "Mass Code" : event.target.value;
     promotionPopulateForm();
   });
-  document.getElementById("promoCodeValue").addEventListener("input", event => {
+  const codeInput = document.getElementById("promoCodeValue");
+  codeInput.addEventListener("input", event => {
     const raw = event.target.value.toUpperCase();
     const sanitized = raw.replace(/[^A-Z0-9]/g, "").slice(0, 50);
-    promotionState.form.codeValue = sanitized;
-    promotionState.form.rawCode = sanitized;
     event.target.value = sanitized;
     if (raw !== sanitized) setFieldError(event.target, "Only letters (A-Z) and numbers (0-9) are allowed");
     else clearFieldError(event.target);
+  });
+  codeInput.addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    const code = event.target.value.trim();
+    if (!code) return;
+    if (promotionState.form.massCodes.includes(code)) return toast("Code đã tồn tại.", "error");
+    promotionState.form.massCodes.push(code);
+    promotionState.form.codeValue = promotionState.form.massCodes.join(", ");
+    promotionState.form.rawCode = promotionState.form.codeValue;
+    event.target.value = "";
+    clearFieldError(event.target);
+    promotionRenderMassCodes();
   });
   document.getElementById("promoNumberOfCode").addEventListener("input", event => {
     const numeric = Math.min(number(event.target.value), 1000000);
     promotionState.form.numbersOfCode = numeric ? String(numeric) : "";
     event.target.value = promotionState.form.numbersOfCode;
     if (numeric) clearFieldError(event.target);
-  });
-  document.getElementById("promoRewardBudget").addEventListener("input", event => {
-    const numeric = number(event.target.value);
-    promotionState.form.rewardBudget = numeric ? String(numeric) : "";
-    event.target.value = promotionState.form.rewardBudget ? money(promotionState.form.rewardBudget) : "";
-  });
-  document.getElementById("promoBudgetSponsor").addEventListener("change", event => { promotionState.form.budgetSponsor = event.target.value; clearFieldError(event.target); });
-  document.getElementById("promoRewardId").addEventListener("change", event => {
-    promotionState.form.rewardId = event.target.value;
-    promotionRenderRewardPreview();
-    clearFieldError(event.target);
   });
   document.getElementById("promoSegment").addEventListener("change", event => { promotionState.form.segment = event.target.value; clearFieldError(event.target); });
   document.getElementById("promoActiveStart").addEventListener("change", event => { promotionState.form.activeStart = event.target.value; clearFieldError(event.target); });
@@ -1767,7 +1848,17 @@ function promotionBindForm() {
   document.getElementById("promoMaxApplyPeriod").addEventListener("change", event => { promotionState.form.maxApplyPeriod = event.target.value; });
   document.getElementById("promoStockLimitQty").addEventListener("input", event => { promotionState.form.stockLimitQty = String(number(event.target.value) || ""); });
   document.getElementById("promoStockLimitPeriod").addEventListener("change", event => { promotionState.form.stockLimitPeriod = event.target.value; });
-  document.getElementById("promoAddReward").onclick = () => toast("Phase 1 chỉ hỗ trợ Single Reward.");
+  document.getElementById("promoAddReward").onclick = () => {
+    if (promotionState.formMode === "view" || !promotionCanEditCore()) return;
+    promotionState.form.rewards.push(newPromotionReward({
+      rewardBudget: promotionState.form.budgetControl === "campaign" ? promotionState.form.allocatedBudget : ""
+    }));
+    promotionState.form.codeType = "Mass Code";
+    promotionState.form.numbersOfCode = "";
+    promotionPopulateForm();
+    document.querySelector(`[data-reward-index="${promotionState.form.rewards.length - 1}"]`)?.scrollIntoView({ block: "center" });
+    toast("Đã thêm reward. Code type chuyển sang Mass Code vì Unique Code chưa hỗ trợ multiple reward.");
+  };
   promotionBindAlertInput("promoEmailInput", "email");
   promotionBindAlertInput("promoThresholdInput", "threshold");
 }
@@ -1836,7 +1927,7 @@ function validatePromotionForm() {
   setRequired("promoMktCode", !promotionState.form.mktType, "MKT Code is required");
   setRequired("promoMktName", !promotionState.form.mktName, "MKT Name is required");
   setRequired("promoBudgetControl", !promotionState.form.budgetControl, "Budget Control is required");
-  if (promotionState.form.codeType === "Mass Code") setRequired("promoCodeValue", !promotionState.form.codeValue, "Code Value is required");
+  if (promotionState.form.codeType === "Mass Code") setRequired("promoCodeValue", !promotionState.form.massCodes.length, "At least one code is required");
   if (promotionState.form.codeType === "Unique Code") {
     setRequired("promoNumberOfCode", !number(promotionState.form.numbersOfCode), "Number of code is required");
     if (number(promotionState.form.numbersOfCode) <= 0) {
@@ -1845,21 +1936,31 @@ function validatePromotionForm() {
     }
   }
   if (promotionState.form.budgetControl === "package") {
-    const rewardBudget = number(promotionState.form.rewardBudget);
     const allocatedBudget = number(promotionState.form.allocatedBudget);
-    if (!rewardBudget) {
-      setFieldError(document.getElementById("promoRewardBudget"), "Package Budget is required");
-      valid = false;
-    } else if (rewardBudget > allocatedBudget) {
-      setFieldError(document.getElementById("promoRewardBudget"), "Package Budget cannot exceed Allocated Budget.");
-      valid = false;
-    } else if (rewardBudget < number(promotionState.form.consumedBudget)) {
-      setFieldError(document.getElementById("promoRewardBudget"), "Package Budget cannot be less than consumed budget.");
+    promotionState.form.rewards.forEach((reward, index) => {
+      const rewardBudget = number(reward.rewardBudget);
+      const input = document.getElementById(promotionRewardControlId("promoRewardBudget", index));
+      if (!rewardBudget) {
+        setFieldError(input, "Package Budget is required");
+        valid = false;
+      } else if (rewardBudget > allocatedBudget) {
+        setFieldError(input, "Package Budget cannot exceed Allocated Budget.");
+        valid = false;
+      } else if (rewardBudget < number(reward.consumedBudget)) {
+        setFieldError(input, "Package Budget cannot be less than consumed budget.");
+        valid = false;
+      }
+    });
+    const totalRewardBudget = promotionState.form.rewards.reduce((total, reward) => total + number(reward.rewardBudget), 0);
+    if (totalRewardBudget > allocatedBudget) {
+      setFieldError(document.getElementById("promoRewardBudget"), "Total Package Budget cannot exceed Allocated Budget.");
       valid = false;
     }
   }
-  setRequired("promoBudgetSponsor", !promotionState.form.budgetSponsor, "Budget Sponsor is Required");
-  setRequired("promoRewardId", !promotionState.form.rewardId, "Reward ID is Required");
+  promotionState.form.rewards.forEach((reward, index) => {
+    setRequired(promotionRewardControlId("promoBudgetSponsor", index), !reward.budgetSponsor, `Reward #${index + 1} Budget Sponsor is Required`);
+    setRequired(promotionRewardControlId("promoRewardId", index), !reward.rewardId, `Reward #${index + 1} Reward ID is Required`);
+  });
   setRequired("promoSegment", !promotionState.form.segment, "Segment is required");
   if (!promotionState.form.userTypes.length) {
     setFieldError(document.getElementById("promoUserTypes"), "User Type is required");
@@ -1916,26 +2017,35 @@ function validatePromotionDraft() {
 }
 
 function collectPromotionForm() {
-  const reward = promotionCatalog.rewards[promotionState.form.rewardId];
   const payload = clonePromotionCampaign(promotionState.form);
+  payload.massCodes = payload.codeType === "Mass Code" ? [...payload.massCodes] : [];
+  payload.codeValue = payload.codeType === "Mass Code" ? payload.massCodes.join(", ") : "";
   payload.rawCode = payload.codeType === "Mass Code" ? payload.codeValue : (payload.rawCode || `${payload.mktCode}-UNIQUE`);
   payload.allocatedBudget = String(number(payload.allocatedBudget));
-  payload.rewardBudget = String(number(payload.budgetControl === "campaign" ? payload.allocatedBudget : payload.rewardBudget));
-  payload.consumedBudget = String(number(payload.consumedBudget || 0));
+  payload.rewards = payload.rewards.map(reward => ({
+    ...reward,
+    rewardBudget: String(number(payload.budgetControl === "campaign" ? payload.allocatedBudget : reward.rewardBudget)),
+    consumedBudget: String(number(reward.consumedBudget || 0))
+  }));
+  const firstReward = payload.rewards[0];
+  payload.rewardBudget = firstReward.rewardBudget;
+  payload.consumedBudget = firstReward.consumedBudget;
+  payload.budgetSponsor = firstReward.budgetSponsor;
+  payload.rewardId = payload.rewards.map(reward => reward.rewardId).join(", ");
   payload.exportState = payload.codeType === "Unique Code"
     ? (number(payload.numbersOfCode) > 900000 ? "failed" : number(payload.numbersOfCode) > 500000 ? "processing" : "ready")
     : "ready";
   payload.label ||= "ZPO";
   payload.owner ||= "kiettt8";
-  payload.rewardName = reward?.title || "";
+  payload.rewardName = payload.rewards.map(reward => promotionCatalog.rewards[reward.rewardId]?.title || "").filter(Boolean).join(", ");
   return payload;
 }
 
 function submitPromotionForm(asDraft) {
   if (asDraft ? !validatePromotionDraft() : !validatePromotionForm()) return;
   const payload = collectPromotionForm();
-  const reward = promotionCatalog.rewards[payload.rewardId];
-  const status = asDraft ? "Draft" : reward && reward.approvalCap > 50000 ? "FA Review" : "Auto Approved";
+  const requiresFaReview = payload.rewards.some(item => promotionCatalog.rewards[item.rewardId]?.approvalCap > 50000);
+  const status = asDraft ? "Draft" : requiresFaReview ? "FA Review" : "Auto Approved";
   const id = Math.max(...promotionState.campaigns.map(item => item.id)) + 1;
   promotionState.campaigns.unshift({ ...payload, id, status });
   toast(asDraft ? `Promotion Code ${id} đã Save.` : `Promotion Code ${id}: ${status}.`);
@@ -1977,7 +2087,7 @@ function initPromotionForm(options = {}) {
   promotionState.editingId = options.id || null;
   const campaign = getPromotionCampaign();
   if (promotionState.formMode !== "create" && !campaign) return route("promotion-list");
-  promotionState.form = campaign ? clonePromotionCampaign(campaign) : defaultPromotionForm();
+  promotionState.form = campaign ? promotionNormalizeCampaign(campaign) : defaultPromotionForm();
   document.getElementById("promoFormTitle").textContent = "Basic Information";
   document.getElementById("promoFormStatus").innerHTML = campaign ? `<span class="status ${statusClass(campaign.status)}">${campaign.status}</span>` : "";
   promotionPopulateForm();

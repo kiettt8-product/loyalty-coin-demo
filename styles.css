@@ -180,11 +180,20 @@ body.asset-mode .time-field { grid-column: auto; }
 .promo-code-feedback { display: flex; align-items: center; gap: 12px; }
 .promo-inline-error { color: #9f0712; font-size: 12px; line-height: 16px; }
 .promo-code-button.warning { border-color: #d97706; color: #7a4700; background: #fff7ed; }
+.promo-code-tag-control { height: auto; min-height: 32px; flex-wrap: wrap; align-content: center; }
+.promo-code-tag-control input { flex: 1 1 150px; }
+.promo-code-tag-control.readonly { background: #f3f4f6; }
+#promoCodeValueField { grid-column: span 2; }
 
 .promo-reward-layout { display: grid; gap: 0; }
+.promo-reward-list { display: grid; }
 .promo-reward-group { padding: 0 0 24px; }
 .promo-reward-group + .promo-reward-group,
+.promo-reward-list + .promo-reward-group,
 .promo-bottom-grid { padding-top: 24px; border-top: 1px solid #f0f0f0; }
+.promo-reward-item + .promo-reward-item { padding-top: 24px; border-top: 1px dashed #d9e1eb; }
+.promo-reward-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.promo-remove-reward { min-height: 24px; padding: 0; border: 0; background: transparent; color: var(--danger); }
 .promo-reward-group h2 { margin: 0 0 20px; color: #17365d; font-size: 16px; line-height: 24px; font-weight: 600; }
 .promo-reward-grid { display: grid; grid-template-columns: 365px 365px minmax(365px, 480px); gap: 16px 24px; align-items: start; }
 .promo-reward-grid > .asset-field:nth-child(2) { grid-column: 3; }
@@ -508,6 +517,7 @@ body.asset-mode .time-field { grid-column: auto; }
   .promo-apply-row { grid-template-columns: minmax(0, 1fr); }
   .promo-user-type-field,
   .promo-code-meta,
+  #promoCodeValueField,
   .promo-pill-field,
   .promo-reward-id-field,
   .promo-reward-preview { grid-column: 1; }
