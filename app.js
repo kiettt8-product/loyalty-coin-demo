@@ -183,7 +183,8 @@ function newPromotionReward(source = {}, fallback = {}, ruleSetId = "rule-1") {
     consumedBudget: String(source.consumedBudget || "0"),
     budgetSponsor: source.budgetSponsor || "",
     rewardId: source.rewardId || "",
-    ruleSetId: source.ruleSetId || ruleSetId
+    ruleSetId: source.ruleSetId || ruleSetId,
+    privateRuleSetId: source.privateRuleSetId || ""
   };
 }
 
@@ -196,7 +197,13 @@ function promotionNormalizeCampaign(campaign) {
   normalized.ruleSets = Array.isArray(normalized.ruleSets) && normalized.ruleSets.length
     ? normalized.ruleSets.map((ruleSet, index) => newPromotionRuleSet(ruleSet, normalized, ruleSet.id || `rule-${index + 1}`))
     : sourceRewards.map((reward, index) => newPromotionRuleSet(reward, normalized, `rule-${index + 1}`));
-  normalized.rewards = sourceRewards.map((reward, index) => newPromotionReward(reward, normalized, reward.ruleSetId || normalized.ruleSets[index]?.id || normalized.ruleSets[0].id));
+  normalized.rewards = sourceRewards.map((reward, index) => {
+    const ruleSetId = reward.ruleSetId || normalized.ruleSets[index]?.id || normalized.ruleSets[0].id;
+    const normalizedReward = newPromotionReward(reward, normalized, ruleSetId);
+    if (index && ruleSetId !== normalized.ruleSets[0].id) normalizedReward.privateRuleSetId ||= ruleSetId;
+    return normalizedReward;
+  });
+  normalized.rewards[0].ruleSetId = normalized.ruleSets[0].id;
   return normalized;
 }
 
@@ -1424,6 +1431,12 @@ function promotionRewardControlId(base, index) {
   return index ? `${base}-${index + 1}` : base;
 }
 
+function promotionRuleGroupsMarkup(item, index, permissions) {
+  const { segmentEditable, userTypeEditable, activeEditable, recurringEditable, applyEditable, extendOnly } = permissions;
+  const id = base => promotionRewardControlId(base, index);
+  return `<div class="promo-reward-group"><h2>Display Users</h2><div class="promo-display-grid"><label class="field asset-field required"><span>Segment</span><select id="${id("promoSegment")}" class="promo-segment" data-rule-set-index="${index}" ${segmentEditable ? "" : "disabled"}><option value="">Select Segment</option>${["New User", "Retention", "Merchant Partner", "Campus Segment"].map(value => `<option ${item.segment === value ? "selected" : ""}>${value}</option>`).join("")}</select></label><label class="field asset-field required"><span>Risk Control</span><select disabled><option>${escapeHtml(item.riskControl)}</option></select></label>${promotionUserTypeMarkup(item, index, userTypeEditable)}</div></div><div class="promo-bottom-grid"><div class="promo-reward-group"><h2>Reward Active Time</h2><div class="promo-active-grid"><label class="field asset-field required time-field"><span>Reward active time</span><div class="time-range-control"><div class="asset-control-icon"><input id="${id("promoActiveStart")}" class="promo-active-start" data-rule-set-index="${index}" type="datetime-local" value="${escapeHtml(item.activeStart)}" ${activeEditable && !extendOnly ? "" : "disabled"}><span class="calendar-mark"></span></div><span class="time-range-separator"></span><div class="asset-control-icon"><input id="${id("promoActiveEnd")}" class="promo-active-end" data-rule-set-index="${index}" type="datetime-local" value="${escapeHtml(item.activeEnd)}" ${activeEditable ? "" : "disabled"}><span class="calendar-mark"></span></div></div></label><label class="field asset-field required"><span>Recurring period</span><select id="${id("promoRecurringPeriod")}" class="promo-recurring-period" data-rule-set-index="${index}" ${recurringEditable ? "" : "disabled"}>${promotionCatalog.recurringPeriods.map(value => `<option value="${value}" ${item.recurringPeriod === value ? "selected" : ""}>${value === "Display Continuously" ? "Display continuously" : value}</option>`).join("")}</select></label></div><div class="promo-recurring-detail" data-rule-set-index="${index}">${promotionRecurringDetailMarkup(item, index)}</div></div><div class="promo-reward-group"><h2>Apply Limit</h2><div class="promo-apply-grid"><div class="promo-apply-row"><select disabled><option>Maximum Apply</option></select><select disabled><option>Per user</option></select><input id="${id("promoMaxApplyQty")}" class="promo-max-apply-qty" data-rule-set-index="${index}" inputmode="numeric" placeholder="Input number" value="${escapeHtml(item.maxApplyQty)}" ${applyEditable ? "" : "disabled"}><select class="promo-max-apply-period" data-rule-set-index="${index}" ${applyEditable ? "" : "disabled"}>${promotionCatalog.periodOptions.map(value => `<option ${item.maxApplyPeriod === value ? "selected" : ""}>${value}</option>`).join("")}</select></div><div class="promo-apply-row"><select disabled><option>Stock Limit</option></select><input id="${id("promoStockLimitQty")}" class="promo-stock-limit-qty" data-rule-set-index="${index}" inputmode="numeric" placeholder="Input number" value="${escapeHtml(item.stockLimitQty)}" ${applyEditable ? "" : "disabled"}><select class="promo-stock-limit-period" data-rule-set-index="${index}" ${applyEditable ? "" : "disabled"}>${promotionCatalog.periodOptions.map(value => `<option ${item.stockLimitPeriod === value ? "selected" : ""}>${value}</option>`).join("")}</select></div></div></div></div>`;
+}
+
 function promotionRenderRewards() {
   const holder = document.getElementById("promoRewardList");
   if (!holder) return;
@@ -1431,13 +1444,29 @@ function promotionRenderRewards() {
   const isView = promotionState.formMode === "view";
   const coreEditable = !isView && promotionCanEditCore(campaign);
   const budgetEditable = !isView && promotionCanEditRewardBudget(campaign) && promotionState.form.budgetControl === "package";
+  const permissions = {
+    segmentEditable: !isView && promotionCanEditSegment(campaign),
+    userTypeEditable: !isView && promotionCanEditUserTypes(campaign),
+    activeEditable: !isView && promotionCanEditActiveTime(campaign),
+    recurringEditable: !isView && promotionCanEditRecurring(campaign),
+    applyEditable: !isView && promotionCanEditApplyLimit(campaign),
+    extendOnly: promotionActiveExtendOnly(campaign)
+  };
+  const masterRuleSet = promotionState.form.ruleSets[0];
   const rewardBudgetLabel = promotionState.form.budgetControl === "campaign" ? "Campaign Budget" : "Package Budget";
   holder.innerHTML = promotionState.form.rewards.map((item, index) => {
     const budgetId = promotionRewardControlId("promoRewardBudget", index);
     const sponsorId = promotionRewardControlId("promoBudgetSponsor", index);
     const rewardId = promotionRewardControlId("promoRewardId", index);
+    const isShared = index > 0 && item.ruleSetId === masterRuleSet.id;
+    const ruleSetIndex = index === 0 ? 0 : Math.max(0, promotionState.form.ruleSets.findIndex(ruleSet => ruleSet.id === item.ruleSetId));
+    const activeRuleSet = promotionState.form.ruleSets[ruleSetIndex] || masterRuleSet;
+    const ruleModeField = index ? `<label class="field asset-field required promo-rule-mode-field"><span>Rule configuration</span><select class="promo-rule-mode" data-reward-index="${index}" ${coreEditable ? "" : "disabled"}><option value="shared" ${isShared ? "selected" : ""}>Use same rules as Reward #1</option><option value="separate" ${isShared ? "" : "selected"}>Configure separate rules</option></select></label>` : "";
+    const rules = isShared
+      ? `<div class="promo-shared-rule-note"><strong>Using rules from Reward #1</strong><span>Segment, Risk Control, User Type, Active Time and Apply Limit are shared.</span></div>`
+      : promotionRuleGroupsMarkup(activeRuleSet, ruleSetIndex, permissions);
     return `<section class="asset-form-section promo-reward-config promo-reward-item" data-reward-index="${index}">
-      <h1 class="promo-reward-config-title"><span>Reward #${index + 1} Configuration</span>${promotionState.form.rewards.length > 1 && coreEditable ? `<button type="button" class="promo-remove-reward" data-remove-reward="${index}">Remove</button>` : ""}</h1>
+      <h1 class="promo-reward-config-title"><span>Reward #${index + 1} Configuration</span>${index > 0 && coreEditable ? `<button type="button" class="promo-remove-reward" data-remove-reward="${index}">Remove</button>` : ""}</h1>
       <div class="asset-section-body promo-reward-layout">
         <div class="promo-reward-group">
           <h2>Reward Info</h2>
@@ -1445,10 +1474,11 @@ function promotionRenderRewards() {
             <label class="field asset-field" id="${budgetId}Field"><span>${rewardBudgetLabel}</span><div class="asset-suffix"><input id="${budgetId}" class="promo-reward-budget" data-reward-index="${index}" inputmode="numeric" placeholder="${rewardBudgetLabel}" value="${item.rewardBudget ? money(item.rewardBudget) : ""}" ${budgetEditable ? "" : "disabled"}><b>VND</b></div></label>
             <label class="field asset-field required"><span>Budget sponsor <span class="help-mark" title="Budget sponsor">?</span></span><select id="${sponsorId}" class="promo-budget-sponsor" data-reward-index="${index}" ${coreEditable ? "" : "disabled"}><option value="">Budget sponsor</option>${["ZaloPay", "Merchant", "Partnership"].map(value => `<option ${item.budgetSponsor === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
             <label class="field asset-field required promo-reward-id-field"><span>Reward ID (only apply for Voucher Discount)</span><select id="${rewardId}" class="promo-reward-id" data-reward-index="${index}" ${coreEditable ? "" : "disabled"}><option value="">Reward ID</option>${Object.values(promotionCatalog.rewards).map(reward => `<option value="${reward.id}" ${item.rewardId === reward.id ? "selected" : ""}>${reward.id} - ${escapeHtml(reward.title)}</option>`).join("")}</select></label>
-            <label class="field asset-field required promo-rule-set-field"><span>Rule Set</span><select class="promo-reward-rule-set" data-reward-index="${index}" ${coreEditable ? "" : "disabled"}>${promotionState.form.ruleSets.map(ruleSet => `<option value="${ruleSet.id}" ${item.ruleSetId === ruleSet.id ? "selected" : ""}>${escapeHtml(ruleSet.name)}</option>`).join("")}</select></label>
+            ${ruleModeField}
             <div class="promo-reward-preview" aria-live="polite">${promotionRewardPreviewMarkup(item.rewardId)}</div>
           </div>
         </div>
+        ${rules}
       </div>
     </section>`;
   }).join("");
@@ -1473,37 +1503,39 @@ function promotionRenderRewards() {
       event.target.closest(".promo-reward-grid").querySelector(".promo-reward-preview").innerHTML = promotionRewardPreviewMarkup(event.target.value);
     };
   });
-  holder.querySelectorAll(".promo-reward-rule-set").forEach(select => { select.onchange = event => { promotionState.form.rewards[Number(event.target.dataset.rewardIndex)].ruleSetId = event.target.value; promotionRenderRuleSets(); }; });
+  holder.querySelectorAll(".promo-rule-mode").forEach(select => {
+    select.onchange = event => {
+      const rewardIndex = Number(event.target.dataset.rewardIndex);
+      const reward = promotionState.form.rewards[rewardIndex];
+      if (event.target.value === "shared") {
+        reward.ruleSetId = masterRuleSet.id;
+      } else {
+        let privateRuleSet = promotionState.form.ruleSets.find(ruleSet => ruleSet.id === reward.privateRuleSetId);
+        if (!privateRuleSet) {
+          const id = `rule-${Date.now()}-${rewardIndex + 1}`;
+          privateRuleSet = newPromotionRuleSet({ ...clonePromotionCampaign(masterRuleSet), id, name: `Reward #${rewardIndex + 1} Rules` }, {}, id);
+          promotionState.form.ruleSets.push(privateRuleSet);
+          reward.privateRuleSetId = id;
+        }
+        reward.ruleSetId = privateRuleSet.id;
+      }
+      promotionRenderRewards();
+    };
+  });
   holder.querySelectorAll("[data-remove-reward]").forEach(button => {
     button.onclick = () => {
-      promotionState.form.rewards.splice(Number(button.dataset.removeReward), 1);
-      promotionRenderRewards();
+      const removed = promotionState.form.rewards.splice(Number(button.dataset.removeReward), 1)[0];
+      if (removed.privateRuleSetId && !promotionState.form.rewards.some(reward => reward.ruleSetId === removed.privateRuleSetId || reward.privateRuleSetId === removed.privateRuleSetId)) {
+        promotionState.form.ruleSets = promotionState.form.ruleSets.filter(ruleSet => ruleSet.id !== removed.privateRuleSetId);
+      }
       promotionApplyPromotionAccess();
     };
   });
-}
-
-function promotionRenderRuleSets() {
-  const holder = document.getElementById("promoRuleSetList");
-  if (!holder) return;
-  const campaign = getPromotionCampaign();
-  const isView = promotionState.formMode === "view";
-  const segmentEditable = !isView && promotionCanEditSegment(campaign);
-  const userTypeEditable = !isView && promotionCanEditUserTypes(campaign);
-  const activeEditable = !isView && promotionCanEditActiveTime(campaign);
-  const recurringEditable = !isView && promotionCanEditRecurring(campaign);
-  const applyEditable = !isView && promotionCanEditApplyLimit(campaign);
-  const extendOnly = promotionActiveExtendOnly(campaign);
-  holder.innerHTML = promotionState.form.ruleSets.map((item, index) => {
-    const usedBy = promotionState.form.rewards.map((reward, rewardIndex) => reward.ruleSetId === item.id ? `Reward #${rewardIndex + 1}` : "").filter(Boolean);
-    const id = base => promotionRewardControlId(base, index);
-    return `<section class="asset-form-section promo-rule-set-config" data-rule-set-index="${index}"><h1 class="promo-rule-set-title"><span>${escapeHtml(item.name)} Configuration</span><small>Used by: ${usedBy.join(", ") || "Not assigned"}</small></h1><div class="asset-section-body promo-reward-layout"><div class="promo-reward-group"><h2>Display Users</h2><div class="promo-display-grid"><label class="field asset-field required"><span>Segment</span><select id="${id("promoSegment")}" class="promo-segment" data-rule-set-index="${index}" ${segmentEditable ? "" : "disabled"}><option value="">Select Segment</option>${["New User", "Retention", "Merchant Partner", "Campus Segment"].map(value => `<option ${item.segment === value ? "selected" : ""}>${value}</option>`).join("")}</select></label><label class="field asset-field required"><span>Risk Control</span><select disabled><option>${escapeHtml(item.riskControl)}</option></select></label>${promotionUserTypeMarkup(item, index, userTypeEditable)}</div></div><div class="promo-bottom-grid"><div class="promo-reward-group"><h2>Reward Active Time</h2><div class="promo-active-grid"><label class="field asset-field required time-field"><span>Reward active time</span><div class="time-range-control"><div class="asset-control-icon"><input id="${id("promoActiveStart")}" class="promo-active-start" data-rule-set-index="${index}" type="datetime-local" value="${escapeHtml(item.activeStart)}" ${activeEditable && !extendOnly ? "" : "disabled"}><span class="calendar-mark"></span></div><span class="time-range-separator"></span><div class="asset-control-icon"><input id="${id("promoActiveEnd")}" class="promo-active-end" data-rule-set-index="${index}" type="datetime-local" value="${escapeHtml(item.activeEnd)}" ${activeEditable ? "" : "disabled"}><span class="calendar-mark"></span></div></div></label><label class="field asset-field required"><span>Recurring period</span><select id="${id("promoRecurringPeriod")}" class="promo-recurring-period" data-rule-set-index="${index}" ${recurringEditable ? "" : "disabled"}>${promotionCatalog.recurringPeriods.map(value => `<option value="${value}" ${item.recurringPeriod === value ? "selected" : ""}>${value === "Display Continuously" ? "Display continuously" : value}</option>`).join("")}</select></label></div><div class="promo-recurring-detail" data-rule-set-index="${index}">${promotionRecurringDetailMarkup(item, index)}</div></div><div class="promo-reward-group"><h2>Apply Limit</h2><div class="promo-apply-grid"><div class="promo-apply-row"><select disabled><option>Maximum Apply</option></select><select disabled><option>Per user</option></select><input id="${id("promoMaxApplyQty")}" class="promo-max-apply-qty" data-rule-set-index="${index}" inputmode="numeric" placeholder="Input number" value="${escapeHtml(item.maxApplyQty)}" ${applyEditable ? "" : "disabled"}><select class="promo-max-apply-period" data-rule-set-index="${index}" ${applyEditable ? "" : "disabled"}>${promotionCatalog.periodOptions.map(value => `<option ${item.maxApplyPeriod === value ? "selected" : ""}>${value}</option>`).join("")}</select></div><div class="promo-apply-row"><select disabled><option>Stock Limit</option></select><input id="${id("promoStockLimitQty")}" class="promo-stock-limit-qty" data-rule-set-index="${index}" inputmode="numeric" placeholder="Input number" value="${escapeHtml(item.stockLimitQty)}" ${applyEditable ? "" : "disabled"}><select class="promo-stock-limit-period" data-rule-set-index="${index}" ${applyEditable ? "" : "disabled"}>${promotionCatalog.periodOptions.map(value => `<option ${item.stockLimitPeriod === value ? "selected" : ""}>${value}</option>`).join("")}</select></div></div></div></div></div></section>`;
-  }).join("");
   const bind = (selector, key) => holder.querySelectorAll(selector).forEach(control => { control.oninput = event => { promotionState.form.ruleSets[Number(event.target.dataset.ruleSetIndex)][key] = event.target.value; clearFieldError(event.target); }; });
   bind(".promo-segment", "segment"); bind(".promo-active-start", "activeStart"); bind(".promo-active-end", "activeEnd"); bind(".promo-max-apply-qty", "maxApplyQty"); bind(".promo-max-apply-period", "maxApplyPeriod"); bind(".promo-stock-limit-qty", "stockLimitQty"); bind(".promo-stock-limit-period", "stockLimitPeriod");
-  holder.querySelectorAll(".promo-recurring-period").forEach(select => { select.onchange = event => { promotionState.form.ruleSets[Number(event.target.dataset.ruleSetIndex)].recurringPeriod = event.target.value; promotionRenderRuleSets(); }; });
+  holder.querySelectorAll(".promo-recurring-period").forEach(select => { select.onchange = event => { promotionState.form.ruleSets[Number(event.target.dataset.ruleSetIndex)].recurringPeriod = event.target.value; promotionRenderRewards(); }; });
   promotionBindRewardUserTypes(holder);
-  promotionBindRewardRecurring(holder, recurringEditable);
+  promotionBindRewardRecurring(holder, permissions.recurringEditable);
 }
 
 function promotionRenderMassCodes() {
@@ -1642,7 +1674,7 @@ function promotionBindRewardUserTypes(holder) {
         if (selected.has(option.dataset.value)) selected.delete(option.dataset.value); else selected.add(option.dataset.value);
         selected.add("Normal User");
         promotionState.form.ruleSets[index].userTypes = promotionCatalog.userTypes.filter(value => selected.has(value));
-        promotionRenderRuleSets();
+        promotionRenderRewards();
         const nextSearch = document.getElementById(promotionRewardControlId("promoUserTypeSearch", index));
         nextSearch?.focus();
       };
@@ -1651,7 +1683,7 @@ function promotionBindRewardUserTypes(holder) {
       button.onclick = event => {
         event.stopPropagation();
         promotionState.form.ruleSets[index].userTypes = promotionState.form.ruleSets[index].userTypes.filter(value => value !== button.dataset.removeUserType);
-        promotionRenderRuleSets();
+        promotionRenderRewards();
       };
     });
   });
@@ -1684,7 +1716,7 @@ function promotionBindRewardRecurring(holder, editable) {
     if (!isWeek && !isMonth) return;
     const id = promotionRewardControlId(isWeek ? "promoRecurringWeekDays" : "promoRecurringMonthDays", index);
     const key = isWeek ? "selectedWeekDays" : "selectedMonthDays";
-    promotionRenderChoicePills(id, isWeek ? promotionCatalog.weekDays : promotionCatalog.monthDays, item.recurringConfig[key], { disabled: !editable, onChange: values => { item.recurringConfig[key] = values; promotionRenderRuleSets(); } });
+    promotionRenderChoicePills(id, isWeek ? promotionCatalog.weekDays : promotionCatalog.monthDays, item.recurringConfig[key], { disabled: !editable, onChange: values => { item.recurringConfig[key] = values; promotionRenderRewards(); } });
   });
 }
 
@@ -1724,9 +1756,7 @@ function promotionApplyPromotionAccess() {
   document.getElementById("promoEmailControl").classList.toggle("readonly", isView || !promotionCanEditBudgetAlert(campaign));
   document.getElementById("promoThresholdControl").classList.toggle("readonly", isView || !promotionCanEditBudgetAlert(campaign));
   document.getElementById("promoAddReward").disabled = !coreEditable;
-  document.getElementById("promoAddRuleSet").disabled = !coreEditable;
   promotionRenderRewards();
-  promotionRenderRuleSets();
   promotionRenderMassCodes();
   promotionRenderAlertTags("email");
   promotionRenderAlertTags("threshold");
@@ -1748,7 +1778,6 @@ function promotionPopulateForm() {
   }
   promotionRenderCodeMeta();
   promotionRenderRewards();
-  promotionRenderRuleSets();
   promotionRenderMassCodes();
   promotionApplyPromotionAccess();
 }
@@ -1833,16 +1862,6 @@ function promotionBindForm() {
     promotionPopulateForm();
     document.querySelector(`[data-reward-index="${promotionState.form.rewards.length - 1}"]`)?.scrollIntoView({ block: "center" });
     toast("Đã thêm reward. Code type chuyển sang Mass Code vì Unique Code chưa hỗ trợ multiple reward.");
-  };
-  document.getElementById("promoAddRuleSet").onclick = () => {
-    if (promotionState.formMode === "view" || !promotionCanEditCore()) return;
-    const index = promotionState.form.ruleSets.length;
-    const id = `rule-${Date.now()}`;
-    promotionState.form.ruleSets.push(newPromotionRuleSet({}, {}, id));
-    promotionState.form.ruleSets[index].name = `Rule Set ${String.fromCharCode(65 + index)}`;
-    promotionRenderRewards();
-    promotionRenderRuleSets();
-    document.querySelectorAll(".promo-rule-set-config")[index]?.scrollIntoView({ block: "center" });
   };
   promotionBindAlertInput("promoEmailInput", "email");
   promotionBindAlertInput("promoThresholdInput", "threshold");
@@ -1946,8 +1965,12 @@ function validatePromotionForm() {
     setRequired(promotionRewardControlId("promoBudgetSponsor", index), !reward.budgetSponsor, `Reward #${index + 1} Budget Sponsor is Required`);
     setRequired(promotionRewardControlId("promoRewardId", index), !reward.rewardId, `Reward #${index + 1} Reward ID is Required`);
   });
+  const activeRuleSetIds = new Set(promotionState.form.rewards.map(reward => reward.ruleSetId));
   promotionState.form.ruleSets.forEach((ruleSet, index) => {
-    setRequired(promotionRewardControlId("promoSegment", index), !ruleSet.segment, `${ruleSet.name} Segment is required`);
+    if (!activeRuleSetIds.has(ruleSet.id)) return;
+    const rewardIndex = promotionState.form.rewards.findIndex(reward => reward.ruleSetId === ruleSet.id);
+    const ruleLabel = `Reward #${rewardIndex + 1}`;
+    setRequired(promotionRewardControlId("promoSegment", index), !ruleSet.segment, `${ruleLabel} Segment is required`);
     const userTypeControl = document.getElementById(promotionRewardControlId("promoUserTypes", index));
     if (!ruleSet.userTypes.length || !ruleSet.userTypes.includes("Normal User")) {
       setFieldError(userTypeControl, "Normal User must be selected");
@@ -1956,7 +1979,7 @@ function validatePromotionForm() {
     const activeStart = document.getElementById(promotionRewardControlId("promoActiveStart", index));
     const activeEnd = document.getElementById(promotionRewardControlId("promoActiveEnd", index));
     if (!ruleSet.activeStart || !ruleSet.activeEnd) {
-      setFieldError(activeStart, `${ruleSet.name} Active Time is required`);
+      setFieldError(activeStart, `${ruleLabel} Active Time is required`);
       valid = false;
     } else if (ruleSet.activeStart >= ruleSet.activeEnd) {
       setFieldError(activeStart, "Start time must be earlier than End time");
