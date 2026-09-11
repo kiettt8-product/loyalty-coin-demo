@@ -191,7 +191,16 @@ body.asset-mode .time-field { grid-column: auto; }
 .promo-reward-layout { display: grid; gap: 0; }
 .promo-reward-list { display: grid; }
 .promo-reward-config { margin-bottom: 16px; }
-.promo-reward-config-title .promo-remove-reward { margin-left: auto; }
+.promo-reward-header-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.promo-reward-order-actions { display: inline-flex; align-items: center; gap: 4px; }
+.promo-reward-order-button { width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 1px solid #d1d5dc; border-radius: 3px; background: #fff; color: #364153; }
+.promo-reward-order-button:hover:not(:disabled) { border-color: #99a1af; background: #f9fafb; color: #1447e6; }
+.promo-reward-order-button:focus-visible { outline: 2px solid #165dff; outline-offset: 1px; }
+.promo-reward-order-button:disabled { border-color: #e5e7eb; background: #f3f4f6; color: #b7bdc8; cursor: not-allowed; }
+.promo-reward-order-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.promo-reorder-dialog p { margin: 0 0 12px; color: #364153; font-size: 14px; line-height: 22px; }
+.promo-reorder-dialog .promo-reorder-warning { padding: 10px 12px; border: 1px solid #f2d18a; border-radius: 4px; background: #fff9ef; color: #694100; }
+.promo-reorder-dialog .asset-dialog-actions { margin-top: 18px; }
 .promo-reward-group { padding: 0 0 24px; }
 .promo-reward-group + .promo-reward-group,
 .promo-bottom-grid { padding-top: 24px; border-top: 1px solid #f0f0f0; }

@@ -257,6 +257,7 @@ function defaultPromotionForm() {
 const promotionState = {
   formMode: "create",
   editingId: null,
+  pendingRewardMove: null,
   form: defaultPromotionForm(),
   campaigns: [
     {
@@ -1431,6 +1432,49 @@ function promotionRewardControlId(base, index) {
   return index ? `${base}-${index + 1}` : base;
 }
 
+function promotionMoveReward(index, direction, confirmed = false) {
+  const targetIndex = index + direction;
+  const rewards = promotionState.form.rewards;
+  if (targetIndex < 0 || targetIndex >= rewards.length) return;
+
+  const currentMasterId = promotionState.form.ruleSets[0]?.id;
+  const crossesMasterPosition = index === 0 || targetIndex === 0;
+  const incomingMaster = crossesMasterPosition ? rewards[index === 0 ? targetIndex : index] : null;
+  const changesMasterRule = incomingMaster && incomingMaster.ruleSetId !== currentMasterId;
+  if (changesMasterRule && !confirmed) {
+    promotionState.pendingRewardMove = { index, direction };
+    const dialog = document.getElementById("promoReorderDialog");
+    document.getElementById("promoReorderMessage").textContent = `Move Reward #${index + 1} ${direction < 0 ? "up" : "down"} and update the shared rule source?`;
+    dialog.showModal();
+    return;
+  }
+
+  const previousMasterReward = rewards[0];
+  const sharedFollowers = rewards.filter((reward, rewardIndex) => rewardIndex > 0 && reward.ruleSetId === currentMasterId);
+  [rewards[index], rewards[targetIndex]] = [rewards[targetIndex], rewards[index]];
+
+  const nextMasterId = rewards[0]?.ruleSetId;
+  if (nextMasterId && nextMasterId !== currentMasterId) {
+    const nextMasterIndex = promotionState.form.ruleSets.findIndex(ruleSet => ruleSet.id === nextMasterId);
+    if (nextMasterIndex > 0) {
+      const [nextMaster] = promotionState.form.ruleSets.splice(nextMasterIndex, 1);
+      promotionState.form.ruleSets.unshift(nextMaster);
+    }
+    rewards[0].privateRuleSetId = "";
+    previousMasterReward.ruleSetId = currentMasterId;
+    previousMasterReward.privateRuleSetId = currentMasterId;
+    sharedFollowers.forEach(reward => {
+      if (reward !== rewards[0]) reward.ruleSetId = nextMasterId;
+    });
+  }
+
+  promotionState.pendingRewardMove = null;
+  promotionRenderRewards();
+  const reverseDirection = direction < 0 ? "down" : "up";
+  document.querySelector(`[data-reward-index="${targetIndex}"] [data-move-reward="${reverseDirection}"]`)?.focus();
+  toast(`Đã chuyển Reward #${index + 1} ${direction < 0 ? "lên" : "xuống"}.`);
+}
+
 function promotionRuleGroupsMarkup(item, index, permissions) {
   const { segmentEditable, userTypeEditable, activeEditable, recurringEditable, applyEditable, extendOnly } = permissions;
   const id = base => promotionRewardControlId(base, index);
@@ -1465,8 +1509,14 @@ function promotionRenderRewards() {
     const rules = isShared
       ? `<div class="promo-shared-rule-note"><strong>Using rules from Reward #1</strong><span>Segment, Risk Control, User Type, Active Time and Apply Limit are shared.</span></div>`
       : promotionRuleGroupsMarkup(activeRuleSet, ruleSetIndex, permissions);
+    const reorderActions = coreEditable && promotionState.form.rewards.length > 1
+      ? `<div class="promo-reward-order-actions" aria-label="Reorder Reward #${index + 1}">
+          <button type="button" class="promo-reward-order-button" data-move-reward="up" data-reward-index="${index}" aria-label="Move Reward #${index + 1} up" title="Move up" ${index === 0 ? "disabled" : ""}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 9.5 8 5l4.5 4.5"/></svg></button>
+          <button type="button" class="promo-reward-order-button" data-move-reward="down" data-reward-index="${index}" aria-label="Move Reward #${index + 1} down" title="Move down" ${index === promotionState.form.rewards.length - 1 ? "disabled" : ""}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 6.5 4.5 4.5 4.5-4.5"/></svg></button>
+        </div>`
+      : "";
     return `<section class="asset-form-section promo-reward-config promo-reward-item" data-reward-index="${index}">
-      <h1 class="promo-reward-config-title"><span>Reward #${index + 1} Configuration</span>${index > 0 && coreEditable ? `<button type="button" class="promo-remove-reward" data-remove-reward="${index}">Remove</button>` : ""}</h1>
+      <h1 class="promo-reward-config-title"><span>Reward #${index + 1} Configuration</span><div class="promo-reward-header-actions">${reorderActions}${index > 0 && coreEditable ? `<button type="button" class="promo-remove-reward" data-remove-reward="${index}">Remove</button>` : ""}</div></h1>
       <div class="asset-section-body promo-reward-layout">
         <div class="promo-reward-group">
           <h2>Reward Info</h2>
@@ -1529,6 +1579,12 @@ function promotionRenderRewards() {
         promotionState.form.ruleSets = promotionState.form.ruleSets.filter(ruleSet => ruleSet.id !== removed.privateRuleSetId);
       }
       promotionApplyPromotionAccess();
+    };
+  });
+  holder.querySelectorAll("[data-move-reward]").forEach(button => {
+    button.onclick = () => {
+      const direction = button.dataset.moveReward === "up" ? -1 : 1;
+      promotionMoveReward(Number(button.dataset.rewardIndex), direction);
     };
   });
   const bind = (selector, key) => holder.querySelectorAll(selector).forEach(control => { control.oninput = event => { promotionState.form.ruleSets[Number(event.target.dataset.ruleSetIndex)][key] = event.target.value; clearFieldError(event.target); }; });
@@ -1806,6 +1862,14 @@ function promotionBindAlertInput(id, type) {
 function promotionBindForm() {
   document.addEventListener("click", event => {
     if (!event.target.closest(".promo-user-type-combobox")) promotionCloseAllUserTypeMenus();
+  });
+  const reorderDialog = document.getElementById("promoReorderDialog");
+  reorderDialog.addEventListener("close", () => {
+    const pendingMove = promotionState.pendingRewardMove;
+    promotionState.pendingRewardMove = null;
+    if (reorderDialog.returnValue === "confirm" && pendingMove) {
+      promotionMoveReward(pendingMove.index, pendingMove.direction, true);
+    }
   });
   document.getElementById("promoMktCode").addEventListener("change", event => {
     promotionState.form.mktType = event.target.value;
