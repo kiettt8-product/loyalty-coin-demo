@@ -198,9 +198,6 @@ body.asset-mode .time-field { grid-column: auto; }
 .promo-reward-order-button:focus-visible { outline: 2px solid #165dff; outline-offset: 1px; }
 .promo-reward-order-button:disabled { border-color: #e5e7eb; background: #f3f4f6; color: #b7bdc8; cursor: not-allowed; }
 .promo-reward-order-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.promo-reorder-dialog p { margin: 0 0 12px; color: #364153; font-size: 14px; line-height: 22px; }
-.promo-reorder-dialog .promo-reorder-warning { padding: 10px 12px; border: 1px solid #f2d18a; border-radius: 4px; background: #fff9ef; color: #694100; }
-.promo-reorder-dialog .asset-dialog-actions { margin-top: 18px; }
 .promo-reward-group { padding: 0 0 24px; }
 .promo-reward-group + .promo-reward-group,
 .promo-bottom-grid { padding-top: 24px; border-top: 1px solid #f0f0f0; }
@@ -212,6 +209,11 @@ body.asset-mode .time-field { grid-column: auto; }
 .promo-rule-mode-field { grid-column: 2 / 3; }
 .promo-shared-rule-note { min-height: 40px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 24px; padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 4px; background: #f9fafb; color: #364153; font-size: 13px; }
 .promo-shared-rule-note strong { color: #001f3e; font-weight: 600; }
+.promo-rule-usage { min-height: 32px; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; color: #364153; font-size: 12px; }
+.promo-rule-usage strong { padding: 3px 8px; border-radius: 3px; background: #f0f1f3; color: #101828; font-weight: 500; }
+.promo-rule-usage span { color: #667085; }
+.promo-active-range { display: inline-grid; gap: 2px; white-space: nowrap; }
+.promo-active-range span + span::before { content: "→ "; color: #99a1af; }
 .promo-reward-preview { min-height: 102px; grid-column: 3; align-self: end; }
 .promo-reward-preview:empty { display: none; }
 .promo-preview-card { min-height: 102px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 16px 24px 12px 96px; border: 1px solid #f0f0f0; border-radius: 8px; background: #fff; box-shadow: 0 2px 14px rgba(0,31,62,.08); }

@@ -138,7 +138,22 @@ function promotionCodeDisplay(campaign) {
 }
 
 function promotionListTime(campaign) {
-  return isoToDisplay(campaign.activeEnd || campaign.rewardActiveEnd || campaign.endTime || "");
+  const range = promotionCampaignActiveRange(campaign);
+  if (!range.start && !range.end) return "";
+  return `<span class="promo-active-range" title="${escapeHtml(`${isoToDisplay(range.start)} - ${isoToDisplay(range.end)}`)}"><span>${isoToDisplay(range.start)}</span><span>${isoToDisplay(range.end)}</span></span>`;
+}
+
+function promotionCampaignActiveRange(campaign) {
+  const activeRuleSetIds = new Set((campaign.rewards || []).map(reward => reward.ruleSetId));
+  const ruleSets = (campaign.ruleSets || []).filter(ruleSet => !activeRuleSetIds.size || activeRuleSetIds.has(ruleSet.id));
+  const starts = ruleSets.map(ruleSet => ruleSet.activeStart).filter(Boolean);
+  const ends = ruleSets.map(ruleSet => ruleSet.activeEnd).filter(Boolean);
+  const fallbackStart = campaign.activeStart || campaign.rewardActiveStart || campaign.startTime || "";
+  const fallbackEnd = campaign.activeEnd || campaign.rewardActiveEnd || campaign.endTime || "";
+  return {
+    start: starts.length ? starts.sort()[0] : fallbackStart,
+    end: ends.length ? ends.sort().at(-1) : fallbackEnd
+  };
 }
 
 function clonePromotionCampaign(campaign) {
@@ -200,10 +215,17 @@ function promotionNormalizeCampaign(campaign) {
   normalized.rewards = sourceRewards.map((reward, index) => {
     const ruleSetId = reward.ruleSetId || normalized.ruleSets[index]?.id || normalized.ruleSets[0].id;
     const normalizedReward = newPromotionReward(reward, normalized, ruleSetId);
-    if (index && ruleSetId !== normalized.ruleSets[0].id) normalizedReward.privateRuleSetId ||= ruleSetId;
     return normalizedReward;
   });
-  normalized.rewards[0].ruleSetId = normalized.ruleSets[0].id;
+  const ownedRuleSetIds = new Set(normalized.rewards.map(reward => reward.privateRuleSetId).filter(Boolean));
+  new Set(normalized.rewards.map(reward => reward.ruleSetId)).forEach(ruleSetId => {
+    if (ownedRuleSetIds.has(ruleSetId)) return;
+    const owner = normalized.rewards.find(reward => reward.ruleSetId === ruleSetId);
+    if (owner) {
+      owner.privateRuleSetId = ruleSetId;
+      ownedRuleSetIds.add(ruleSetId);
+    }
+  });
   return normalized;
 }
 
@@ -221,7 +243,7 @@ function defaultPromotionForm() {
     massCodes: [],
     rawCode: "",
     numbersOfCode: "",
-    rewards: [newPromotionReward()],
+    rewards: [newPromotionReward({ privateRuleSetId: "rule-1" })],
     ruleSets: [newPromotionRuleSet()],
     rewardId: "",
     budgetSponsor: "",
@@ -257,7 +279,6 @@ function defaultPromotionForm() {
 const promotionState = {
   formMode: "create",
   editingId: null,
-  pendingRewardMove: null,
   form: defaultPromotionForm(),
   campaigns: [
     {
@@ -1373,12 +1394,14 @@ function initPromotionList() {
     const label = document.getElementById("promoFilterLabel").value;
     const owner = document.getElementById("promoFilterOwner").value;
     renderPromotionRows(promotionState.campaigns.filter(item => {
-      const activeDate = String(item.activeStart || "").slice(0, 10);
+      const activeRange = promotionCampaignActiveRange(item);
+      const activeStart = String(activeRange.start || "").slice(0, 10);
+      const activeEnd = String(activeRange.end || "").slice(0, 10);
       return (!id || String(item.id) === id || String(item.rewardId) === id)
         && (!mkt || item.mktName.toLowerCase().includes(mkt) || item.mktCode.toLowerCase().includes(mkt))
-        && (!code || promotionCodeDisplay(item) === code || String(item.rawCode || "").toUpperCase() === code)
-        && (!from || activeDate >= from)
-        && (!to || activeDate <= to)
+        && (!code || promotionMassCodes(item).includes(code) || promotionCodeDisplay(item) === code || String(item.rawCode || "").toUpperCase() === code)
+        && (!from || activeEnd >= from)
+        && (!to || activeStart <= to)
         && (!statuses.length || statuses.includes(item.status))
         && (!label || item.label === label)
         && (!owner || item.owner === owner);
@@ -1432,43 +1455,32 @@ function promotionRewardControlId(base, index) {
   return index ? `${base}-${index + 1}` : base;
 }
 
-function promotionMoveReward(index, direction, confirmed = false) {
+function promotionRuleOwnerIndex(ruleSetId) {
+  return promotionState.form.rewards.findIndex(reward => reward.privateRuleSetId === ruleSetId);
+}
+
+function promotionRuleFollowers(ruleSetId, ownerIndex) {
+  return promotionState.form.rewards
+    .map((reward, index) => ({ reward, index }))
+    .filter(item => item.index !== ownerIndex && item.reward.ruleSetId === ruleSetId);
+}
+
+function promotionEnsureOwnRuleSet(reward, rewardIndex) {
+  let ownRuleSet = promotionState.form.ruleSets.find(ruleSet => ruleSet.id === reward.privateRuleSetId);
+  if (ownRuleSet) return ownRuleSet;
+  const sourceRuleSet = promotionState.form.ruleSets.find(ruleSet => ruleSet.id === reward.ruleSetId) || promotionState.form.ruleSets[0];
+  const id = `rule-${Date.now()}-${rewardIndex + 1}`;
+  ownRuleSet = newPromotionRuleSet({ ...clonePromotionCampaign(sourceRuleSet), id, name: `Reward #${rewardIndex + 1} Rules` }, {}, id);
+  promotionState.form.ruleSets.push(ownRuleSet);
+  reward.privateRuleSetId = id;
+  return ownRuleSet;
+}
+
+function promotionMoveReward(index, direction) {
   const targetIndex = index + direction;
   const rewards = promotionState.form.rewards;
   if (targetIndex < 0 || targetIndex >= rewards.length) return;
-
-  const currentMasterId = promotionState.form.ruleSets[0]?.id;
-  const crossesMasterPosition = index === 0 || targetIndex === 0;
-  const incomingMaster = crossesMasterPosition ? rewards[index === 0 ? targetIndex : index] : null;
-  const changesMasterRule = incomingMaster && incomingMaster.ruleSetId !== currentMasterId;
-  if (changesMasterRule && !confirmed) {
-    promotionState.pendingRewardMove = { index, direction };
-    const dialog = document.getElementById("promoReorderDialog");
-    document.getElementById("promoReorderMessage").textContent = `Move Reward #${index + 1} ${direction < 0 ? "up" : "down"} and update the shared rule source?`;
-    dialog.showModal();
-    return;
-  }
-
-  const previousMasterReward = rewards[0];
-  const sharedFollowers = rewards.filter((reward, rewardIndex) => rewardIndex > 0 && reward.ruleSetId === currentMasterId);
   [rewards[index], rewards[targetIndex]] = [rewards[targetIndex], rewards[index]];
-
-  const nextMasterId = rewards[0]?.ruleSetId;
-  if (nextMasterId && nextMasterId !== currentMasterId) {
-    const nextMasterIndex = promotionState.form.ruleSets.findIndex(ruleSet => ruleSet.id === nextMasterId);
-    if (nextMasterIndex > 0) {
-      const [nextMaster] = promotionState.form.ruleSets.splice(nextMasterIndex, 1);
-      promotionState.form.ruleSets.unshift(nextMaster);
-    }
-    rewards[0].privateRuleSetId = "";
-    previousMasterReward.ruleSetId = currentMasterId;
-    previousMasterReward.privateRuleSetId = currentMasterId;
-    sharedFollowers.forEach(reward => {
-      if (reward !== rewards[0]) reward.ruleSetId = nextMasterId;
-    });
-  }
-
-  promotionState.pendingRewardMove = null;
   promotionRenderRewards();
   const reverseDirection = direction < 0 ? "down" : "up";
   document.querySelector(`[data-reward-index="${targetIndex}"] [data-move-reward="${reverseDirection}"]`)?.focus();
@@ -1496,19 +1508,27 @@ function promotionRenderRewards() {
     applyEditable: !isView && promotionCanEditApplyLimit(campaign),
     extendOnly: promotionActiveExtendOnly(campaign)
   };
-  const masterRuleSet = promotionState.form.ruleSets[0];
   const rewardBudgetLabel = promotionState.form.budgetControl === "campaign" ? "Campaign Budget" : "Package Budget";
   holder.innerHTML = promotionState.form.rewards.map((item, index) => {
     const budgetId = promotionRewardControlId("promoRewardBudget", index);
     const sponsorId = promotionRewardControlId("promoBudgetSponsor", index);
     const rewardId = promotionRewardControlId("promoRewardId", index);
-    const isShared = index > 0 && item.ruleSetId === masterRuleSet.id;
-    const ruleSetIndex = index === 0 ? 0 : Math.max(0, promotionState.form.ruleSets.findIndex(ruleSet => ruleSet.id === item.ruleSetId));
-    const activeRuleSet = promotionState.form.ruleSets[ruleSetIndex] || masterRuleSet;
-    const ruleModeField = index ? `<label class="field asset-field required promo-rule-mode-field"><span>Rule configuration</span><select class="promo-rule-mode" data-reward-index="${index}" ${coreEditable ? "" : "disabled"}><option value="shared" ${isShared ? "selected" : ""}>Use same rules as Reward #1</option><option value="separate" ${isShared ? "" : "selected"}>Configure separate rules</option></select></label>` : "";
-    const rules = isShared
-      ? `<div class="promo-shared-rule-note"><strong>Using rules from Reward #1</strong><span>Segment, Risk Control, User Type, Active Time and Apply Limit are shared.</span></div>`
-      : promotionRuleGroupsMarkup(activeRuleSet, ruleSetIndex, permissions);
+    const ownsActiveRuleSet = item.privateRuleSetId && item.ruleSetId === item.privateRuleSetId;
+    const ruleSetIndex = Math.max(0, promotionState.form.ruleSets.findIndex(ruleSet => ruleSet.id === item.ruleSetId));
+    const activeRuleSet = promotionState.form.ruleSets[ruleSetIndex] || promotionState.form.ruleSets[0];
+    const ownerIndex = promotionRuleOwnerIndex(item.ruleSetId);
+    const sourceOptions = promotionState.form.rewards.map((reward, sourceIndex) => {
+      const isActiveOwner = reward.privateRuleSetId && reward.ruleSetId === reward.privateRuleSetId;
+      if (sourceIndex === index || !isActiveOwner) return "";
+      return `<option value="${escapeHtml(reward.privateRuleSetId)}" ${item.ruleSetId === reward.privateRuleSetId ? "selected" : ""}>Use same rules as Reward #${sourceIndex + 1}</option>`;
+    }).join("");
+    const ruleModeField = promotionState.form.rewards.length > 1
+      ? `<label class="field asset-field required promo-rule-mode-field"><span>Rule configuration</span><select class="promo-rule-mode" data-reward-index="${index}" ${coreEditable ? "" : "disabled"}><option value="own" ${ownsActiveRuleSet ? "selected" : ""}>Configure separate rules</option>${sourceOptions}</select></label>`
+      : "";
+    const followerCount = ownsActiveRuleSet ? promotionRuleFollowers(item.ruleSetId, index).length : 0;
+    const rules = ownsActiveRuleSet
+      ? `${followerCount ? `<div class="promo-rule-usage"><strong>${escapeHtml(activeRuleSet.name)}</strong><span>Used by ${followerCount + 1} rewards</span></div>` : ""}${promotionRuleGroupsMarkup(activeRuleSet, ruleSetIndex, permissions)}`
+      : `<div class="promo-shared-rule-note"><strong>Using rules from Reward #${ownerIndex + 1}</strong><span>Segment, Risk Control, User Type, Active Time, Apply Limit and Stock Limit are shared.</span></div>`;
     const reorderActions = coreEditable && promotionState.form.rewards.length > 1
       ? `<div class="promo-reward-order-actions" aria-label="Reorder Reward #${index + 1}">
           <button type="button" class="promo-reward-order-button" data-move-reward="up" data-reward-index="${index}" aria-label="Move Reward #${index + 1} up" title="Move up" ${index === 0 ? "disabled" : ""}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 9.5 8 5l4.5 4.5"/></svg></button>
@@ -1557,24 +1577,30 @@ function promotionRenderRewards() {
     select.onchange = event => {
       const rewardIndex = Number(event.target.dataset.rewardIndex);
       const reward = promotionState.form.rewards[rewardIndex];
-      if (event.target.value === "shared") {
-        reward.ruleSetId = masterRuleSet.id;
+      const followers = promotionRuleFollowers(reward.privateRuleSetId, rewardIndex);
+      if (event.target.value !== "own" && followers.length) {
+        event.target.value = "own";
+        toast(`Cannot change Reward #${rewardIndex + 1} rule source because Reward #${followers.map(item => item.index + 1).join(", #")} use its rules.`, "error");
+        return;
+      }
+      if (event.target.value === "own") {
+        reward.ruleSetId = promotionEnsureOwnRuleSet(reward, rewardIndex).id;
       } else {
-        let privateRuleSet = promotionState.form.ruleSets.find(ruleSet => ruleSet.id === reward.privateRuleSetId);
-        if (!privateRuleSet) {
-          const id = `rule-${Date.now()}-${rewardIndex + 1}`;
-          privateRuleSet = newPromotionRuleSet({ ...clonePromotionCampaign(masterRuleSet), id, name: `Reward #${rewardIndex + 1} Rules` }, {}, id);
-          promotionState.form.ruleSets.push(privateRuleSet);
-          reward.privateRuleSetId = id;
-        }
-        reward.ruleSetId = privateRuleSet.id;
+        reward.ruleSetId = event.target.value;
       }
       promotionRenderRewards();
     };
   });
   holder.querySelectorAll("[data-remove-reward]").forEach(button => {
     button.onclick = () => {
-      const removed = promotionState.form.rewards.splice(Number(button.dataset.removeReward), 1)[0];
+      const rewardIndex = Number(button.dataset.removeReward);
+      const reward = promotionState.form.rewards[rewardIndex];
+      const followers = promotionRuleFollowers(reward.privateRuleSetId, rewardIndex);
+      if (followers.length) {
+        toast(`Cannot remove Reward #${rewardIndex + 1} because Reward #${followers.map(item => item.index + 1).join(", #")} use its rules.`, "error");
+        return;
+      }
+      const removed = promotionState.form.rewards.splice(rewardIndex, 1)[0];
       if (removed.privateRuleSetId && !promotionState.form.rewards.some(reward => reward.ruleSetId === removed.privateRuleSetId || reward.privateRuleSetId === removed.privateRuleSetId)) {
         promotionState.form.ruleSets = promotionState.form.ruleSets.filter(ruleSet => ruleSet.id !== removed.privateRuleSetId);
       }
@@ -1863,14 +1889,6 @@ function promotionBindForm() {
   document.addEventListener("click", event => {
     if (!event.target.closest(".promo-user-type-combobox")) promotionCloseAllUserTypeMenus();
   });
-  const reorderDialog = document.getElementById("promoReorderDialog");
-  reorderDialog.addEventListener("close", () => {
-    const pendingMove = promotionState.pendingRewardMove;
-    promotionState.pendingRewardMove = null;
-    if (reorderDialog.returnValue === "confirm" && pendingMove) {
-      promotionMoveReward(pendingMove.index, pendingMove.direction, true);
-    }
-  });
   document.getElementById("promoMktCode").addEventListener("change", event => {
     promotionState.form.mktType = event.target.value;
     promotionState.form.mktName = "";
@@ -1983,6 +2001,29 @@ function promotionValidateRecurring(reward, index) {
   return true;
 }
 
+function promotionMassCodes(campaign) {
+  if (campaign.codeType !== "Mass Code") return [];
+  if (Array.isArray(campaign.massCodes) && campaign.massCodes.length) return campaign.massCodes.map(code => code.toUpperCase());
+  return String(campaign.codeValue || campaign.rawCode || "").split(",").map(code => code.trim().toUpperCase()).filter(Boolean);
+}
+
+function promotionExtendedCodeConflict() {
+  const campaign = getPromotionCampaign();
+  if (!campaign || !promotionActiveExtendOnly(campaign) || promotionState.form.codeType !== "Mass Code") return null;
+  const originalRange = promotionCampaignActiveRange(campaign);
+  const nextRange = promotionCampaignActiveRange(promotionState.form);
+  if (!originalRange.end || !nextRange.end || nextRange.end <= originalRange.end) return null;
+  const codes = new Set(promotionMassCodes(promotionState.form));
+  return promotionState.campaigns.find(other => {
+    if (other.id === campaign.id || other.codeType !== "Mass Code") return false;
+    const duplicatedCode = promotionMassCodes(other).find(code => codes.has(code));
+    if (!duplicatedCode) return false;
+    const otherRange = promotionCampaignActiveRange(other);
+    const overlaps = nextRange.start <= otherRange.end && nextRange.end >= otherRange.start;
+    return overlaps;
+  }) || null;
+}
+
 function validatePromotionForm() {
   resetValidation();
   let valid = true;
@@ -2074,6 +2115,13 @@ function validatePromotionForm() {
       }
     }
   });
+  const codeConflict = promotionExtendedCodeConflict();
+  if (codeConflict) {
+    const duplicatedCode = promotionMassCodes(codeConflict).find(code => promotionMassCodes(promotionState.form).includes(code));
+    const firstActiveEnd = document.querySelector(".promo-active-end:not(:disabled)");
+    setFieldError(firstActiveEnd, `Code ${duplicatedCode} is already used in the extended time range.`);
+    valid = false;
+  }
   if (!valid) {
     toast("Promotion Code chưa hợp lệ.", "error");
     focusFirstInvalid();
@@ -2106,7 +2154,7 @@ function collectPromotionForm() {
   payload.consumedBudget = firstReward.consumedBudget;
   payload.budgetSponsor = firstReward.budgetSponsor;
   payload.rewardId = payload.rewards.map(reward => reward.rewardId).join(", ");
-  const firstRuleSet = payload.ruleSets[0];
+  const firstRuleSet = payload.ruleSets.find(ruleSet => ruleSet.id === firstReward.ruleSetId) || payload.ruleSets[0];
   payload.segment = firstRuleSet.segment;
   payload.riskControl = firstRuleSet.riskControl;
   payload.userTypes = [...firstRuleSet.userTypes];
