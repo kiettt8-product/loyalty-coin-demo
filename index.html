@@ -34,7 +34,11 @@
       </div>
       <button class="nav-parent" aria-expanded="false"><img class="nav-icon" src="assets/nav-inventory.svg" alt="">Inventory Management<span>⌄</span></button>
       <button class="nav-parent" aria-expanded="false"><img class="nav-icon" src="assets/nav-budget.svg" alt="">Budget Management<span>⌄</span></button>
-      <button class="nav-parent nav-parent-no-icon" aria-expanded="false">Others<span>⌄</span></button>
+      <button class="nav-parent nav-parent-no-icon" data-nav-target="othersMenu" aria-expanded="false">Others<span>⌄</span></button>
+      <div class="nav-sub other-menu" id="othersMenu" hidden>
+        <button data-route="ai-banner">AI Generate Banner</button>
+        <button data-route="coin-direct-discount">Coin to Direct Discount</button>
+      </div>
     </nav>
   </aside>
 
@@ -360,6 +364,70 @@
         <button type="submit" class="asset-btn primary">Save &amp; Submit</button>
       </div>
     </form>
+  </template>
+
+  <template id="aiBannerTemplate">
+    <div class="screen other-screen">
+      <section class="other-section">
+        <h1>AI Generate Banner</h1>
+        <div class="other-empty" aria-label="AI Generate Banner has no content yet"></div>
+      </section>
+    </div>
+  </template>
+
+  <template id="coinDirectDiscountTemplate">
+    <div class="screen other-screen coin-discount-screen">
+      <div class="coin-discount-toolbar">
+        <div>
+          <h1>Coin to Direct Discount</h1>
+          <p>Monitor the shared budget and configure how coins are converted at checkout.</p>
+        </div>
+        <button type="button" class="asset-btn secondary" id="toggleCoinDiscountConfig" aria-expanded="true" aria-controls="coinDiscountConfig">Hide future configuration</button>
+      </div>
+
+      <section class="budget-summary" aria-label="Budget summary">
+        <article class="budget-summary-card">
+          <span>Total Budget</span>
+          <strong>2,500,000,000 <small>VND</small></strong>
+        </article>
+        <article class="budget-summary-card spent">
+          <span>Spent Budget</span>
+          <strong>1,680,000,000 <small>VND</small></strong>
+          <small>67.2% of total budget</small>
+        </article>
+        <article class="budget-summary-card remaining">
+          <span>Remaining Budget</span>
+          <strong>820,000,000 <small>VND</small></strong>
+          <small>32.8% available</small>
+        </article>
+      </section>
+
+      <div id="coinDiscountConfig">
+        <section class="other-section coin-rate-section">
+          <h1>Conversion Rate</h1>
+          <div class="other-section-body coin-rate-grid">
+            <label class="field asset-field required"><span>Coin amount</span><input id="coinAmount" type="number" min="1" value="1" inputmode="numeric"></label>
+            <label class="field asset-field required"><span>Discount value</span><div class="asset-suffix"><input id="discountValue" type="text" value="100" inputmode="numeric"><b>VND</b></div></label>
+            <div class="conversion-preview" aria-live="polite"><span>Current conversion</span><strong id="conversionPreview">1 coin = 100 VND</strong></div>
+          </div>
+        </section>
+
+        <section class="other-section app-id-section">
+          <div class="other-section-heading">
+            <div><h1>App ID Management</h1><p>Choose which applications can use coin as a direct discount.</p></div>
+            <button type="button" class="asset-btn primary" id="addAppId"><span class="plus-mark" aria-hidden="true"></span>Add App ID</button>
+          </div>
+          <div class="app-id-table-wrap">
+            <table class="app-id-table">
+              <thead><tr><th>App ID</th><th>Application name</th><th>Status</th><th>Updated by</th><th>Action</th></tr></thead>
+              <tbody id="appIdRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="other-form-actions"><button type="button" class="asset-btn primary" id="saveCoinDiscountConfig">Save changes</button></div>
+      </div>
+    </div>
   </template>
 
   <script src="app.js"></script>

@@ -358,6 +358,74 @@ body.asset-mode .time-field { grid-column: auto; }
 .asset-icon-button.stop img { width: 20px; height: 20px; }
 .asset-pagination { height: 40px; display: flex; justify-content: flex-end; align-items: center; gap: 12px; color: #001f3e; font-variant-numeric: tabular-nums; }
 .asset-pagination > span:first-child { margin-right: 4px; }
+
+/* Others — Coin to Direct Discount */
+.other-screen { max-width: 1688px; padding: 24px; color: #001f3e; }
+.other-section { margin-bottom: 16px; overflow: hidden; border: 1px solid #f0f0f0; border-radius: 4px; background: #fff; }
+.other-section > h1,
+.other-section-heading { min-height: 56px; display: flex; align-items: center; margin: 0; padding: 0 24px; border-bottom: 1px solid #f0f0f0; background: #f9fafb; }
+.other-section > h1,
+.other-section-heading h1 { margin: 0; color: #001f3e; font-size: 16px; line-height: 24px; font-weight: 600; }
+.other-empty { min-height: 320px; background: #fff; }
+
+.coin-discount-toolbar { min-height: 72px; display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 16px; padding: 16px 24px; border-radius: 4px; background: #fff; }
+.coin-discount-toolbar h1 { margin: 0 0 4px; color: #001f3e; font-size: 18px; line-height: 24px; font-weight: 600; }
+.coin-discount-toolbar p,
+.other-section-heading p { margin: 0; color: #66798b; font-size: 13px; line-height: 20px; }
+.coin-discount-toolbar .asset-btn { flex: 0 0 auto; margin-top: 4px; }
+
+.budget-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.budget-summary-card { min-height: 128px; display: flex; flex-direction: column; justify-content: center; padding: 20px 24px; border: 1px solid #e5e7eb; border-radius: 4px; background: #fff; }
+.budget-summary-card > span { margin-bottom: 12px; color: #66798b; font-size: 13px; line-height: 18px; }
+.budget-summary-card strong { color: #001f3e; font-size: 24px; line-height: 32px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.budget-summary-card strong small { color: #66798b; font-size: 13px; font-weight: 500; }
+.budget-summary-card > small { margin-top: 5px; color: #66798b; font-size: 12px; }
+.budget-summary-card.spent { border-color: #ffd8a8; background: #fffaf3; }
+.budget-summary-card.remaining { border-color: #bde8ce; background: #f4fbf7; }
+
+#coinDiscountConfig[hidden] { display: none; }
+.other-section-body { padding: 24px; }
+.coin-rate-grid { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr) minmax(280px, 1.5fr); gap: 24px; align-items: end; }
+.conversion-preview { min-height: 57px; display: flex; flex-direction: column; justify-content: center; padding: 8px 16px; border: 1px solid #dbe7ff; border-radius: 4px; background: #f5f8ff; }
+.conversion-preview span { color: #66798b; font-size: 12px; line-height: 18px; }
+.conversion-preview strong { color: #0033c9; font-size: 14px; line-height: 22px; font-weight: 600; }
+.other-section-heading { justify-content: space-between; gap: 24px; }
+.other-section-heading > div { min-width: 0; }
+.app-id-table-wrap { overflow-x: auto; padding: 0 24px 16px; }
+.app-id-table { min-width: 850px; }
+.app-id-table th { height: 44px; }
+.app-id-table td { height: 56px; }
+.app-id-table th:nth-child(1) { width: 24%; }
+.app-id-table th:nth-child(2) { width: 32%; }
+.app-id-table th:nth-child(3) { width: 14%; }
+.app-id-table th:nth-child(4) { width: 18%; }
+.app-id-table th:nth-child(5) { width: 12%; }
+.app-id-table input { max-width: 320px; }
+.app-id-input { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; }
+.app-status { min-width: 70px; height: 24px; padding: 0 8px; border: 0; border-radius: 4px; font-size: 12px; }
+.app-status.active { background: #dcfce7; color: #016630; }
+.app-status.inactive { background: #f0f1f3; color: #667085; }
+.app-status:focus-visible,
+.text-button:focus-visible { outline: 2px solid #165dff; outline-offset: 2px; }
+.text-button { padding: 0; border: 0; background: transparent; color: #1447e6; font-size: 13px; }
+.text-button.danger { color: #e3173c; }
+.other-form-actions { display: flex; justify-content: flex-end; padding-bottom: 24px; }
+
+@media (max-width: 1000px) {
+  .budget-summary { grid-template-columns: 1fr; }
+  .budget-summary-card { min-height: 112px; }
+  .coin-rate-grid { grid-template-columns: 1fr 1fr; }
+  .conversion-preview { grid-column: 1 / -1; }
+}
+
+@media (max-width: 600px) {
+  .other-screen { padding: 16px; }
+  .coin-discount-toolbar { align-items: stretch; flex-direction: column; }
+  .coin-discount-toolbar .asset-btn { align-self: flex-start; }
+  .coin-rate-grid { grid-template-columns: 1fr; }
+  .conversion-preview { grid-column: auto; }
+  .other-section-heading { align-items: flex-start; flex-direction: column; padding-block: 14px; }
+}
 .asset-pagination button { min-width: 32px; height: 32px; padding: 0 8px; border: 0; border-radius: 4px; background: #fff; color: #0033c9; }
 .asset-pagination button.active { border: 1px solid #0033c9; }
 .asset-pagination select { width: 100px; margin-left: 8px; }

@@ -596,7 +596,17 @@ const templates = {
   "asset-massive": document.getElementById("assetMassiveTemplate"),
   "asset-coin-create": document.getElementById("formTemplate"),
   "promotion-list": document.getElementById("promotionListTemplate"),
-  "promotion-form": document.getElementById("promotionFormTemplate")
+  "promotion-form": document.getElementById("promotionFormTemplate"),
+  "ai-banner": document.getElementById("aiBannerTemplate"),
+  "coin-direct-discount": document.getElementById("coinDirectDiscountTemplate")
+};
+
+const coinDiscountState = {
+  appIds: [
+    { id: "ZLP_MAIN", name: "Zalopay", active: true, owner: "kiettt8" },
+    { id: "ZLP_CHECKOUT", name: "Zalopay Checkout", active: true, owner: "product_ops" },
+    { id: "MERCHANT_HUB", name: "Merchant Hub", active: false, owner: "kiettt8" }
+  ]
 };
 
 function toast(message, type = "") {
@@ -660,6 +670,13 @@ function route(name, payload = {}) {
   if (name === "asset-coin-create") initForm({ mode: "create", returnRoute: "asset-list" });
   if (name === "promotion-list") initPromotionList();
   if (name === "promotion-form") initPromotionForm(payload);
+  if (name === "ai-banner" || name === "coin-direct-discount") {
+    const otherMenu = document.getElementById("othersMenu");
+    const otherParent = document.querySelector('[data-nav-target="othersMenu"]');
+    otherMenu.hidden = false;
+    otherParent.setAttribute("aria-expanded", "true");
+  }
+  if (name === "coin-direct-discount") initCoinDirectDiscount();
   document.getElementById("sidebar").classList.remove("open");
   main.focus();
 }
@@ -2227,6 +2244,73 @@ function initPromotionForm(options = {}) {
   promotionPopulateForm();
   promotionBindForm();
   renderPromotionFormActions();
+}
+
+function renderCoinDiscountAppIds() {
+  const rows = document.getElementById("appIdRows");
+  rows.innerHTML = coinDiscountState.appIds.map((app, index) => `
+    <tr>
+      <td><input class="app-id-input" data-app-field="id" data-app-index="${index}" aria-label="App ID ${index + 1}" value="${escapeHtml(app.id)}"></td>
+      <td><input data-app-field="name" data-app-index="${index}" aria-label="Application name ${index + 1}" value="${escapeHtml(app.name)}"></td>
+      <td><button type="button" class="app-status ${app.active ? "active" : "inactive"}" data-app-toggle="${index}" aria-pressed="${app.active}">${app.active ? "Active" : "Inactive"}</button></td>
+      <td>${escapeHtml(app.owner)}</td>
+      <td><button type="button" class="text-button danger" data-app-remove="${index}" aria-label="Remove ${escapeHtml(app.id || `App ID ${index + 1}`)}">Remove</button></td>
+    </tr>
+  `).join("");
+
+  rows.querySelectorAll("[data-app-field]").forEach(input => input.oninput = () => {
+    coinDiscountState.appIds[Number(input.dataset.appIndex)][input.dataset.appField] = input.value;
+  });
+  rows.querySelectorAll("[data-app-toggle]").forEach(button => button.onclick = () => {
+    const app = coinDiscountState.appIds[Number(button.dataset.appToggle)];
+    app.active = !app.active;
+    renderCoinDiscountAppIds();
+  });
+  rows.querySelectorAll("[data-app-remove]").forEach(button => button.onclick = () => {
+    coinDiscountState.appIds.splice(Number(button.dataset.appRemove), 1);
+    renderCoinDiscountAppIds();
+  });
+}
+
+function initCoinDirectDiscount() {
+  const coinInput = document.getElementById("coinAmount");
+  const discountInput = document.getElementById("discountValue");
+  const preview = document.getElementById("conversionPreview");
+  const config = document.getElementById("coinDiscountConfig");
+  const toggle = document.getElementById("toggleCoinDiscountConfig");
+  const updatePreview = () => {
+    const coinAmount = Math.max(number(coinInput.value), 1);
+    const discountValue = number(discountInput.value);
+    discountInput.value = discountValue ? money(discountValue) : "";
+    preview.textContent = `${money(coinAmount)} coin${coinAmount === 1 ? "" : "s"} = ${money(discountValue)} VND`;
+  };
+
+  coinInput.oninput = updatePreview;
+  discountInput.oninput = updatePreview;
+  discountInput.onblur = updatePreview;
+  toggle.onclick = () => {
+    const willHide = !config.hidden;
+    config.hidden = willHide;
+    toggle.setAttribute("aria-expanded", String(!willHide));
+    toggle.textContent = willHide ? "Show future configuration" : "Hide future configuration";
+  };
+  document.getElementById("addAppId").onclick = () => {
+    coinDiscountState.appIds.push({ id: "", name: "", active: true, owner: "kiettt8" });
+    renderCoinDiscountAppIds();
+    document.querySelector("#appIdRows tr:last-child input")?.focus();
+  };
+  document.getElementById("saveCoinDiscountConfig").onclick = () => {
+    const invalidInput = Array.from(document.querySelectorAll("#appIdRows input")).find(input => !input.value.trim());
+    if (invalidInput || !number(discountInput.value)) {
+      (invalidInput || discountInput).focus();
+      toast("Please complete the conversion rate and App ID information.", "error");
+      return;
+    }
+    updatePreview();
+    toast("Coin to Direct Discount configuration saved.");
+  };
+  updatePreview();
+  renderCoinDiscountAppIds();
 }
 
 document.querySelectorAll("[data-route]").forEach(button => button.onclick = () => route(button.dataset.route));

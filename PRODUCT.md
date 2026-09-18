@@ -10,9 +10,11 @@ Business, Operations, FA và Product Ops sử dụng CRM nội bộ để config
 
 ## Product Purpose
 
-Demo đúng flow Loyalty Coin Campaign trong buổi grooming: tạo campaign, config budget/package, submit approval, generate Package ID và gắn Package ID vào Trigger Based Campaign.
+Demo đúng flow Loyalty Coin Campaign trong buổi grooming: tạo campaign, config budget/package, submit approval, generate Package ID, gắn Package ID vào Trigger Based Campaign và trình bày hướng phát triển Coin to Direct Discount.
 
 Loyalty Coin Campaign không có menu riêng. Entry point nằm tại `Promo Asset Campaign` → `Add new` → `Distribute coin based on action trigger`.
+
+Coin to Direct Discount nằm tại `Others` → `Coin to Direct Discount`, gồm budget overview và future configuration có thể ẩn/hiện khi demo.
 
 ## Brand Personality
 

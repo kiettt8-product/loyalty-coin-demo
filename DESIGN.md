@@ -74,6 +74,12 @@
 - Row separator 1px.
 - Actions are blue text links, not invented icon buttons.
 
+### Budget Summary
+
+- Three equal cards for `Total Budget`, `Spent Budget` and `Remaining Budget`.
+- Use restrained neutral, warning and success surfaces with 1px borders and no shadow.
+- Amounts use tabular numerals; currency remains secondary to the value.
+
 ## Motion
 
 - 150-200ms state transitions only.

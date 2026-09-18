@@ -31,5 +31,7 @@ http://127.0.0.1:4173
 10. Submit: Auto Approved hoặc FA Review theo Coin Per User.
 11. Generate Package ID: mô phỏng all package thành công sau Auto Approved.
 12. Trigger Based Campaign: chọn Campaign trước, sau đó Package ID mới được enable và load đúng package.
+13. Others: mở submenu `AI Generate Banner` (placeholder) và `Coin to Direct Discount`.
+14. Coin to Direct Discount: xem Total/Spent/Remaining Budget, cấu hình conversion rate, quản lý App ID và bật/tắt future configuration khi demo.
 
 `qa-promotion.mjs` kiểm tra Promotion Code flow. `qa.mjs` kiểm tra Loyalty Coin flow. `qa-asset.mjs` kiểm tra Promo Asset Massive và Coin Create flow.
