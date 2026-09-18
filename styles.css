@@ -386,7 +386,7 @@ body.asset-mode .time-field { grid-column: auto; }
 .budget-summary-row dd small { color: #66798b; font-size: 12px; font-weight: 400; }
 .budget-summary-row dl > span { margin-top: 2px; color: #66798b; font-size: 12px; }
 
-#coinDiscountConfig[hidden] { display: none; }
+[data-direct-discount-config][hidden] { display: none; }
 .other-section-body { padding: 24px; }
 .coin-config-section { overflow: visible; }
 .coin-rate-grid { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr) minmax(240px, 1.25fr); gap: 24px; align-items: end; }

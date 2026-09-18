@@ -598,23 +598,25 @@ const templates = {
   "promotion-list": document.getElementById("promotionListTemplate"),
   "promotion-form": document.getElementById("promotionFormTemplate"),
   "ai-banner": document.getElementById("aiBannerTemplate"),
-  "coin-direct-discount": document.getElementById("coinDirectDiscountTemplate")
+  "coin-direct-discount": document.getElementById("coinDirectDiscountTemplate"),
+  "gotit-direct-discount": document.getElementById("gotitDirectDiscountTemplate")
 };
 
-const coinDiscountState = {
-  merchants: [
-    { id: "16778", name: "MAI TUAN VU-272688" },
-    { id: "2015", name: "" },
-    { id: "16564", name: "VU BAN BIA" },
-    { id: "4023", name: "EVERCHARGE" },
-    { id: "12722", name: "SOBSALE23030804" },
-    { id: "1252", name: "Hot Deals" },
-    { id: "2128", name: "ho tuy" },
-    { id: "15605", name: "DN BACH HOA XANH" }
-  ],
-  applicable: ["16778", "4023", "16564"],
-  nonApplicable: ["2015", "1252"]
+const directDiscountMerchants = [
+  { id: "16778", name: "MAI TUAN VU-272688" },
+  { id: "2015", name: "" },
+  { id: "16564", name: "VU BAN BIA" },
+  { id: "4023", name: "EVERCHARGE" },
+  { id: "12722", name: "SOBSALE23030804" },
+  { id: "1252", name: "Hot Deals" },
+  { id: "2128", name: "ho tuy" },
+  { id: "15605", name: "DN BACH HOA XANH" }
+];
+const directDiscountStates = {
+  coin: { merchants: directDiscountMerchants, applicable: ["16778", "4023", "16564"], nonApplicable: ["2015", "1252"] },
+  gotit: { merchants: directDiscountMerchants, applicable: ["16778", "16564"], nonApplicable: ["4023", "1252"] }
 };
+let directDiscountState = directDiscountStates.coin;
 
 function toast(message, type = "") {
   const node = document.createElement("div");
@@ -677,13 +679,14 @@ function route(name, payload = {}) {
   if (name === "asset-coin-create") initForm({ mode: "create", returnRoute: "asset-list" });
   if (name === "promotion-list") initPromotionList();
   if (name === "promotion-form") initPromotionForm(payload);
-  if (name === "ai-banner" || name === "coin-direct-discount") {
+  if (["ai-banner", "coin-direct-discount", "gotit-direct-discount"].includes(name)) {
     const otherMenu = document.getElementById("othersMenu");
     const otherParent = document.querySelector('[data-nav-target="othersMenu"]');
     otherMenu.hidden = false;
     otherParent.setAttribute("aria-expanded", "true");
   }
   if (name === "coin-direct-discount") initCoinDirectDiscount();
+  if (name === "gotit-direct-discount") initGotitDirectDiscount();
   document.getElementById("sidebar").classList.remove("open");
   main.focus();
 }
@@ -2254,7 +2257,7 @@ function initPromotionForm(options = {}) {
 }
 
 function merchantLabel(id) {
-  const merchant = coinDiscountState.merchants.find(item => item.id === id);
+  const merchant = directDiscountState.merchants.find(item => item.id === id);
   return merchant ? `${merchant.id}${merchant.name ? ` - ${merchant.name}` : " -"}` : id;
 }
 
@@ -2280,11 +2283,11 @@ function closeMerchantPickers(exceptType = "") {
 
 function renderMerchantPicker(type) {
   const otherType = type === "applicable" ? "nonApplicable" : "applicable";
-  const selected = coinDiscountState[type];
+  const selected = directDiscountState[type];
   const { tags, input, options, picker } = merchantPickerNodes(type);
   const query = input.value.trim().toLowerCase();
-  const candidates = coinDiscountState.merchants.filter(merchant => {
-    if (coinDiscountState[otherType].includes(merchant.id)) return false;
+  const candidates = directDiscountState.merchants.filter(merchant => {
+    if (directDiscountState[otherType].includes(merchant.id)) return false;
     return merchantLabel(merchant.id).toLowerCase().includes(query);
   });
 
@@ -2298,13 +2301,13 @@ function renderMerchantPicker(type) {
 
   tags.querySelectorAll("[data-merchant-remove]").forEach(button => button.onclick = event => {
     event.stopPropagation();
-    coinDiscountState[type] = selected.filter(id => id !== button.dataset.merchantRemove);
+    directDiscountState[type] = selected.filter(id => id !== button.dataset.merchantRemove);
     renderMerchantPicker(type);
   });
   options.querySelectorAll("[data-merchant-option]").forEach(button => button.onclick = event => {
     event.stopPropagation();
     const id = button.dataset.merchantOption;
-    coinDiscountState[type] = selected.includes(id) ? selected.filter(item => item !== id) : [...selected, id];
+    directDiscountState[type] = selected.includes(id) ? selected.filter(item => item !== id) : [...selected, id];
     input.value = "";
     renderMerchantPicker(type);
     options.hidden = false;
@@ -2339,22 +2342,26 @@ function bindMerchantPicker(type) {
   renderMerchantPicker(type);
 }
 
-function initCoinDirectDiscount() {
-  const coinInput = document.getElementById("coinAmount");
-  const discountInput = document.getElementById("discountValue");
-  const preview = document.getElementById("conversionPreview");
-  const config = document.getElementById("coinDiscountConfig");
-  const toggle = document.getElementById("toggleCoinDiscountConfig");
+function initDirectDiscount(type, hasConversionRate) {
+  directDiscountState = directDiscountStates[type];
+  const config = document.getElementById("directDiscountConfig");
+  const toggle = document.getElementById("toggleDirectDiscountConfig");
+  const coinInput = hasConversionRate ? document.getElementById("coinAmount") : null;
+  const discountInput = hasConversionRate ? document.getElementById("discountValue") : null;
+  const preview = hasConversionRate ? document.getElementById("conversionPreview") : null;
   const updatePreview = () => {
+    if (!hasConversionRate) return;
     const coinAmount = Math.max(number(coinInput.value), 1);
     const discountValue = number(discountInput.value);
     discountInput.value = discountValue ? money(discountValue) : "";
     preview.textContent = `${money(coinAmount)} coin${coinAmount === 1 ? "" : "s"} = ${money(discountValue)} VND`;
   };
 
-  coinInput.oninput = updatePreview;
-  discountInput.oninput = updatePreview;
-  discountInput.onblur = updatePreview;
+  if (hasConversionRate) {
+    coinInput.oninput = updatePreview;
+    discountInput.oninput = updatePreview;
+    discountInput.onblur = updatePreview;
+  }
   toggle.onclick = () => {
     const willHide = !config.hidden;
     config.hidden = willHide;
@@ -2366,16 +2373,24 @@ function initCoinDirectDiscount() {
   main.onclick = event => {
     if (!event.target.closest(".merchant-combobox")) closeMerchantPickers();
   };
-  document.getElementById("saveCoinDiscountConfig").onclick = () => {
-    if (!number(discountInput.value) || !coinDiscountState.applicable.length) {
-      (!number(discountInput.value) ? discountInput : document.getElementById("applicableMerchantSearch")).focus();
-      toast("Please complete the conversion rate and select an applicable merchant.", "error");
+  document.getElementById("saveDirectDiscountConfig").onclick = () => {
+    if ((hasConversionRate && !number(discountInput.value)) || !directDiscountState.applicable.length) {
+      (hasConversionRate && !number(discountInput.value) ? discountInput : document.getElementById("applicableMerchantSearch")).focus();
+      toast(hasConversionRate ? "Please complete the conversion rate and select an applicable merchant." : "Please select an applicable merchant.", "error");
       return;
     }
     updatePreview();
-    toast("Coin to Direct Discount configuration saved.");
+    toast(`${type === "coin" ? "Coin" : "Got it"} to Direct Discount configuration saved.`);
   };
   updatePreview();
+}
+
+function initCoinDirectDiscount() {
+  initDirectDiscount("coin", true);
+}
+
+function initGotitDirectDiscount() {
+  initDirectDiscount("gotit", false);
 }
 
 document.querySelectorAll("[data-route]").forEach(button => button.onclick = () => route(button.dataset.route));

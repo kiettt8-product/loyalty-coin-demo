@@ -16,6 +16,8 @@ Loyalty Coin Campaign không có menu riêng. Entry point nằm tại `Promo Ass
 
 Coin to Direct Discount nằm tại `Others` → `Coin to Direct Discount`, gồm budget overview và future configuration có thể ẩn/hiện khi demo.
 
+Got it to Direct Discount nằm ngay bên dưới, tái sử dụng budget overview và App ID configuration nhưng không có coin conversion rate.
+
 ## Brand Personality
 
 Quen thuộc, chính xác, tiết chế. UI phải nhìn như một phần có sẵn của Zalopay CRM, không phải một product mới.
