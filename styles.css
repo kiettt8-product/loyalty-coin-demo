@@ -390,9 +390,9 @@ body.asset-mode .time-field { grid-column: auto; }
 .other-section-body { padding: 24px; }
 .coin-config-section { overflow: visible; }
 .coin-rate-grid { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr) minmax(240px, 1.25fr); gap: 24px; align-items: end; }
-.conversion-preview { min-height: 57px; display: flex; flex-direction: column; justify-content: center; padding: 4px 0; }
-.conversion-preview span { color: #66798b; font-size: 12px; line-height: 18px; }
-.conversion-preview strong { color: #001f3e; font-size: 14px; line-height: 22px; font-weight: 600; }
+.conversion-preview { min-height: 57px; display: flex; flex-direction: column; gap: 8px; }
+.conversion-preview span { min-height: 17px; color: #66798b; font-size: 12px; line-height: 17px; }
+.conversion-preview strong { height: 32px; display: flex; align-items: center; color: #001f3e; font-size: 14px; line-height: 22px; font-weight: 600; }
 .other-section-heading { justify-content: space-between; gap: 24px; }
 .other-section-heading > div { min-width: 0; }
 .merchant-section { border-top: 1px solid #f0f0f0; }
