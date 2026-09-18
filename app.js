@@ -602,11 +602,18 @@ const templates = {
 };
 
 const coinDiscountState = {
-  appIds: [
-    { id: "ZLP_MAIN", name: "Zalopay", active: true, owner: "kiettt8" },
-    { id: "ZLP_CHECKOUT", name: "Zalopay Checkout", active: true, owner: "product_ops" },
-    { id: "MERCHANT_HUB", name: "Merchant Hub", active: false, owner: "kiettt8" }
-  ]
+  merchants: [
+    { id: "16778", name: "MAI TUAN VU-272688" },
+    { id: "2015", name: "" },
+    { id: "16564", name: "VU BAN BIA" },
+    { id: "4023", name: "EVERCHARGE" },
+    { id: "12722", name: "SOBSALE23030804" },
+    { id: "1252", name: "Hot Deals" },
+    { id: "2128", name: "ho tuy" },
+    { id: "15605", name: "DN BACH HOA XANH" }
+  ],
+  applicable: ["16778", "4023", "16564"],
+  nonApplicable: ["2015", "1252"]
 };
 
 function toast(message, type = "") {
@@ -2246,30 +2253,90 @@ function initPromotionForm(options = {}) {
   renderPromotionFormActions();
 }
 
-function renderCoinDiscountAppIds() {
-  const rows = document.getElementById("appIdRows");
-  rows.innerHTML = coinDiscountState.appIds.map((app, index) => `
-    <tr>
-      <td><input class="app-id-input" data-app-field="id" data-app-index="${index}" aria-label="App ID ${index + 1}" value="${escapeHtml(app.id)}"></td>
-      <td><input data-app-field="name" data-app-index="${index}" aria-label="Application name ${index + 1}" value="${escapeHtml(app.name)}"></td>
-      <td><button type="button" class="app-status ${app.active ? "active" : "inactive"}" data-app-toggle="${index}" aria-pressed="${app.active}">${app.active ? "Active" : "Inactive"}</button></td>
-      <td>${escapeHtml(app.owner)}</td>
-      <td><button type="button" class="text-button danger" data-app-remove="${index}" aria-label="Remove ${escapeHtml(app.id || `App ID ${index + 1}`)}">Remove</button></td>
-    </tr>
-  `).join("");
+function merchantLabel(id) {
+  const merchant = coinDiscountState.merchants.find(item => item.id === id);
+  return merchant ? `${merchant.id}${merchant.name ? ` - ${merchant.name}` : " -"}` : id;
+}
 
-  rows.querySelectorAll("[data-app-field]").forEach(input => input.oninput = () => {
-    coinDiscountState.appIds[Number(input.dataset.appIndex)][input.dataset.appField] = input.value;
+function merchantPickerNodes(type) {
+  const prefix = type === "applicable" ? "applicable" : "nonApplicable";
+  return {
+    tags: document.getElementById(`${prefix}MerchantTags`),
+    input: document.getElementById(`${prefix}MerchantSearch`),
+    options: document.getElementById(`${prefix}MerchantOptions`),
+    picker: document.querySelector(`[data-merchant-picker="${type}"]`)
+  };
+}
+
+function closeMerchantPickers(exceptType = "") {
+  ["applicable", "nonApplicable"].forEach(type => {
+    if (type === exceptType) return;
+    const { input, options, picker } = merchantPickerNodes(type);
+    options.hidden = true;
+    input.setAttribute("aria-expanded", "false");
+    picker.classList.remove("open");
   });
-  rows.querySelectorAll("[data-app-toggle]").forEach(button => button.onclick = () => {
-    const app = coinDiscountState.appIds[Number(button.dataset.appToggle)];
-    app.active = !app.active;
-    renderCoinDiscountAppIds();
+}
+
+function renderMerchantPicker(type) {
+  const otherType = type === "applicable" ? "nonApplicable" : "applicable";
+  const selected = coinDiscountState[type];
+  const { tags, input, options, picker } = merchantPickerNodes(type);
+  const query = input.value.trim().toLowerCase();
+  const candidates = coinDiscountState.merchants.filter(merchant => {
+    if (coinDiscountState[otherType].includes(merchant.id)) return false;
+    return merchantLabel(merchant.id).toLowerCase().includes(query);
   });
-  rows.querySelectorAll("[data-app-remove]").forEach(button => button.onclick = () => {
-    coinDiscountState.appIds.splice(Number(button.dataset.appRemove), 1);
-    renderCoinDiscountAppIds();
+
+  tags.innerHTML = selected.map(id => `
+    <span class="merchant-tag ${type}">${escapeHtml(merchantLabel(id))}<button type="button" data-merchant-remove="${escapeHtml(id)}" aria-label="Remove ${escapeHtml(merchantLabel(id))}">×</button></span>
+  `).join("");
+  options.innerHTML = candidates.length ? candidates.map(merchant => {
+    const isSelected = selected.includes(merchant.id);
+    return `<button type="button" role="option" aria-selected="${isSelected}" class="merchant-option${isSelected ? " selected" : ""}" data-merchant-option="${escapeHtml(merchant.id)}"><span>${escapeHtml(merchantLabel(merchant.id))}</span><b aria-hidden="true">${isSelected ? "✓" : ""}</b></button>`;
+  }).join("") : '<div class="merchant-no-result">No matching AppID</div>';
+
+  tags.querySelectorAll("[data-merchant-remove]").forEach(button => button.onclick = event => {
+    event.stopPropagation();
+    coinDiscountState[type] = selected.filter(id => id !== button.dataset.merchantRemove);
+    renderMerchantPicker(type);
   });
+  options.querySelectorAll("[data-merchant-option]").forEach(button => button.onclick = event => {
+    event.stopPropagation();
+    const id = button.dataset.merchantOption;
+    coinDiscountState[type] = selected.includes(id) ? selected.filter(item => item !== id) : [...selected, id];
+    input.value = "";
+    renderMerchantPicker(type);
+    options.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+    picker.classList.add("open");
+    input.focus();
+  });
+}
+
+function bindMerchantPicker(type) {
+  const { input, options, picker } = merchantPickerNodes(type);
+  const open = () => {
+    closeMerchantPickers(type);
+    renderMerchantPicker(type);
+    options.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+    picker.classList.add("open");
+  };
+  input.onfocus = open;
+  input.oninput = open;
+  input.onkeydown = event => {
+    if (event.key === "Escape") {
+      options.hidden = true;
+      input.setAttribute("aria-expanded", "false");
+      picker.classList.remove("open");
+      input.blur();
+    }
+  };
+  picker.onclick = event => {
+    if (!event.target.closest("button")) input.focus();
+  };
+  renderMerchantPicker(type);
 }
 
 function initCoinDirectDiscount() {
@@ -2294,23 +2361,21 @@ function initCoinDirectDiscount() {
     toggle.setAttribute("aria-expanded", String(!willHide));
     toggle.textContent = willHide ? "Show future configuration" : "Hide future configuration";
   };
-  document.getElementById("addAppId").onclick = () => {
-    coinDiscountState.appIds.push({ id: "", name: "", active: true, owner: "kiettt8" });
-    renderCoinDiscountAppIds();
-    document.querySelector("#appIdRows tr:last-child input")?.focus();
+  bindMerchantPicker("applicable");
+  bindMerchantPicker("nonApplicable");
+  main.onclick = event => {
+    if (!event.target.closest(".merchant-combobox")) closeMerchantPickers();
   };
   document.getElementById("saveCoinDiscountConfig").onclick = () => {
-    const invalidInput = Array.from(document.querySelectorAll("#appIdRows input")).find(input => !input.value.trim());
-    if (invalidInput || !number(discountInput.value)) {
-      (invalidInput || discountInput).focus();
-      toast("Please complete the conversion rate and App ID information.", "error");
+    if (!number(discountInput.value) || !coinDiscountState.applicable.length) {
+      (!number(discountInput.value) ? discountInput : document.getElementById("applicableMerchantSearch")).focus();
+      toast("Please complete the conversion rate and select an applicable merchant.", "error");
       return;
     }
     updatePreview();
     toast("Coin to Direct Discount configuration saved.");
   };
   updatePreview();
-  renderCoinDiscountAppIds();
 }
 
 document.querySelectorAll("[data-route]").forEach(button => button.onclick = () => route(button.dataset.route));

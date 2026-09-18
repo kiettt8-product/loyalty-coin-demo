@@ -76,9 +76,15 @@
 
 ### Budget Summary
 
-- Three equal cards for `Total Budget`, `Spent Budget` and `Remaining Budget`.
-- Use restrained neutral, warning and success surfaces with 1px borders and no shadow.
+- One connected summary panel with three columns for `Total Budget`, `Spent Budget` and `Remaining Budget`.
+- Use neutral surfaces, column dividers and no shadow or semantic color fill.
 - Amounts use tabular numerals; currency remains secondary to the value.
+
+### Merchant App ID Selector
+
+- Use two multi-select fields: `Applicable merchant` and `Non-Applicable merchant`.
+- Selected App IDs appear as compact removable tags; green identifies applicable and red identifies non-applicable.
+- Dropdown options support search, selected checkmarks and mutual exclusion between the two fields.
 
 ## Motion
 
