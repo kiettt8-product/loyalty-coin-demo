@@ -386,6 +386,13 @@ body.asset-mode .time-field { grid-column: auto; }
 .budget-summary-row dd small { color: #66798b; font-size: 12px; font-weight: 400; }
 .budget-summary-row dl > span { margin-top: 2px; color: #66798b; font-size: 12px; }
 
+.coin-alert-grid { align-items: end; }
+.coin-alert-grid .tag-control { min-height: 32px; flex-wrap: wrap; background: #fff; }
+.coin-alert-grid .tag-control:focus-within { border-color: #165dff; box-shadow: 0 0 0 1px rgba(22,93,255,.12); }
+.coin-alert-grid .tag-control input { flex: 1 1 160px; }
+.coin-alert-note { align-self: center; margin: 0; color: #66798b; font-size: 12px; line-height: 18px; }
+.coin-alert-actions { display: flex; justify-content: flex-end; }
+
 [data-direct-discount-config][hidden] { display: none; }
 .other-section-body { padding: 24px; }
 .coin-config-section { overflow: visible; }
@@ -445,6 +452,8 @@ body.asset-mode .time-field { grid-column: auto; }
   .budget-summary-row { grid-template-columns: 1fr; }
   .budget-summary-row dl { min-height: 90px; }
   .budget-summary-row dl + dl { border-top: 1px solid #f0f0f0; border-left: 0; }
+  .coin-alert-grid { grid-template-columns: 1fr; }
+  .coin-alert-actions { justify-content: flex-start; }
   .merchant-grid { padding: 16px; }
   .merchant-control-row { grid-template-columns: 92px minmax(0, 1fr); }
 }
@@ -464,15 +473,11 @@ body.asset-mode .time-field { grid-column: auto; }
 .asset-table.promo-table th:nth-child(9) { width: 120px; }
 .asset-table.promo-table th:nth-child(10) { width: 120px; }
 .asset-table.promo-table th:nth-child(11) { width: 110px; }
-.asset-table.promo-table th:nth-child(12) { width: 82px; }
+.asset-table.promo-table th:nth-child(12) { width: 120px; }
 .asset-table.promo-table tbody tr:first-child td,
 .asset-table.promo-table tbody tr:nth-child(2) td { height: 57px; }
 .asset-table.promo-table td:last-child { overflow: visible; }
-.asset-table.promo-table .row-actions { justify-content: flex-start; }
-.asset-table.promo-table th:last-child,
-.asset-table.promo-table td:last-child { position: static; right: auto; z-index: auto; box-shadow: none; text-align: left; }
-.asset-table.promo-table th:last-child { background: #f9fafb; }
-.asset-table.promo-table td:last-child { background: #fff; }
+.promo-row-actions { min-height: 32px; }
 
 .asset-choice-dialog { width: 600px; padding: 0; border: 0; border-radius: 4px; color: #001f3e; box-shadow: 0 12px 36px rgba(0,0,0,.18); }
 .asset-choice-dialog::backdrop { background: rgba(0,0,0,.48); }

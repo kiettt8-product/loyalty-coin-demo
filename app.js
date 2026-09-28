@@ -613,7 +613,13 @@ const directDiscountMerchants = [
   { id: "15605", name: "DN BACH HOA XANH" }
 ];
 const directDiscountStates = {
-  coin: { merchants: directDiscountMerchants, applicable: ["16778", "4023", "16564"], nonApplicable: ["2015", "1252"] },
+  coin: {
+    merchants: directDiscountMerchants,
+    applicable: ["16778", "4023", "16564"],
+    nonApplicable: ["2015", "1252"],
+    alertEmails: ["loyalty.business@vng.com.vn"],
+    alertThresholds: [10, 20]
+  },
   gotit: { merchants: directDiscountMerchants, applicable: ["16778", "16564"], nonApplicable: ["4023", "1252"] }
 };
 let directDiscountState = directDiscountStates.coin;
@@ -1368,7 +1374,10 @@ function promotionUpdateStatusSummary() {
 }
 
 function promotionActionButtons(campaign) {
-  return `<button type="button" data-promo-view="${campaign.id}">View</button><button type="button" data-promo-edit="${campaign.id}">Edit</button>`;
+  const primaryKind = campaign.status === "Draft" ? "approve" : "stop";
+  const primaryLabel = campaign.status === "Draft" ? "Approve" : "Stop";
+  const action = (kind, label) => `<button type="button" class="asset-icon-button ${kind}" data-promo-action="${kind}" data-promo-id="${campaign.id}" aria-label="${label}" title="${label}"><img src="assets/action-${kind}.svg" alt="" aria-hidden="true"></button>`;
+  return `${action(primaryKind, primaryLabel)}${action("clone", "Clone")}${action("edit", "Edit")}${campaign.status === "Draft" ? action("delete", "Delete") : ""}`;
 }
 
 function renderPromotionRows(rows = promotionState.campaigns) {
@@ -1386,7 +1395,7 @@ function renderPromotionRows(rows = promotionState.campaigns) {
     <td><span class="status ${statusClass(item.status)}">${item.status}</span></td>
     <td>${escapeHtml(item.label)}</td>
     <td>${escapeHtml(item.owner)}</td>
-    <td><div class="row-actions">${promotionActionButtons(item)}</div></td>
+    <td><div class="asset-row-actions promo-row-actions">${promotionActionButtons(item)}</div></td>
   </tr>`).join("");
   document.getElementById("promoEmptyState").hidden = ordered.length > 0;
   document.getElementById("promoItemCount").textContent = ordered.length ? `1-${Math.min(ordered.length, 10)} of 733 items` : "0 items";
@@ -1435,10 +1444,16 @@ function initPromotionList() {
     }));
   };
   main.onclick = event => {
-    const action = event.target.closest("button");
+    const action = event.target.closest("[data-promo-action]");
     if (!action) return;
-    if (action.dataset.promoView) route("promotion-form", { mode: "view", id: Number(action.dataset.promoView) });
-    if (action.dataset.promoEdit) route("promotion-form", { mode: "edit", id: Number(action.dataset.promoEdit) });
+    const campaignId = Number(action.dataset.promoId);
+    const campaign = promotionState.campaigns.find(item => item.id === campaignId);
+    if (!campaign) return;
+    if (action.dataset.promoAction === "edit") route("promotion-form", { mode: "edit", id: campaignId });
+    if (action.dataset.promoAction === "clone") toast(`Promotion Code ${campaignId} clone action — demo only.`);
+    if (action.dataset.promoAction === "approve") toast(`Promotion Code ${campaignId} approve action — demo only.`);
+    if (action.dataset.promoAction === "stop") toast(`Promotion Code ${campaignId} stop action — demo only.`);
+    if (action.dataset.promoAction === "delete") toast(`Promotion Code ${campaignId} delete action — demo only.`);
   };
 }
 
@@ -2342,6 +2357,56 @@ function bindMerchantPicker(type) {
   renderMerchantPicker(type);
 }
 
+function renderCoinBudgetAlertTags(type) {
+  const isEmail = type === "email";
+  const holder = document.querySelector(isEmail ? "#coinAlertEmailControl .tags" : "#coinAlertThresholdControl .tags");
+  if (!holder) return;
+  const values = isEmail ? directDiscountState.alertEmails : directDiscountState.alertThresholds;
+  holder.innerHTML = values.map(value => `<span class="tag">${escapeHtml(String(value))}${isEmail ? "" : "%"}<button type="button" data-alert-value="${escapeHtml(String(value))}" aria-label="Remove ${escapeHtml(String(value))}${isEmail ? "" : "%"}">×</button></span>`).join("");
+  holder.querySelectorAll("[data-alert-value]").forEach(button => button.onclick = () => {
+    if (isEmail) directDiscountState.alertEmails = directDiscountState.alertEmails.filter(value => value !== button.dataset.alertValue);
+    else directDiscountState.alertThresholds = directDiscountState.alertThresholds.filter(value => value !== Number(button.dataset.alertValue));
+    renderCoinBudgetAlertTags(type);
+  });
+}
+
+function bindCoinBudgetAlertInput(id, type) {
+  const input = document.getElementById(id);
+  if (!input) return;
+  input.onkeydown = event => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    const raw = input.value.trim();
+    if (!raw) return;
+    if (type === "email") {
+      const email = raw.includes("@") ? raw : `${raw}@vng.com.vn`;
+      if (!/^[^\s@]+@vng\.com\.vn$/i.test(email)) {
+        toast("You must use email company", "error");
+        return;
+      }
+      if (!directDiscountState.alertEmails.some(value => value.toLowerCase() === email.toLowerCase())) directDiscountState.alertEmails.push(email);
+    } else {
+      const threshold = Number(raw);
+      if (!/^\d+$/.test(raw) || !Number.isInteger(threshold) || threshold <= 0 || threshold >= 100) {
+        toast("Budget alert must be an integer between 1 and 99.", "error");
+        return;
+      }
+      if (!directDiscountState.alertThresholds.includes(threshold)) directDiscountState.alertThresholds.push(threshold);
+      directDiscountState.alertThresholds.sort((a, b) => b - a);
+    }
+    input.value = "";
+    renderCoinBudgetAlertTags(type);
+  };
+}
+
+function initCoinBudgetAlert() {
+  bindCoinBudgetAlertInput("coinAlertEmailInput", "email");
+  bindCoinBudgetAlertInput("coinAlertThresholdInput", "threshold");
+  renderCoinBudgetAlertTags("email");
+  renderCoinBudgetAlertTags("threshold");
+  document.getElementById("saveCoinBudgetAlert").onclick = () => toast("Budget alert settings saved.");
+}
+
 function initDirectDiscount(type, hasConversionRate) {
   directDiscountState = directDiscountStates[type];
   const config = document.getElementById("directDiscountConfig");
@@ -2387,6 +2452,7 @@ function initDirectDiscount(type, hasConversionRate) {
 
 function initCoinDirectDiscount() {
   initDirectDiscount("coin", true);
+  initCoinBudgetAlert();
 }
 
 function initGotitDirectDiscount() {
