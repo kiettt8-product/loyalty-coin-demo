@@ -21,7 +21,21 @@
       <div class="nav-sub single" id="userManagementMenu" hidden><button>Label List</button></div>
       <button class="nav-parent" data-nav-target="userProfileMenu" aria-expanded="false"><img class="nav-icon" src="assets/nav-user.svg" alt="">User Profile<span>⌄</span></button>
       <div class="nav-sub single" id="userProfileMenu" hidden><button>Segment</button></div>
-      <button class="nav-parent" aria-expanded="false"><img class="nav-icon" src="assets/nav-asset.svg" alt="">Asset Management<span>⌄</span></button>
+      <button class="nav-parent" data-nav-target="assetManagementMenu" aria-expanded="false"><img class="nav-icon" src="assets/nav-asset.svg" alt="">Asset Management<span>⌄</span></button>
+      <div class="nav-sub asset-management-menu" id="assetManagementMenu" hidden>
+        <button>Merchant and Service Logo</button>
+        <button>Notification</button>
+        <button>ZMS</button>
+        <button>Banner</button>
+        <button>Reminder</button>
+        <button>Popup</button>
+        <button>SKU</button>
+        <button>SKU Template</button>
+        <button>Story</button>
+        <button data-route="voucher-assets">Voucher</button>
+        <button>ZBS Template</button>
+        <button>Merchant Code</button>
+      </div>
       <button class="nav-parent" aria-expanded="true"><img class="nav-icon" src="assets/nav-campaign.svg" alt="">Campaign Management<span>⌃</span></button>
       <div class="nav-sub campaign-menu">
         <button>Notification Campaign</button>
@@ -123,6 +137,108 @@
         </form>
       </dialog>
     </div>
+  </template>
+
+  <template id="voucherAssetListTemplate">
+    <div class="screen voucher-screen voucher-list-screen">
+      <section class="voucher-filter-panel">
+        <div class="voucher-filter-row voucher-filter-primary">
+          <label><span>Search :</span><input id="voucherSearch" placeholder="ID/Title/Description/Merchant name"></label>
+          <label><span>Status :</span><select id="voucherStatus"><option value="">All</option><option>Approved</option><option>Draft</option></select></label>
+          <label><span>Updated time :</span><div class="voucher-date-range"><input placeholder="From"><span aria-hidden="true">→</span><input placeholder="To"><i class="calendar-mark" aria-hidden="true"></i></div></label>
+          <label><span>Label :</span><select id="voucherLabel"><option value="">All</option><option>[DLS] Daily Life Services</option><option>[FS] Financial Services</option></select></label>
+        </div>
+        <div class="voucher-filter-row voucher-filter-secondary">
+          <label><span>Created by :</span><select id="voucherCreator"><option value="">All</option><option>nhungttn</option><option>huongntd3</option><option>huypm3</option></select></label>
+          <div class="voucher-filter-actions"><button class="asset-btn secondary" id="voucherReset">Reset</button><button class="asset-btn primary" id="voucherSubmitSearch">Search</button><button class="voucher-collapse" id="voucherCollapse">Collapse <span aria-hidden="true">⌃</span></button></div>
+        </div>
+      </section>
+
+      <section class="voucher-list-panel">
+        <div class="voucher-list-toolbar">
+          <div><button class="asset-btn voucher-template-btn"><span aria-hidden="true">⇩</span>Template</button><button class="asset-btn voucher-import-btn"><span aria-hidden="true">⇩</span>Import</button></div>
+          <button class="asset-btn primary" id="voucherAddNew"><span class="plus-mark" aria-hidden="true"></span>Add New</button>
+        </div>
+        <div class="voucher-table-wrap">
+          <table class="voucher-table">
+            <thead><tr><th>ID</th><th>Demo</th><th>Status</th><th>Updated time <span class="voucher-sort" aria-hidden="true">◆</span></th><th>Label</th><th>Created by</th><th>Action</th></tr></thead>
+            <tbody id="voucherAssetRows"></tbody>
+          </table>
+        </div>
+        <div class="voucher-pagination"><span id="voucherItemCount">1-10 of 3024 items</span><button aria-label="Previous page">‹</button><button class="active">1</button><button>2</button><button>3</button><span>•••</span><button>303</button><button aria-label="Next page">›</button><select aria-label="Items per page"><option>10 / page</option></select></div>
+      </section>
+    </div>
+  </template>
+
+  <template id="voucherAssetCreateTemplate">
+    <form class="screen voucher-screen voucher-create-screen" id="voucherCreateForm" novalidate>
+      <section class="voucher-form-section">
+        <h1>1. Discount Scheme</h1>
+        <div class="voucher-section-body voucher-discount-grid">
+          <label class="voucher-field required"><span>Voucher type</span><select id="voucherType"><option value="">Please select</option><option>Cashback</option><option>Discount amount</option><option>Discount percentage</option></select></label>
+          <label class="voucher-field"><span>Status</span><select disabled><option>Draft</option></select></label>
+        </div>
+      </section>
+
+      <section class="voucher-form-section">
+        <h1>2. Voucher Applicable Rule <button type="button" class="voucher-chevron" aria-label="Collapse section">⌄</button></h1>
+        <div class="voucher-section-body voucher-rule-body">
+          <label class="voucher-field required voucher-platform-field"><span>Applicable platform</span><div class="voucher-token-control"><span>Zalopay app (ZPA) ×</span><span>Zalopay on Zalo (ZMP) ×</span></div></label>
+
+          <div class="voucher-rule-box">
+            <div class="voucher-rule-title"><span class="chevron-down" aria-hidden="true"></span>Payment Context Applicable Rule</div>
+            <div class="voucher-rule-content voucher-payment-context"><select><option>By Source of Fund</option></select><div class="voucher-token-control"><span>MMF (44) ×</span><span>BNPL (45) ×</span><span>Zalopay Wallet (38) ×</span><span>ATM (39) ×</span><span>Debit (41) ×</span><span>Credit (36) ×</span><span>Bank Account (37) ×</span><span>Installment (51) ×</span></div></div>
+          </div>
+
+          <div class="voucher-rule-box">
+            <div class="voucher-rule-title"><span class="chevron-down" aria-hidden="true"></span>Applicable merchant</div>
+            <div class="voucher-rule-content voucher-merchant-rule">
+              <label class="voucher-field"><strong>Applicable merchant</strong><div class="voucher-split-control"><select><option>AppID</option></select><input placeholder="AppID"></div></label>
+              <label class="voucher-field"><strong>Non-Applicable merchant</strong><div class="voucher-split-control"><select><option>AppID</option></select><input placeholder="AppID"></div></label>
+            </div>
+          </div>
+
+          <div class="voucher-rule-two-col">
+            <fieldset class="voucher-field required"><legend>Auto apply</legend><label class="voucher-radio"><input type="radio" name="voucherAutoApply">Yes</label><label class="voucher-radio"><input type="radio" name="voucherAutoApply" checked>No</label></fieldset>
+            <label class="voucher-field required"><span>Applicable payment method <i class="help-mark">?</i></span><div class="voucher-token-control"><span>Cashier Payment ×</span></div></label>
+            <label class="voucher-field required"><span>Order amount</span><div class="voucher-order-control"><select><option>Min (&gt;=)</option></select><input type="number" placeholder="Enter value"><b>VND</b></div></label>
+          </div>
+
+          <div class="voucher-rule-box voucher-advanced-rule">
+            <div class="voucher-rule-title"><span class="chevron-right" aria-hidden="true"></span>Advance Rule</div>
+            <div class="voucher-advanced-content"><select disabled><option>Select rule condition</option></select><select disabled><option>Operator</option></select><input disabled placeholder="Select value"><button type="button" class="asset-btn secondary" disabled>Add Rule</button></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="voucher-form-section">
+        <h1>3. UI Display <button type="button" class="voucher-chevron" aria-label="Collapse section">⌄</button></h1>
+        <div class="voucher-section-body voucher-display-grid">
+          <div class="voucher-display-copy">
+            <label class="voucher-field required"><span>Merchant name</span><div class="voucher-counted"><input maxlength="32" placeholder="Merchant name"><small>0 / 32</small></div></label>
+            <label class="voucher-field required"><span>Voucher title</span><div class="voucher-counted"><input maxlength="32" placeholder="Voucher title"><small>0 / 32</small></div></label>
+            <label class="voucher-field required"><span>Voucher description</span><div class="voucher-counted"><input maxlength="64" placeholder="Voucher description"><small>0 / 64</small></div></label>
+            <fieldset class="voucher-field required"><legend>Display at short-list voucher at checkout page</legend><label class="voucher-radio"><input type="radio" name="voucherDisplay" checked>Do not display</label><label class="voucher-radio"><input type="radio" name="voucherDisplay">Display</label></fieldset>
+          </div>
+          <div class="voucher-logo-settings"><label class="voucher-field required"><span>Merchant Logo</span><select><option>1 - Default</option></select></label><div class="voucher-upload"><span>Upload Thumbnail</span><button type="button">⇧ Upload</button></div><small>PNG/JPEG, &lt; 150KB</small></div>
+          <div class="voucher-demo-card"><div class="voucher-demo-logo">Zalo<br><b>pay</b></div><div class="voucher-demo-dash"></div><span>HSD: ../../..</span><strong>Dùng ngay</strong></div>
+        </div>
+      </section>
+
+      <section class="voucher-form-section voucher-tnc-section">
+        <h1>4. Voucher TnC <button type="button" class="voucher-chevron" aria-label="Collapse section">⌄</button></h1>
+        <div class="voucher-section-body">
+          <label class="voucher-field required"><span>TnC Content</span><div class="voucher-editor"><div class="voucher-editor-toolbar"><b>B</b><i>I</i><u>U</u><s>S</s><span>☷</span><span>≡</span><span>¶</span><span>▦</span><span>🔗</span><span>−</span><span>⌘</span><span>⌄</span></div><textarea aria-label="TnC Content"></textarea><small>WORDS: 0&nbsp;&nbsp; POWERED BY JODIT</small></div></label>
+          <div class="voucher-cta-row"><span>CTA :</span><button type="button" class="voucher-switch active" aria-label="CTA enabled"><i></i></button><div class="voucher-counted voucher-cta-name"><input maxlength="15" placeholder="CTA Name"><small>0 / 15</small></div></div>
+          <div class="voucher-redirect-grid">
+            <label class="voucher-field"><span>ZPA Redirect URL</span><div class="voucher-url-control"><select><option>URL</option></select><input placeholder="zalopay://"></div></label>
+            <label class="voucher-field"><span>ZPI Redirect URL</span><div class="voucher-url-control"><select><option>URL</option></select><input placeholder="https://"></div></label>
+          </div>
+        </div>
+      </section>
+
+      <div class="voucher-sticky-actions"><button type="button" class="asset-btn secondary" id="voucherCancel">Cancel</button><button type="button" class="asset-btn primary" id="voucherSave">Save</button><button type="submit" class="asset-btn primary" disabled>Save &amp; Distribute</button></div>
+    </form>
   </template>
 
   <template id="assetMassiveTemplate">

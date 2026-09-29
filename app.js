@@ -60,6 +60,19 @@ const assetCampaigns = [
   { id: 998, name: "New_User_Coin", code: "ZPI_290426_118", budget: 18000000, packageIds: "19882", type: "Loyalty Coin", time: "31/12/2026 23:59", target: "Trigger Campaign", status: "In Use", label: "Growth", owner: "linhnt22" }
 ];
 
+const voucherAssets = [
+  { id: 3040, merchant: "Nạp điện thoại", title: "Giảm 5K", description: "Cho đơn từ 10K", brand: "TOP UP", brandClass: "", updated: "2026/09/29 11:15", label: "[FS] Financial Services, [Telco], [GLB] Global", owner: "huongntd3" },
+  { id: 1720, merchant: "Saigon Co.op", title: "Giảm 35K cho đơn 350K", description: "Khi thanh toán Tài khoản trả sau", brand: "SAIGON CO.OP", brandClass: "saigon", updated: "2026/09/28 16:38", label: "[DLS] Daily Life Services", owner: "huypm3" },
+  { id: 3039, merchant: "Trung Sơn Pharma", title: "Giảm 35K cho đơn từ 150K", description: "Khi sử dụng Tài khoản trả sau", brand: "TRUNG SƠN", brandClass: "trungson", updated: "2026/09/28 16:18", label: "[DLS] Daily Life Services", owner: "nhungttn" },
+  { id: 3038, merchant: "Trung Sơn Pharma", title: "Giảm 15K", description: "Cho đơn từ 150K", brand: "TRUNG SƠN", brandClass: "trungson", updated: "2026/09/28 16:16", label: "[DLS] Daily Life Services", owner: "nhungttn" },
+  { id: 3037, merchant: "Nhà thuốc Long Châu", title: "Giảm 10%", description: "Tối đa 25K", brand: "LONG CHÂU", brandClass: "longchau", updated: "2026/09/28 16:08", label: "[DLS] Daily Life Services", owner: "nhungttn" },
+  { id: 3036, merchant: "Nhà thuốc Long Châu", title: "Giảm 10%", description: "Tối đa 20K", brand: "LONG CHÂU", brandClass: "longchau", updated: "2026/09/28 16:07", label: "[DLS] Daily Life Services", owner: "nhungttn" },
+  { id: 3035, merchant: "Tiêm chủng Long Châu", title: "Giảm 100K cho đơn từ 3 triệu", description: "Khi sử dụng Tài khoản trả sau", brand: "TIÊM CHỦNG", brandClass: "tiemchung", updated: "2026/09/28 16:04", label: "[DLS] Daily Life Services", owner: "nhungttn" },
+  { id: 3032, merchant: "Tiêm chủng Long Châu", title: "Giảm 50K", description: "Cho đơn từ 1,7 triệu", brand: "TIÊM CHỦNG", brandClass: "tiemchung", updated: "2026/09/28 15:58", label: "[DLS] Daily Life Services", owner: "nhungttn" },
+  { id: 3034, merchant: "Nhà thuốc Long Châu", title: "Giảm 30K cho đơn từ 500K", description: "Khi sử dụng Tài khoản trả sau", brand: "LONG CHÂU", brandClass: "longchau", updated: "2026/09/28 15:56", label: "[DLS] Daily Life Services", owner: "nhungttn" },
+  { id: 3033, merchant: "Nhà thuốc Long Châu", title: "Giảm 20K cho đơn từ 150K", description: "Khi sử dụng Tài khoản trả sau", brand: "LONG CHÂU", brandClass: "longchau", updated: "2026/09/28 15:54", label: "[DLS] Daily Life Services", owner: "nhungttn" }
+];
+
 state.campaigns = state.campaigns.map((campaign, campaignIndex) => {
   const coins = campaign.coins.length ? campaign.coins : [300];
   const packageBudget = Math.floor(campaign.budget / coins.length);
@@ -595,6 +608,8 @@ const templates = {
   "asset-list": document.getElementById("assetListTemplate"),
   "asset-massive": document.getElementById("assetMassiveTemplate"),
   "asset-coin-create": document.getElementById("formTemplate"),
+  "voucher-assets": document.getElementById("voucherAssetListTemplate"),
+  "voucher-create": document.getElementById("voucherAssetCreateTemplate"),
   "promotion-list": document.getElementById("promotionListTemplate"),
   "promotion-form": document.getElementById("promotionFormTemplate"),
   "ai-banner": document.getElementById("aiBannerTemplate"),
@@ -668,13 +683,15 @@ function budgetSnapshot(control, pkg) {
 
 function route(name, payload = {}) {
   state.route = name;
-  document.body.classList.toggle("asset-mode", name.startsWith("asset-") || name.startsWith("promotion-"));
+  document.body.classList.toggle("asset-mode", name.startsWith("asset-") || name.startsWith("promotion-") || name.startsWith("voucher-"));
+  document.body.classList.toggle("voucher-mode", name.startsWith("voucher-"));
   main.onclick = null;
   main.replaceChildren(templates[name].content.cloneNode(true));
   document.querySelectorAll("[data-route]").forEach(button => button.classList.toggle("active",
     button.dataset.route === name
     || (name === "form" && button.dataset.route === "list")
     || (["asset-massive", "asset-coin-create"].includes(name) && button.dataset.route === "asset-list")
+    || (name === "voucher-create" && button.dataset.route === "voucher-assets")
     || (name.startsWith("promotion-") && button.dataset.route === "promotion-list")
   ));
   if (name === "list") initList();
@@ -683,6 +700,8 @@ function route(name, payload = {}) {
   if (name === "asset-list") initAssetList();
   if (name === "asset-massive") initAssetMassive();
   if (name === "asset-coin-create") initForm({ mode: "create", returnRoute: "asset-list" });
+  if (name === "voucher-assets") initVoucherAssetList();
+  if (name === "voucher-create") initVoucherAssetCreate();
   if (name === "promotion-list") initPromotionList();
   if (name === "promotion-form") initPromotionForm(payload);
   if (["ai-banner", "coin-direct-discount", "gotit-direct-discount"].includes(name)) {
@@ -693,12 +712,101 @@ function route(name, payload = {}) {
   }
   if (name === "coin-direct-discount") initCoinDirectDiscount();
   if (name === "gotit-direct-discount") initGotitDirectDiscount();
+  if (name.startsWith("voucher-")) {
+    const assetMenu = document.getElementById("assetManagementMenu");
+    const assetParent = document.querySelector('[data-nav-target="assetManagementMenu"]');
+    assetMenu.hidden = false;
+    assetParent.setAttribute("aria-expanded", "true");
+  }
   document.getElementById("sidebar").classList.remove("open");
-  main.focus();
+  main.focus({ preventScroll: true });
+  window.scrollTo(0, 0);
 }
 
 function assetActionIcon(kind, label) {
   return `<button class="asset-icon-button ${kind}" aria-label="${label}" title="${label}"><img src="assets/action-${kind}.svg" alt="" aria-hidden="true"></button>`;
+}
+
+function voucherDemoMarkup(item) {
+  return `<div class="voucher-demo">
+    <div class="voucher-demo-brand ${item.brandClass}">${escapeHtml(item.brand)}</div>
+    <div class="voucher-demo-seam" aria-hidden="true"></div>
+    <div class="voucher-demo-copy"><small>${escapeHtml(item.merchant)}</small><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.description)}</span></div>
+    <span class="voucher-demo-info" aria-label="Voucher information">i</span>
+  </div>`;
+}
+
+function renderVoucherAssetRows(rows = voucherAssets) {
+  const body = document.getElementById("voucherAssetRows");
+  body.innerHTML = rows.map(item => `<tr>
+    <td>${item.id}</td>
+    <td>${voucherDemoMarkup(item)}</td>
+    <td><span class="voucher-status">Approved</span></td>
+    <td>${item.updated}</td>
+    <td>${escapeHtml(item.label)}</td>
+    <td>${escapeHtml(item.owner)}</td>
+    <td><div class="voucher-row-actions">${assetActionIcon("clone", "Clone")}${assetActionIcon("edit", "Edit")}</div></td>
+  </tr>`).join("");
+  document.getElementById("voucherItemCount").textContent = rows.length ? `1-${rows.length} of 3024 items` : "0 items";
+}
+
+function initVoucherAssetList() {
+  renderVoucherAssetRows();
+  document.getElementById("voucherAddNew").onclick = () => route("voucher-create");
+  document.getElementById("voucherReset").onclick = () => {
+    document.querySelectorAll(".voucher-filter-panel input, .voucher-filter-panel select").forEach(control => control.value = "");
+    renderVoucherAssetRows();
+  };
+  document.getElementById("voucherSubmitSearch").onclick = () => {
+    const query = document.getElementById("voucherSearch").value.trim().toLowerCase();
+    const status = document.getElementById("voucherStatus").value;
+    const label = document.getElementById("voucherLabel").value;
+    const owner = document.getElementById("voucherCreator").value;
+    renderVoucherAssetRows(voucherAssets.filter(item =>
+      (!query || String(item.id).includes(query) || item.title.toLowerCase().includes(query) || item.description.toLowerCase().includes(query) || item.merchant.toLowerCase().includes(query))
+      && (!status || status === "Approved")
+      && (!label || item.label.includes(label.replace(/^\[(.*?)\].*$/, "[$1]")))
+      && (!owner || item.owner === owner)
+    ));
+  };
+  document.getElementById("voucherCollapse").onclick = event => {
+    const primary = document.querySelector(".voucher-filter-primary");
+    const creator = document.querySelector(".voucher-filter-secondary > label");
+    const collapsed = !primary.hidden;
+    primary.hidden = collapsed;
+    creator.hidden = collapsed;
+    document.querySelector(".voucher-filter-panel").classList.toggle("collapsed", collapsed);
+    event.currentTarget.innerHTML = `${collapsed ? "Expand" : "Collapse"} <span aria-hidden="true">${collapsed ? "⌄" : "⌃"}</span>`;
+  };
+  main.onclick = event => {
+    const action = event.target.closest(".asset-icon-button");
+    if (action) toast(`${action.getAttribute("aria-label")} voucher asset — demo only.`);
+  };
+}
+
+function initVoucherAssetCreate() {
+  document.getElementById("voucherCancel").onclick = () => route("voucher-assets");
+  document.getElementById("voucherSave").onclick = () => toast("Voucher Asset saved as Draft.");
+  document.querySelectorAll(".voucher-counted input").forEach(input => {
+    const counter = input.parentElement.querySelector("small");
+    input.oninput = () => counter.textContent = `${input.value.length} / ${input.maxLength}`;
+  });
+  document.querySelectorAll(".voucher-chevron").forEach(button => {
+    button.onclick = () => {
+      const section = button.closest(".voucher-form-section");
+      const body = section.querySelector(".voucher-section-body");
+      body.hidden = !body.hidden;
+      button.textContent = body.hidden ? "›" : "⌄";
+    };
+  });
+  document.querySelector(".voucher-switch").onclick = event => {
+    event.currentTarget.classList.toggle("active");
+    event.currentTarget.querySelector("i").style.right = event.currentTarget.classList.contains("active") ? "2px" : "24px";
+  };
+  document.getElementById("voucherCreateForm").onsubmit = event => {
+    event.preventDefault();
+    toast("Complete mandatory fields before distributing the voucher.", "error");
+  };
 }
 
 function assetIdentifierCell(item) {
