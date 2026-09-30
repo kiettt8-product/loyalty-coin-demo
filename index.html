@@ -11,7 +11,7 @@
 <body>
   <header class="topbar">
     <button class="menu-toggle" id="menuToggle" aria-label="Mở menu">☰</button>
-    <a class="zalopay-logo" href="#" aria-label="Zalopay"><img src="assets/figma-logo.svg" alt="Zalopay"></a>
+    <a class="zalopay-logo" href="#" aria-label="Zalopay"><img src="assets/figma-voucher/zalopay-header.png" alt="Zalopay"></a>
     <div class="account"><span>Kiệt. Tô Thế (8)</span><i>K</i></div>
   </header>
 
@@ -145,7 +145,7 @@
         <div class="voucher-filter-row voucher-filter-primary">
           <label><span>Search :</span><input id="voucherSearch" placeholder="ID/Title/Description/Merchant name"></label>
           <label><span>Status :</span><select id="voucherStatus"><option value="">All</option><option>Approved</option><option>Draft</option></select></label>
-          <label><span>Updated time :</span><div class="voucher-date-range"><input placeholder="From"><span aria-hidden="true">→</span><input placeholder="To"><i class="calendar-mark" aria-hidden="true"></i></div></label>
+          <label><span>Updated time :</span><div class="voucher-date-range"><input placeholder="From"><span aria-hidden="true">→</span><input placeholder="To"><img src="assets/figma-voucher/icon-calendar.png" alt="" aria-hidden="true"></div></label>
           <label><span>Label :</span><select id="voucherLabel"><option value="">All</option><option>[DLS] Daily Life Services</option><option>[FS] Financial Services</option></select></label>
         </div>
         <div class="voucher-filter-row voucher-filter-secondary">
@@ -156,8 +156,8 @@
 
       <section class="voucher-list-panel">
         <div class="voucher-list-toolbar">
-          <div><button class="asset-btn voucher-template-btn"><span aria-hidden="true">⇩</span>Template</button><button class="asset-btn voucher-import-btn"><span aria-hidden="true">⇩</span>Import</button></div>
-          <button class="asset-btn primary" id="voucherAddNew"><span class="plus-mark" aria-hidden="true"></span>Add New</button>
+          <div><button class="asset-btn voucher-template-btn"><img src="assets/figma-voucher/icon-download.png" alt="" aria-hidden="true">Template</button><button class="asset-btn voucher-import-btn"><img src="assets/figma-voucher/icon-upload.png" alt="" aria-hidden="true">Import</button></div>
+          <button class="asset-btn primary" id="voucherAddNew"><img src="assets/figma-voucher/icon-plus.png" alt="" aria-hidden="true">Add New</button>
         </div>
         <div class="voucher-table-wrap">
           <table class="voucher-table">
@@ -176,7 +176,7 @@
         <h1>1. Discount Scheme</h1>
         <div class="voucher-section-body voucher-discount-grid">
           <label class="voucher-field required"><span>Voucher type</span><select id="voucherType"><option value="">Please select</option><option>Cashback</option><option>Discount amount</option><option>Discount percentage</option></select></label>
-          <label class="voucher-field"><span>Status</span><select disabled><option>Draft</option></select></label>
+          <label class="voucher-field"><span>Status</span><div class="voucher-status-select" aria-label="Status: Draft"><b>Draft</b><i aria-hidden="true"></i></div></label>
         </div>
       </section>
 
@@ -200,7 +200,7 @@
 
           <div class="voucher-rule-two-col">
             <fieldset class="voucher-field required"><legend>Auto apply</legend><label class="voucher-radio"><input type="radio" name="voucherAutoApply">Yes</label><label class="voucher-radio"><input type="radio" name="voucherAutoApply" checked>No</label></fieldset>
-            <label class="voucher-field required"><span>Applicable payment method <i class="help-mark">?</i></span><div class="voucher-token-control"><span>Cashier Payment ×</span></div></label>
+            <label class="voucher-field required"><span>Applicable payment method <img class="voucher-help-icon" src="assets/figma-voucher/icon-question.png" alt="Help"></span><div class="voucher-token-control"><span>Cashier Payment ×</span></div></label>
             <label class="voucher-field required"><span>Order amount</span><div class="voucher-order-control"><select><option>Min (&gt;=)</option></select><input type="number" placeholder="Enter value"><b>VND</b></div></label>
           </div>
 
@@ -220,15 +220,15 @@
             <label class="voucher-field required"><span>Voucher description</span><div class="voucher-counted"><input maxlength="64" placeholder="Voucher description"><small>0 / 64</small></div></label>
             <fieldset class="voucher-field required"><legend>Display at short-list voucher at checkout page</legend><label class="voucher-radio"><input type="radio" name="voucherDisplay" checked>Do not display</label><label class="voucher-radio"><input type="radio" name="voucherDisplay">Display</label></fieldset>
           </div>
-          <div class="voucher-logo-settings"><label class="voucher-field required"><span>Merchant Logo</span><select><option>1 - Default</option></select></label><div class="voucher-upload"><span>Upload Thumbnail</span><button type="button">⇧ Upload</button></div><small>PNG/JPEG, &lt; 150KB</small></div>
-          <div class="voucher-demo-card"><div class="voucher-demo-logo">Zalo<br><b>pay</b></div><div class="voucher-demo-dash"></div><span>HSD: ../../..</span><strong>Dùng ngay</strong></div>
+          <div class="voucher-logo-settings"><label class="voucher-field required"><span>Merchant Logo</span><select><option>1 - Default</option></select></label><div class="voucher-upload"><span>Upload Thumbnail</span><button type="button"><img src="assets/figma-voucher/icon-upload-create.png" alt="" aria-hidden="true">Upload</button></div><small>PNG/JPEG, &lt; 150KB</small></div>
+          <img class="voucher-demo-card-image" src="assets/figma-voucher/voucher-create-preview.png" alt="Voucher preview">
         </div>
       </section>
 
       <section class="voucher-form-section voucher-tnc-section">
         <h1>4. Voucher TnC <button type="button" class="voucher-chevron" aria-label="Collapse section">⌄</button></h1>
         <div class="voucher-section-body">
-          <label class="voucher-field required"><span>TnC Content</span><div class="voucher-editor"><div class="voucher-editor-toolbar"><b>B</b><i>I</i><u>U</u><s>S</s><span>☷</span><span>≡</span><span>¶</span><span>▦</span><span>🔗</span><span>−</span><span>⌘</span><span>⌄</span></div><textarea aria-label="TnC Content"></textarea><small>WORDS: 0&nbsp;&nbsp; POWERED BY JODIT</small></div></label>
+          <label class="voucher-field required"><span>TnC Content</span><div class="voucher-editor"><div class="voucher-editor-toolbar"><img src="assets/figma-voucher/voucher-editor-toolbar.png" alt="Rich text formatting tools"></div><textarea aria-label="TnC Content"></textarea><small>WORDS: 0&nbsp;&nbsp; POWERED BY JODIT</small></div></label>
           <div class="voucher-cta-row"><span>CTA :</span><button type="button" class="voucher-switch active" aria-label="CTA enabled"><i></i></button><div class="voucher-counted voucher-cta-name"><input maxlength="15" placeholder="CTA Name"><small>0 / 15</small></div></div>
           <div class="voucher-redirect-grid">
             <label class="voucher-field"><span>ZPA Redirect URL</span><div class="voucher-url-control"><select><option>URL</option></select><input placeholder="zalopay://"></div></label>

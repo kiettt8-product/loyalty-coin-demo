@@ -18,8 +18,18 @@ const expected = ["ID", "Demo", "Status", "Updated time", "Label", "Created by",
 if (JSON.stringify(headers) !== JSON.stringify(expected)) throw new Error(`Voucher list headers mismatch: ${JSON.stringify(headers)}`);
 if (await page.locator(".voucher-table tbody tr").count() !== 10) throw new Error("Voucher list must render 10 rows");
 if (!await page.getByRole("button", { name: "Voucher", exact: true }).evaluate(node => node.classList.contains("active"))) throw new Error("Voucher navigation must be active");
-await page.screenshot({ path: "voucher-asset-list.png", fullPage: true });
+const figmaGeometry = await page.evaluate(() => ({
+  filter: document.querySelector(".voucher-filter-panel").getBoundingClientRect().toJSON(),
+  table: document.querySelector(".voucher-table").getBoundingClientRect().toJSON(),
+  row: document.querySelector(".voucher-table tbody tr").getBoundingClientRect().toJSON(),
+  card: document.querySelector(".voucher-demo-image").getBoundingClientRect().toJSON()
+}));
+if (figmaGeometry.filter.width !== 1640 || figmaGeometry.filter.height !== 136) throw new Error(`Filter geometry differs from Figma: ${JSON.stringify(figmaGeometry.filter)}`);
+if (figmaGeometry.table.width !== 1592 || figmaGeometry.row.height !== 125) throw new Error(`Table geometry differs from Figma: ${JSON.stringify(figmaGeometry)}`);
+if (figmaGeometry.card.width !== 359 || figmaGeometry.card.height !== 100) throw new Error(`Voucher card geometry differs from Figma: ${JSON.stringify(figmaGeometry.card)}`);
+await page.mouse.move(1900, 20);
 await page.screenshot({ path: "voucher-asset-list-viewport.png" });
+await page.screenshot({ path: "voucher-asset-list.png", fullPage: true });
 
 await page.getByRole("button", { name: "Add New" }).click();
 await page.locator("#voucherCreateForm").waitFor();
@@ -27,12 +37,13 @@ const sections = await page.locator(".voucher-form-section > h1").allTextContent
 if (sections.length !== 4 || !sections[0].includes("Discount Scheme") || !sections[3].includes("Voucher TnC")) throw new Error("Create Voucher Asset sections do not match Figma");
 if (!await page.locator(".voucher-sticky-actions").isVisible()) throw new Error("Sticky create actions are missing");
 if (!await page.getByRole("button", { name: "Voucher", exact: true }).evaluate(node => node.classList.contains("active"))) throw new Error("Voucher navigation must remain active on create page");
-await page.screenshot({ path: "voucher-asset-create.png", fullPage: true });
+await page.evaluate(() => window.scrollTo(0, 0));
 await page.screenshot({ path: "voucher-asset-create-viewport.png" });
+await page.screenshot({ path: "voucher-asset-create.png", fullPage: true });
 
 await page.getByRole("button", { name: "Cancel", exact: true }).click();
 await page.locator(".voucher-list-screen").waitFor();
 if (errors.length) throw new Error(`Browser errors: ${errors.join(" | ")}`);
 
-console.log(JSON.stringify({ headers, rows: 10, sections: sections.map(value => value.trim()), browserErrors: errors }, null, 2));
+console.log(JSON.stringify({ headers, rows: 10, figmaGeometry, sections: sections.map(value => value.trim()), browserErrors: errors }, null, 2));
 await browser.close();

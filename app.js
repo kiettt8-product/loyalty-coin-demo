@@ -715,8 +715,12 @@ function route(name, payload = {}) {
   if (name.startsWith("voucher-")) {
     const assetMenu = document.getElementById("assetManagementMenu");
     const assetParent = document.querySelector('[data-nav-target="assetManagementMenu"]');
+    const userProfileMenu = document.getElementById("userProfileMenu");
+    const userProfileParent = document.querySelector('[data-nav-target="userProfileMenu"]');
     assetMenu.hidden = false;
     assetParent.setAttribute("aria-expanded", "true");
+    userProfileMenu.hidden = false;
+    userProfileParent.setAttribute("aria-expanded", "true");
   }
   document.getElementById("sidebar").classList.remove("open");
   main.focus({ preventScroll: true });
@@ -728,12 +732,11 @@ function assetActionIcon(kind, label) {
 }
 
 function voucherDemoMarkup(item) {
-  return `<div class="voucher-demo">
-    <div class="voucher-demo-brand ${item.brandClass}">${escapeHtml(item.brand)}</div>
-    <div class="voucher-demo-seam" aria-hidden="true"></div>
-    <div class="voucher-demo-copy"><small>${escapeHtml(item.merchant)}</small><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.description)}</span></div>
-    <span class="voucher-demo-info" aria-label="Voucher information">i</span>
-  </div>`;
+  return `<img class="voucher-demo-image" src="assets/figma-voucher/voucher-card-${item.id}.png" alt="${escapeHtml(item.merchant)} — ${escapeHtml(item.title)} — ${escapeHtml(item.description)}">`;
+}
+
+function voucherActionIcon(kind, label) {
+  return `<button class="asset-icon-button" aria-label="${label}" title="${label}"><img src="assets/figma-voucher/icon-${kind}.png" alt="" aria-hidden="true"></button>`;
 }
 
 function renderVoucherAssetRows(rows = voucherAssets) {
@@ -745,7 +748,7 @@ function renderVoucherAssetRows(rows = voucherAssets) {
     <td>${item.updated}</td>
     <td>${escapeHtml(item.label)}</td>
     <td>${escapeHtml(item.owner)}</td>
-    <td><div class="voucher-row-actions">${assetActionIcon("clone", "Clone")}${assetActionIcon("edit", "Edit")}</div></td>
+    <td><div class="voucher-row-actions">${voucherActionIcon("clone", "Clone")}${voucherActionIcon("edit", "Edit")}</div></td>
   </tr>`).join("");
   document.getElementById("voucherItemCount").textContent = rows.length ? `1-${rows.length} of 3024 items` : "0 items";
 }
