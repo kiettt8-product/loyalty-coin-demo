@@ -613,6 +613,7 @@ const templates = {
   "promotion-list": document.getElementById("promotionListTemplate"),
   "promotion-form": document.getElementById("promotionFormTemplate"),
   "ai-banner": document.getElementById("aiBannerTemplate"),
+  "budget-approval": document.getElementById("budgetApprovalTemplate"),
   "coin-direct-discount": document.getElementById("coinDirectDiscountTemplate"),
   "gotit-direct-discount": document.getElementById("gotitDirectDiscountTemplate")
 };
@@ -704,6 +705,7 @@ function route(name, payload = {}) {
   if (name === "voucher-create") initVoucherAssetCreate();
   if (name === "promotion-list") initPromotionList();
   if (name === "promotion-form") initPromotionForm(payload);
+  if (name === "budget-approval") initBudgetApproval();
   if (["ai-banner", "coin-direct-discount", "gotit-direct-discount"].includes(name)) {
     const otherMenu = document.getElementById("othersMenu");
     const otherParent = document.querySelector('[data-nav-target="othersMenu"]');
@@ -712,6 +714,17 @@ function route(name, payload = {}) {
   }
   if (name === "coin-direct-discount") initCoinDirectDiscount();
   if (name === "gotit-direct-discount") initGotitDirectDiscount();
+  if (name === "budget-approval") {
+    const budgetMenu = document.getElementById("budgetManagementMenu");
+    const budgetParent = document.querySelector('[data-nav-target="budgetManagementMenu"]');
+    const campaignMenu = document.getElementById("campaignManagementMenu");
+    const campaignParent = document.querySelector('[data-nav-target="campaignManagementMenu"]');
+    budgetMenu.hidden = false;
+    budgetParent.setAttribute("aria-expanded", "true");
+    campaignMenu.hidden = true;
+    campaignParent.setAttribute("aria-expanded", "false");
+    campaignParent.querySelector("span").textContent = "⌄";
+  }
   if (name.startsWith("voucher-")) {
     const assetMenu = document.getElementById("assetManagementMenu");
     const assetParent = document.querySelector('[data-nav-target="assetManagementMenu"]');
@@ -2570,6 +2583,12 @@ function initCoinTopup() {
   const requestedAmount = document.getElementById("coinTopupRequestedAmount");
   let submittedAmount = 0;
 
+  const latestRequest = readCoinTopupRequests()[0];
+  if (latestRequest) {
+    requestedAmount.textContent = `${money(Number(latestRequest.amount) || 0)} VND`;
+    statusPanel.hidden = false;
+  }
+
   amountInput.oninput = () => {
     amountInput.value = amountInput.value.replace(/[^0-9]/g, "");
   };
@@ -2591,6 +2610,7 @@ function initCoinTopup() {
   });
   dialog.addEventListener("close", () => {
     if (dialog.returnValue !== "confirm") return;
+    saveCoinTopupRequest(submittedAmount);
     requestedAmount.textContent = `${money(submittedAmount)} VND`;
     statusPanel.hidden = false;
     amountInput.value = "";
@@ -2604,9 +2624,205 @@ function initCoinDirectDiscount() {
   initCoinBudgetAlert();
 }
 
+const budgetApprovalDemoRows = [
+  { mktCode: "LYT_DEMO_001", request: 20000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-001", domain: "sample" },
+  { mktCode: "LYT_DEMO_002", request: 20000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-002", domain: "sample" },
+  { mktCode: "DLS_DEMO_003", request: 20000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-003", domain: "growth" },
+  { mktCode: "LYT_DEMO_004", request: 20000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-004", domain: "growth" },
+  { mktCode: "LOYALTY_DEMO_005", request: 100000000, approved: 100000000, campaigns: 2, shared: false, status: "Approved: 2", ticket: "DEMO-REQ-005", domain: "business" },
+  { mktCode: "LOYALTY_DEMO_006", request: 100000000, approved: 0, campaigns: 2, shared: true, status: "Reviewing: 2", ticket: "DEMO-REQ-006", domain: "business" },
+  { mktCode: "LOYALTY_DEMO_007", request: 100000000, approved: 100000000, campaigns: 2, shared: false, status: "Approved: 2", ticket: "DEMO-REQ-007", domain: "business" },
+  { mktCode: "LOYALTY_DEMO_008", request: 100000000, approved: 0, campaigns: 2, shared: true, status: "Reviewing: 2", ticket: "DEMO-REQ-008", domain: "business" },
+  { mktCode: "LOYALTY_DEMO_009", request: 100000000, approved: 100000000, campaigns: 2, shared: false, status: "Approved: 2", ticket: "DEMO-REQ-009", domain: "business" },
+  { mktCode: "LOYALTY_DEMO_010", request: 100000000, approved: 100000000, campaigns: 2, shared: false, status: "Approved: 2", ticket: "DEMO-REQ-010", domain: "business" },
+  { mktCode: "LOYALTY_DEMO_011", request: 50000000, approved: 50000000, campaigns: 1, shared: false, status: "Approved: 1", ticket: "DEMO-REQ-011", domain: "sample" },
+  { mktCode: "LOYALTY_DEMO_012", request: 50000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-012", domain: "sample" }
+];
+
+const coinTopupStorageKey = "coin2dd-demo-topup-requests";
+function readCoinTopupRequests() {
+  try {
+    const items = JSON.parse(sessionStorage.getItem(coinTopupStorageKey) || "[]");
+    return Array.isArray(items) ? items.filter(item => Number(item.amount) > 0) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCoinTopupRequest(amount) {
+  const request = {
+    mktCode: "COIN2DD_TOPUP",
+    amount: Number(amount),
+    approved: 0,
+    campaigns: 1,
+    shared: true,
+    status: "Reviewing: 1",
+    ticket: "—",
+    domain: "business-demo"
+  };
+  try {
+    const requests = readCoinTopupRequests();
+    sessionStorage.setItem(coinTopupStorageKey, JSON.stringify([request, ...requests].slice(0, 20)));
+  } catch {
+    // Keep the current screen usable if browser storage is unavailable.
+  }
+  return request;
+}
+
+function initBudgetApproval() {
+  const body = document.getElementById("budgetApprovalRows");
+  const mktCode = document.getElementById("budgetApprovalMktCode");
+  const status = document.getElementById("budgetApprovalStatus");
+  const domain = document.getElementById("budgetApprovalDomain");
+  const pageSize = document.getElementById("budgetApprovalPageSize");
+  const pageNumbers = document.getElementById("budgetApprovalPageNumbers");
+  const selectAll = document.getElementById("budgetApprovalSelectAll");
+  let page = 1;
+  let filteredRows = [];
+
+  const getRows = () => [...readCoinTopupRequests().map(item => ({
+    mktCode: "COIN2DD_TOPUP",
+    request: Number(item.amount) || 0,
+    approved: 0,
+    campaigns: 1,
+    shared: true,
+    status: "Reviewing: 1",
+    ticket: "—",
+    domain: "business-demo"
+  })), ...budgetApprovalDemoRows];
+  const initialRows = getRows();
+  mktCode.innerHTML = `<option value="">All</option>${[...new Set(initialRows.map(item => item.mktCode))].map(code => `<option value="${escapeHtml(code)}">${escapeHtml(code)}</option>`).join("")}`;
+
+  const render = () => {
+    const rows = filteredRows;
+    const size = Number(pageSize.value) || 10;
+    const pageCount = Math.max(1, Math.ceil(rows.length / size));
+    page = Math.min(page, pageCount);
+    const start = (page - 1) * size;
+    const pageRows = rows.slice(start, start + size);
+    body.innerHTML = pageRows.map(item => {
+      const approved = item.status.startsWith("Approved");
+      return `<tr>
+        <td class="budget-check-cell"><input type="checkbox" aria-label="Select ${escapeHtml(item.mktCode)}" ${approved ? "disabled" : ""}></td>
+        <td><a class="budget-request-link" href="#" data-budget-request="${escapeHtml(item.mktCode)}">${escapeHtml(item.mktCode)}</a></td>
+        <td class="budget-number">${Number(item.request).toLocaleString("en-US")}</td>
+        <td class="budget-number">${Number(item.approved).toLocaleString("en-US")}</td>
+        <td class="budget-number">${Number(item.campaigns).toLocaleString("en-US")}</td>
+        <td>${item.shared ? "Yes" : "No"}</td>
+        <td><span class="budget-status-chip ${approved ? "is-approved" : "is-reviewing"}">${escapeHtml(item.status)}</span></td>
+        <td>${escapeHtml(item.ticket)}</td>
+        <td>${escapeHtml(item.domain)}</td>
+      </tr>`;
+    }).join("");
+    const end = Math.min(start + pageRows.length, rows.length);
+    document.getElementById("budgetApprovalCount").textContent = rows.length ? `${start + 1}-${end} of ${rows.length} items` : "0 items";
+    document.getElementById("budgetApprovalPrevious").disabled = page <= 1;
+    document.getElementById("budgetApprovalNext").disabled = page >= pageCount;
+    pageNumbers.innerHTML = Array.from({ length: pageCount }, (_, index) => index + 1).map(value => `<button type="button" class="budget-page-button ${value === page ? "is-current" : ""}" data-page="${value}" ${value === page ? 'aria-current="page"' : ""}>${value}</button>`).join("");
+    selectAll.checked = false;
+    selectAll.disabled = !pageRows.some(item => !item.status.startsWith("Approved"));
+  };
+
+  const search = () => {
+    const code = mktCode.value;
+    const statusValue = status.value;
+    const domainValue = domain.value.trim().toLocaleLowerCase();
+    filteredRows = getRows().filter(item =>
+      (!code || item.mktCode === code)
+      && (!statusValue || item.status.startsWith(statusValue))
+      && (!domainValue || item.domain.toLocaleLowerCase().includes(domainValue))
+    );
+    page = 1;
+    render();
+  };
+
+  document.getElementById("budgetApprovalSearch").onclick = search;
+  document.getElementById("budgetApprovalReset").onclick = () => {
+    mktCode.value = "";
+    status.value = "";
+    domain.value = "";
+    search();
+  };
+  domain.onkeydown = event => { if (event.key === "Enter") search(); };
+  pageSize.onchange = () => { page = 1; render(); };
+  document.getElementById("budgetApprovalPrevious").onclick = () => { page = Math.max(1, page - 1); render(); };
+  document.getElementById("budgetApprovalNext").onclick = () => { page += 1; render(); };
+  pageNumbers.onclick = event => {
+    const button = event.target.closest("[data-page]");
+    if (!button) return;
+    page = Number(button.dataset.page);
+    render();
+  };
+  selectAll.onchange = () => body.querySelectorAll('input[type="checkbox"]:not(:disabled)').forEach(checkbox => checkbox.checked = selectAll.checked);
+  body.onclick = event => {
+    const link = event.target.closest("[data-budget-request]");
+    if (!link) return;
+    event.preventDefault();
+    toast("Request detail is not included in this UI draft.");
+  };
+  document.getElementById("budgetApprovalDownload").onclick = () => {
+    const csv = "MKT Code,Total budget request,Total budget approved,Campaigns,Shared budget,Status,TicketID,Domain\n";
+    const blobUrl = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = blobUrl;
+    anchor.download = "budget-approval-template.csv";
+    anchor.click();
+    URL.revokeObjectURL(blobUrl);
+  };
+  document.getElementById("budgetApprovalImport").onclick = () => toast("File import is not connected in this UI draft.");
+  search();
+}
+
 function initGotitDirectDiscount() {
   initDirectDiscount("gotit", false);
 }
+
+const assistantToggle = document.getElementById("assistantToggle");
+const assistantPanel = document.getElementById("crmAssistant");
+const assistantQuestion = document.getElementById("assistantQuestion");
+const assistantReply = document.getElementById("assistantReply");
+
+function setAssistantOpen(open) {
+  assistantPanel.hidden = !open;
+  assistantPanel.setAttribute("aria-hidden", String(!open));
+  assistantToggle.setAttribute("aria-expanded", String(open));
+  assistantToggle.setAttribute("aria-label", open ? "Đóng CRM Assistant" : "Mở CRM Assistant");
+  if (open) assistantQuestion.focus();
+  else assistantToggle.focus();
+}
+
+assistantToggle.addEventListener("click", () => setAssistantOpen(assistantPanel.hidden));
+document.getElementById("assistantClose").addEventListener("click", () => setAssistantOpen(false));
+document.getElementById("assistantNewChat").addEventListener("click", () => {
+  assistantQuestion.value = "";
+  assistantReply.hidden = true;
+  assistantReply.textContent = "";
+  document.getElementById("assistantSummary").hidden = true;
+  document.getElementById("assistantConditions").hidden = true;
+  document.querySelector(".assistant-intro").hidden = false;
+  assistantQuestion.focus();
+});
+document.getElementById("assistantExplain").addEventListener("click", () => {
+  document.getElementById("assistantSummary").hidden = false;
+  document.getElementById("assistantConditions").hidden = false;
+  document.querySelector(".assistant-intro").hidden = true;
+});
+document.getElementById("assistantForm").addEventListener("submit", event => {
+  event.preventDefault();
+  if (!assistantQuestion.value.trim()) {
+    assistantQuestion.focus();
+    return;
+  }
+  const question = assistantQuestion.value.trim().toLocaleLowerCase("vi");
+  assistantReply.textContent = question.includes("mtd") || question.includes("đầu tháng")
+    ? "MTD là khoảng thời gian từ ngày đầu tháng đến thời điểm hiện tại. Segment sẽ tính các giao dịch thành công trong khoảng này."
+    : "Segment này gồm người dùng đã thực hiện thành công ít nhất một giao dịch trên ứng dụng có mã 241 từ đầu tháng đến nay. Hiện chưa có tên ứng dụng để thay cho mã 241.";
+  assistantReply.hidden = false;
+  assistantQuestion.value = "";
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !assistantPanel.hidden) setAssistantOpen(false);
+});
 
 document.querySelectorAll("[data-route]").forEach(button => button.onclick = () => route(button.dataset.route));
 document.querySelectorAll("[data-nav-target]").forEach(button => button.onclick = () => {
