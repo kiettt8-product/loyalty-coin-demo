@@ -386,6 +386,23 @@ body.asset-mode .time-field { grid-column: auto; }
 .budget-summary-row dd small { color: #66798b; font-size: 12px; font-weight: 400; }
 .budget-summary-row dl > span { margin-top: 2px; color: #66798b; font-size: 12px; }
 
+.coin-topup-body { display: grid; gap: 12px; }
+.coin-topup-form { max-width: 760px; display: grid; grid-template-columns: minmax(240px, 1fr) auto; gap: 16px; align-items: end; }
+.coin-topup-form .asset-suffix { grid-template-columns: minmax(0, 1fr) 64px; }
+.coin-topup-form .asset-btn { min-width: 142px; }
+.coin-topup-hint { margin: 0; color: #66798b; font-size: 12px; line-height: 18px; }
+.coin-topup-request { display: grid; grid-template-columns: auto minmax(160px, auto) 1fr; align-items: center; gap: 8px 16px; margin-top: 4px; padding: 12px 16px; border: 1px solid #ffe2a9; border-radius: 4px; background: #fffaf0; }
+.coin-topup-request[hidden] { display: none; }
+.coin-topup-status { min-height: 24px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; background: #ffe2a9; color: #7a4700; font-size: 12px; white-space: nowrap; }
+.coin-topup-request > div { display: flex; flex-direction: column; gap: 2px; }
+.coin-topup-request > div span { color: #66798b; font-size: 12px; }
+.coin-topup-request > div strong { color: #001f3e; font-size: 14px; font-weight: 600; }
+.coin-topup-request p { margin: 0; color: #66798b; font-size: 12px; line-height: 18px; }
+.coin-topup-dialog { width: min(520px, calc(100% - 24px)); }
+.coin-topup-confirm-copy { margin: 18px 0 8px; color: #001f3e; font-size: 14px; line-height: 22px; }
+.coin-topup-confirm-copy strong { font-weight: 600; }
+.coin-topup-confirm-note { margin: 0 0 24px; color: #66798b; font-size: 13px; line-height: 20px; }
+
 .coin-alert-grid { align-items: end; }
 .coin-alert-grid .tag-control { min-height: 32px; flex-wrap: wrap; background: #fff; }
 .coin-alert-grid .tag-control:focus-within { border-color: #165dff; box-shadow: 0 0 0 1px rgba(22,93,255,.12); }
@@ -454,6 +471,9 @@ body.asset-mode .time-field { grid-column: auto; }
   .budget-summary-row dl + dl { border-top: 1px solid #f0f0f0; border-left: 0; }
   .coin-alert-grid { grid-template-columns: 1fr; }
   .coin-alert-actions { justify-content: flex-start; }
+  .coin-topup-form { grid-template-columns: 1fr; }
+  .coin-topup-form .asset-btn { justify-self: start; }
+  .coin-topup-request { grid-template-columns: 1fr; align-items: start; }
   .merchant-grid { padding: 16px; }
   .merchant-control-row { grid-template-columns: 92px minmax(0, 1fr); }
 }

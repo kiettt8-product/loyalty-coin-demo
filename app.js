@@ -2561,8 +2561,46 @@ function initDirectDiscount(type, hasConversionRate) {
   updatePreview();
 }
 
+function initCoinTopup() {
+  const amountInput = document.getElementById("coinTopupAmount");
+  const requestButton = document.getElementById("requestCoinTopup");
+  const dialog = document.getElementById("coinTopupConfirmDialog");
+  const confirmAmount = document.getElementById("coinTopupConfirmAmount");
+  const statusPanel = document.getElementById("coinTopupRequestStatus");
+  const requestedAmount = document.getElementById("coinTopupRequestedAmount");
+  let submittedAmount = 0;
+
+  amountInput.oninput = () => {
+    amountInput.value = amountInput.value.replace(/[^0-9]/g, "");
+  };
+  amountInput.onblur = () => {
+    amountInput.value = formattedNumber(amountInput.value);
+  };
+  requestButton.onclick = () => {
+    submittedAmount = number(amountInput.value);
+    if (submittedAmount <= 0) {
+      amountInput.focus();
+      toast("Enter a top-up amount greater than 0 VND.", "error");
+      return;
+    }
+    confirmAmount.textContent = money(submittedAmount);
+    dialog.showModal();
+  };
+  dialog.addEventListener("click", event => {
+    if (event.target === dialog) dialog.close("cancel");
+  });
+  dialog.addEventListener("close", () => {
+    if (dialog.returnValue !== "confirm") return;
+    requestedAmount.textContent = `${money(submittedAmount)} VND`;
+    statusPanel.hidden = false;
+    amountInput.value = "";
+    toast("Top-up request submitted for FP&A approval.");
+  });
+}
+
 function initCoinDirectDiscount() {
   initDirectDiscount("coin", true);
+  initCoinTopup();
   initCoinBudgetAlert();
 }
 

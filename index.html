@@ -511,6 +511,31 @@
         </div>
       </section>
 
+      <section class="other-section coin-topup-section" aria-labelledby="coinTopupTitle">
+        <h1 id="coinTopupTitle">Top up budget</h1>
+        <div class="other-section-body coin-topup-body">
+          <div class="coin-topup-form">
+            <label class="field asset-field required" for="coinTopupAmount"><span>Top-up amount</span><div class="asset-suffix"><input id="coinTopupAmount" type="text" inputmode="numeric" autocomplete="off" placeholder="Enter amount" aria-describedby="coinTopupHint"><b>VND</b></div></label>
+            <button type="button" class="asset-btn primary" id="requestCoinTopup">Request top-up</button>
+          </div>
+          <p class="coin-topup-hint" id="coinTopupHint">For authorized Business users. FP&amp;A reviews requests in Budget Management; the budget changes only after approval.</p>
+          <div class="coin-topup-request" id="coinTopupRequestStatus" role="status" aria-live="polite" hidden>
+            <span class="coin-topup-status">Pending FP&amp;A approval</span>
+            <div><span>Requested amount</span><strong id="coinTopupRequestedAmount"></strong></div>
+            <p>Your request is waiting for FP&amp;A approval in Budget Management.</p>
+          </div>
+        </div>
+      </section>
+
+      <dialog class="asset-choice-dialog coin-topup-dialog" id="coinTopupConfirmDialog" aria-labelledby="coinTopupConfirmTitle">
+        <form method="dialog">
+          <div class="asset-dialog-heading"><h1 id="coinTopupConfirmTitle">Confirm top-up request</h1><button type="submit" class="asset-dialog-close" value="cancel" aria-label="Close">×</button></div>
+          <p class="coin-topup-confirm-copy">Submit a top-up request for <strong id="coinTopupConfirmAmount"></strong> VND?</p>
+          <p class="coin-topup-confirm-note">The amount will be added to the shared Coin2DD budget only after FP&amp;A approves it in Budget Management.</p>
+          <div class="asset-dialog-actions"><button type="submit" class="asset-btn secondary" value="cancel">Cancel</button><button type="submit" class="asset-btn primary" id="confirmCoinTopup" value="confirm">Confirm request</button></div>
+        </form>
+      </dialog>
+
       <section class="other-section coin-alert-section">
         <h1>Budget Alert</h1>
         <div class="other-section-body asset-alert-grid coin-alert-grid">
