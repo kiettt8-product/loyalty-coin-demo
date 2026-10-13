@@ -47,6 +47,30 @@ const state = {
   ]
 };
 
+const budgetMktCatalog = {
+  shared: {
+    code: "DLS_260528_563",
+    promotionType: "Coin",
+    name: "[28/05/2026][DLS_260528_563][BAU]",
+    allocatedBudget: 30000000,
+    budgetMethods: ["campaign"]
+  },
+  campaign: {
+    code: "ZPI_060426_341",
+    promotionType: "Coin",
+    name: "ZPI_060426_341_campaign",
+    allocatedBudget: 5000000,
+    budgetMethods: ["campaign", "package"]
+  },
+  package: {
+    code: "ZPI_060426_342",
+    promotionType: "Voucher",
+    name: "Voucher_Discount_721",
+    allocatedBudget: 200000,
+    budgetMethods: ["campaign", "package"]
+  }
+};
+
 const assetCampaigns = [
   { id: 1371, name: "TRONG_260526_TEST_62", code: "TRONG_260526_TEST", budget: 3000000, rewards: "2134", type: "Massive", time: "01/07/2027 00:00", target: "test tier", status: "Draft", label: "annhg_test_icon, ZPO_a, Enablers", owner: "trongdd2" },
   { id: 1570, name: "TRONG_260526_TEST_79", code: "TRONG_260526_TEST", budget: 3000000, rewards: "1827", type: "Massive", time: "01/07/2027 00:00", target: "test tier", status: "Approved", label: "annhg_test_icon, ZPO_a, Enablers", owner: "trongdd2" },
@@ -1022,6 +1046,8 @@ function initForm(options = {}) {
     };
   }
 
+  populateCoinMktCodeOptions();
+
   state.packages = campaign ? clonePackages(campaign.packages) : [newPackage()];
   state.emails = campaign ? [...campaign.emails] : [];
   state.thresholds = campaign ? [...campaign.thresholds] : [];
@@ -1107,7 +1133,10 @@ function changeMkt() {
   const allocated = document.getElementById("allocatedBudget");
   name.disabled = !type;
   method.disabled = !type || type === "shared";
-  name.innerHTML = type ? `<option>${type === "shared" ? "DLS_260528_563" : type === "campaign" ? "ZPI_060426_341_campaign" : "ZPI_060426_342_package"}</option>` : "<option>Select MKT Name</option>";
+  const selected = budgetMktCatalog[type];
+  name.innerHTML = selected && selected.promotionType === "Coin"
+    ? `<option value="${escapeHtml(selected.name)}">${escapeHtml(selected.name)}</option>`
+    : '<option value="">Select MKT Name</option>';
   if (!type) {
     method.innerHTML = '<option value="">Select Budget Control Method</option>';
     method.value = "";
@@ -1116,13 +1145,23 @@ function changeMkt() {
     method.innerHTML = "<option value='campaign'>Control budget by campaign</option>";
     method.value = "campaign";
     allocated.value = money(30000000);
-  } else {
+  } else if (selected?.promotionType === "Coin") {
     method.innerHTML = "<option value='campaign'>Control budget by campaign</option><option value='package'>Control budget by package</option>";
     method.value = "campaign";
     allocated.value = money(5000000);
   }
   allocated.disabled = true;
   renderPackages();
+}
+
+function populateCoinMktCodeOptions() {
+  const select = document.getElementById("mktCode");
+  if (!select) return;
+  const options = Object.entries(budgetMktCatalog)
+    .filter(([, item]) => item.promotionType === "Coin")
+    .map(([key, item]) => `<option value="${escapeHtml(key)}">${escapeHtml(item.code)}</option>`)
+    .join("");
+  select.innerHTML = `<option value="">Select MKT Code</option>${options}`;
 }
 
 function renderPackages() {
@@ -2625,18 +2664,18 @@ function initCoinDirectDiscount() {
 }
 
 const budgetApprovalDemoRows = [
-  { mktCode: "LYT_DEMO_001", request: 20000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-001", domain: "sample" },
-  { mktCode: "LYT_DEMO_002", request: 20000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-002", domain: "sample" },
-  { mktCode: "DLS_DEMO_003", request: 20000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-003", domain: "growth" },
-  { mktCode: "LYT_DEMO_004", request: 20000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-004", domain: "growth" },
-  { mktCode: "LOYALTY_DEMO_005", request: 100000000, approved: 100000000, campaigns: 2, shared: false, status: "Approved: 2", ticket: "DEMO-REQ-005", domain: "business" },
-  { mktCode: "LOYALTY_DEMO_006", request: 100000000, approved: 0, campaigns: 2, shared: true, status: "Reviewing: 2", ticket: "DEMO-REQ-006", domain: "business" },
-  { mktCode: "LOYALTY_DEMO_007", request: 100000000, approved: 100000000, campaigns: 2, shared: false, status: "Approved: 2", ticket: "DEMO-REQ-007", domain: "business" },
-  { mktCode: "LOYALTY_DEMO_008", request: 100000000, approved: 0, campaigns: 2, shared: true, status: "Reviewing: 2", ticket: "DEMO-REQ-008", domain: "business" },
-  { mktCode: "LOYALTY_DEMO_009", request: 100000000, approved: 100000000, campaigns: 2, shared: false, status: "Approved: 2", ticket: "DEMO-REQ-009", domain: "business" },
-  { mktCode: "LOYALTY_DEMO_010", request: 100000000, approved: 100000000, campaigns: 2, shared: false, status: "Approved: 2", ticket: "DEMO-REQ-010", domain: "business" },
-  { mktCode: "LOYALTY_DEMO_011", request: 50000000, approved: 50000000, campaigns: 1, shared: false, status: "Approved: 1", ticket: "DEMO-REQ-011", domain: "sample" },
-  { mktCode: "LOYALTY_DEMO_012", request: 50000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-012", domain: "sample" }
+  { mktCode: "LYT_DEMO_001", promotionType: "Coin", request: 20000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-001", domain: "sample" },
+  { mktCode: "LYT_DEMO_002", promotionType: "Coin", request: 20000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-002", domain: "sample" },
+  { mktCode: "DLS_DEMO_003", promotionType: "Coin", request: 20000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-003", domain: "growth" },
+  { mktCode: "LYT_DEMO_004", promotionType: "Voucher", request: 20000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-004", domain: "growth" },
+  { mktCode: "LOYALTY_DEMO_005", promotionType: "Coin", request: 100000000, approved: 100000000, campaigns: 2, shared: false, status: "Approved: 2", ticket: "DEMO-REQ-005", domain: "business" },
+  { mktCode: "LOYALTY_DEMO_006", promotionType: "Voucher", request: 100000000, approved: 0, campaigns: 2, shared: true, status: "Reviewing: 2", ticket: "DEMO-REQ-006", domain: "business" },
+  { mktCode: "LOYALTY_DEMO_007", promotionType: "Coin", request: 100000000, approved: 100000000, campaigns: 2, shared: false, status: "Approved: 2", ticket: "DEMO-REQ-007", domain: "business" },
+  { mktCode: "LOYALTY_DEMO_008", promotionType: "Coin", request: 100000000, approved: 0, campaigns: 2, shared: true, status: "Reviewing: 2", ticket: "DEMO-REQ-008", domain: "business" },
+  { mktCode: "LOYALTY_DEMO_009", promotionType: "Voucher", request: 100000000, approved: 100000000, campaigns: 2, shared: false, status: "Approved: 2", ticket: "DEMO-REQ-009", domain: "business" },
+  { mktCode: "LOYALTY_DEMO_010", promotionType: "Coin", request: 100000000, approved: 100000000, campaigns: 2, shared: false, status: "Approved: 2", ticket: "DEMO-REQ-010", domain: "business" },
+  { mktCode: "LOYALTY_DEMO_011", promotionType: "Coin", request: 50000000, approved: 50000000, campaigns: 1, shared: false, status: "Approved: 1", ticket: "DEMO-REQ-011", domain: "sample" },
+  { mktCode: "LOYALTY_DEMO_012", promotionType: "Voucher", request: 50000000, approved: 0, campaigns: 1, shared: true, status: "Reviewing: 1", ticket: "DEMO-REQ-012", domain: "sample" }
 ];
 
 const coinTopupStorageKey = "coin2dd-demo-topup-requests";
@@ -2683,6 +2722,7 @@ function initBudgetApproval() {
   const getRows = () => [...readCoinTopupRequests().map(item => ({
     mktCode: "COIN2DD_TOPUP",
     request: Number(item.amount) || 0,
+    promotionType: "Coin",
     approved: 0,
     campaigns: 1,
     shared: true,
@@ -2705,6 +2745,7 @@ function initBudgetApproval() {
       return `<tr>
         <td class="budget-check-cell"><input type="checkbox" aria-label="Select ${escapeHtml(item.mktCode)}" ${approved ? "disabled" : ""}></td>
         <td><a class="budget-request-link" href="#" data-budget-request="${escapeHtml(item.mktCode)}">${escapeHtml(item.mktCode)}</a></td>
+        <td><span class="promotion-type-chip promotion-type-${item.promotionType === "Coin" ? "coin" : "voucher"}">${escapeHtml(item.promotionType)}</span></td>
         <td class="budget-number">${Number(item.request).toLocaleString("en-US")}</td>
         <td class="budget-number">${Number(item.approved).toLocaleString("en-US")}</td>
         <td class="budget-number">${Number(item.campaigns).toLocaleString("en-US")}</td>
@@ -2761,7 +2802,7 @@ function initBudgetApproval() {
     toast("Request detail is not included in this UI draft.");
   };
   document.getElementById("budgetApprovalDownload").onclick = () => {
-    const csv = "MKT Code,Total budget request,Total budget approved,Campaigns,Shared budget,Status,TicketID,Domain\n";
+    const csv = "MKT Code,Promotion type,Total budget request,Total budget approved,Campaigns,Shared budget,Status,TicketID,Domain\n";
     const blobUrl = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const anchor = document.createElement("a");
     anchor.href = blobUrl;

@@ -323,7 +323,7 @@
         <h1 class="section-title-row"><span id="formTitle">Basic Information</span><span id="formStatus"></span></h1>
         <div class="section-content basic-fields">
           <label class="field required" id="coinDistributionTypeField" hidden><span>Distribution Type</span><select id="coinDistributionType"><option value="coin-trigger">Distribute coin based on action trigger</option><option value="massive">Distribute Massive</option></select></label>
-          <label class="field required"><span>Select MKT Code</span><select id="mktCode"><option value="">Select MKT Code</option><option value="shared">2893 - [28/05/2026][DLS_260528_563][BAU]</option><option value="campaign">ZPI_060426_341</option><option value="package">ZPI_060426_342</option></select></label>
+          <label class="field required"><span>Select MKT Code</span><select id="mktCode"><option value="">Select MKT Code</option></select><small class="mkt-coin-hint">Chỉ hiển thị MKT Code có Promotion type = Coin.</small></label>
           <label class="field required"><span>Select MKT Name</span><select id="mktName" disabled><option>Select MKT Name</option></select></label>
           <label class="field required"><span>Budget Control Method</span><select id="budgetMethod" disabled><option value="">Select Budget Control Method</option></select></label>
           <label class="field"><span>Allocated Budget</span><div class="suffix-input"><input id="allocatedBudget" placeholder="Allocated Budget" disabled><b>VND</b></div></label>
@@ -548,10 +548,10 @@
         </div>
         <div class="budget-approval-table-scroll">
           <table class="budget-approval-table">
-            <colgroup><col class="budget-col-check"><col class="budget-col-mkt"><col class="budget-col-request"><col class="budget-col-approved"><col class="budget-col-campaigns"><col class="budget-col-shared"><col class="budget-col-status"><col class="budget-col-ticket"><col class="budget-col-domain"></colgroup>
+            <colgroup><col class="budget-col-check"><col class="budget-col-mkt"><col class="budget-col-promotion"><col class="budget-col-request"><col class="budget-col-approved"><col class="budget-col-campaigns"><col class="budget-col-shared"><col class="budget-col-status"><col class="budget-col-ticket"><col class="budget-col-domain"></colgroup>
             <thead><tr>
               <th class="budget-check-cell"><input type="checkbox" id="budgetApprovalSelectAll" aria-label="Select all pending requests"></th>
-              <th>MKT Code</th><th class="budget-number">Total budget<br>request</th><th class="budget-number">Total budget<br>approved</th><th class="budget-number">Campaigns</th><th>Shared<br>budget</th><th>Status</th><th>TicketID</th><th>Domain</th>
+              <th>MKT Code</th><th>Promotion type</th><th class="budget-number">Total budget<br>request</th><th class="budget-number">Total budget<br>approved</th><th class="budget-number">Campaigns</th><th>Shared<br>budget</th><th>Status</th><th>TicketID</th><th>Domain</th>
             </tr></thead>
             <tbody id="budgetApprovalRows"></tbody>
           </table>

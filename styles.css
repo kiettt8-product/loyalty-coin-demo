@@ -871,22 +871,27 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .budget-approval-toolbar .asset-btn { display: inline-flex; align-items: center; gap: 8px; }
 .budget-approval-toolbar img { width: 14px; height: 14px; object-fit: contain; }
 .budget-approval-table-scroll { min-width: 0; overflow-x: auto; }
-.budget-approval-table { width: 100%; min-width: 1112px; table-layout: fixed; border-collapse: collapse; color: rgba(0,31,62,.88); font-size: 14px; }
+.budget-approval-table { width: 100%; min-width: 1200px; table-layout: fixed; border-collapse: collapse; color: rgba(0,31,62,.88); font-size: 14px; }
 .budget-approval-table .budget-col-check { width: 32px; }
-.budget-approval-table .budget-col-mkt { width: 22.3%; }
-.budget-approval-table .budget-col-request { width: 13.1%; }
-.budget-approval-table .budget-col-approved { width: 13.9%; }
-.budget-approval-table .budget-col-campaigns { width: 8.2%; }
-.budget-approval-table .budget-col-shared { width: 9.6%; }
+.budget-approval-table .budget-col-mkt { width: 20%; }
+.budget-approval-table .budget-col-promotion { width: 10%; }
+.budget-approval-table .budget-col-request { width: 12%; }
+.budget-approval-table .budget-col-approved { width: 12%; }
+.budget-approval-table .budget-col-campaigns { width: 7%; }
+.budget-approval-table .budget-col-shared { width: 8%; }
 .budget-approval-table .budget-col-status { width: 10%; }
-.budget-approval-table .budget-col-ticket { width: 13%; }
-.budget-approval-table .budget-col-domain { width: 6.9%; }
+.budget-approval-table .budget-col-ticket { width: 12%; }
+.budget-approval-table .budget-col-domain { width: 7%; }
 .budget-approval-table th, .budget-approval-table td { padding: 8px; overflow-wrap: anywhere; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
 .budget-approval-table th { height: 69px; background: #fafbfb; font-weight: 600; line-height: 20px; text-align: left; }
 .budget-approval-table th.budget-number { text-align: right; }
 .budget-approval-table td { height: 47px; line-height: 18px; }
 .budget-approval-table .budget-number { text-align: right; font-variant-numeric: tabular-nums; }
 .budget-approval-table .budget-check-cell { padding-right: 4px; padding-left: 4px; text-align: center; }
+.promotion-type-chip { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.promotion-type-coin { color: #087443; background: #e8f7ef; }
+.promotion-type-voucher { color: #8a5300; background: #fff4db; }
+.mkt-coin-hint { display: block; margin-top: 4px; color: #66798b; font-size: 12px; line-height: 16px; }
 .budget-approval-table input[type="checkbox"] { width: 16px; height: 16px; margin: 0; padding: 0; accent-color: var(--primary); vertical-align: middle; }
 .budget-request-link { color: var(--primary); text-decoration: none; }
 .budget-request-link:hover { color: var(--primary-link); text-decoration: underline; }
