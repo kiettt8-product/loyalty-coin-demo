@@ -953,7 +953,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-condition-menu { width: max(100%, 280px); }
 .rule-config-card:has(.rule-condition-menu:not([hidden])) { position: relative; z-index: 10; overflow: visible; }
 .rule-condition-row [hidden], .dynamic-filter-builder[hidden] { display: none !important; }
-.dynamic-filter-builder { grid-column: 1 / -1; display: grid; gap: 10px; padding: 12px; border: 1px solid #d8e6f5; border-radius: 4px; background: #f9fbfe; }
+.dynamic-filter-builder { grid-column: 1 / -1; display: grid; gap: 10px; padding: 0; border: 0; background: transparent; }
 .dynamic-filter-title { color: #17365d; font-size: 14px; font-weight: 600; }
 .dynamic-filter-groups { display: grid; gap: 10px; }
 .dynamic-filter-group { display: grid; gap: 12px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 4px; background: #fff; }

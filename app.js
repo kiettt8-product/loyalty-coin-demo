@@ -1860,7 +1860,7 @@ function ruleConditionRow(condition = {}, readonly = false) {
   const builder = document.createElement("div");
   builder.className = "dynamic-filter-builder";
   builder.hidden = !["100", "103"].includes(condition.field);
-  builder.innerHTML = `<div class="dynamic-filter-title">${condition.field === "103" ? "Dynamic counter" : "Dynamic filter"}</div><div class="dynamic-filter-groups"></div>${readonly ? "" : '<button type="button" class="asset-btn secondary dynamic-filter-add-group">+ Add group</button>'}`;
+  builder.innerHTML = `<div class="dynamic-filter-title">${condition.field === "103" ? "Count conditions" : "Filter conditions"}</div><div class="dynamic-filter-groups"></div>${readonly ? "" : '<button type="button" class="asset-btn secondary dynamic-filter-add-group">+ Add group</button>'}`;
   const groups = builder.querySelector(".dynamic-filter-groups");
   const checks = condition.field === "103" ? dynamicCounterChecks : dynamicFilterChecks;
   (condition.groups?.length ? condition.groups : [{}]).forEach((group, index) => groups.append(dynamicFilterGroup(group, readonly, index > 0, checks)));
@@ -1906,7 +1906,7 @@ function syncRuleConditionRow(row, readonly = false) {
     input.placeholder = "Select value";
     value.replaceWith(input);
   }
-  builder.querySelector(".dynamic-filter-title").textContent = field === "103" ? "Dynamic counter" : "Dynamic filter";
+  builder.querySelector(".dynamic-filter-title").textContent = field === "103" ? "Count conditions" : "Filter conditions";
   const checks = field === "103" ? dynamicCounterChecks : dynamicFilterChecks;
   builder.querySelectorAll(".dynamic-filter-check").forEach(select => {
     const current = select.value;
