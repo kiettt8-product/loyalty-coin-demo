@@ -742,6 +742,9 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .voucher-condition-value input { width: 100%; }
 .voucher-counter-config { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 .voucher-condition-row[data-condition-id="counter-user"] .voucher-counter-config { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 901px) {
+  .voucher-condition-row[data-condition-id="counter-user"] { grid-template-columns: minmax(250px, 1.2fr) minmax(180px, 1fr) minmax(200px, 340px) 32px; }
+}
 .voucher-counter-config label { display: grid; gap: 4px; color: #66798b; font-size: 12px; }
 .voucher-counter-config input,
 .voucher-counter-config select { height: 32px; min-width: 0; font-size: 13px; }
@@ -756,6 +759,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
   .voucher-condition-value { grid-column: 1 / 2; }
   .voucher-condition-remove { grid-column: 2; grid-row: 2; justify-self: end; }
   .voucher-counter-config { grid-template-columns: 1fr; }
+  .voucher-condition-row[data-condition-id="counter-user"] .voucher-counter-config { grid-template-columns: 1fr; }
 }
 
 .voucher-display-grid { min-height: 313px; display: grid; grid-template-columns: minmax(480px, 1fr) 253px 531px; gap: 16px; }
