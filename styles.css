@@ -741,6 +741,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .voucher-condition-operator-note { height: 32px; display: flex; align-items: center; padding: 0 10px; border: 1px solid #e7ebf0; border-radius: 4px; background: #f7f9fc; color: #66798b; font-size: 13px; }
 .voucher-condition-value input { width: 100%; }
 .voucher-counter-config { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.voucher-condition-row[data-condition-id="counter-user"] .voucher-counter-config { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .voucher-counter-config label { display: grid; gap: 4px; color: #66798b; font-size: 12px; }
 .voucher-counter-config input,
 .voucher-counter-config select { height: 32px; min-width: 0; font-size: 13px; }
