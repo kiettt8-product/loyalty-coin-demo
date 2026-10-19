@@ -935,10 +935,6 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-row-actions .asset-icon-button { flex: 0 0 32px; }
 .rule-empty-state { position: absolute; inset: 48px 0 0; display: grid; place-items: center; color: #717182; }
 .rule-empty-state[hidden] { display: none; }
-.rule-page-heading { margin-bottom: 16px; }
-.rule-page-heading h1 { margin: 0; color: #001f3e; font-size: 16px; line-height: 24px; font-weight: 600; }
-.rule-page-heading p { margin: 5px 0 0; color: #717182; line-height: 20px; }
-.rule-back-link { margin: 0 0 10px; padding: 0; border: 0; background: transparent; color: #1447e6; font-size: 13px; }
 .rule-config-screen form { display: grid; gap: 16px; }
 .rule-config-card { margin-bottom: 0; }
 .rule-config-content { display: grid; gap: 16px; padding: 24px; }

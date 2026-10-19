@@ -1807,7 +1807,6 @@ function initRuleForm(payload = {}) {
   const rule = ruleEngineRules.find(item => item.id === payload.id);
   const readonly = payload.mode === "view";
   activeRuleForm = { mode: payload.mode || "create", id: payload.id || null };
-  document.getElementById("ruleFormTitle").textContent = readonly ? `Rule ${rule?.id || ""}` : payload.mode === "edit" ? "Edit rule" : "Add new rule";
   document.getElementById("ruleName").value = rule?.name || "";
   document.getElementById("ruleDescription").value = rule?.description || "";
   document.getElementById("ruleName").readOnly = readonly;
@@ -1821,7 +1820,7 @@ function initRuleForm(payload = {}) {
     if (event.target.closest(".rule-condition-remove")) event.target.closest(".rule-condition-row").remove();
   };
   const back = () => route("rule-list");
-  document.getElementById("ruleBackToList").onclick = back;
+  document.getElementById("ruleCancel").textContent = readonly ? "Back" : "Cancel";
   document.getElementById("ruleCancel").onclick = back;
   form.onsubmit = event => {
     event.preventDefault();
