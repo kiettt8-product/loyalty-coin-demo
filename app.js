@@ -48,10 +48,10 @@ const state = {
 };
 
 let ruleEngineRules = [
-  { id: "RE-10001", name: "MMF account eligibility", owner: "kiettt8", description: "Kiểm tra user đã mở tài khoản MMF hay chưa.", conditions: [{ field: "MMF account status", operator: "Is", value: "Has no account" }] },
-  { id: "RE-10002", name: "High risk user check", owner: "nghiatn", description: "Kiểm tra trạng thái risk của user.", conditions: [{ field: "Risk status", operator: "Is", value: "Low risk" }] },
-  { id: "RE-10003", name: "New user segment", owner: "linhnt22", description: "Kiểm tra user có thuộc segment New User.", conditions: [{ field: "Segment", operator: "Is", value: "New User" }] },
-  { id: "RE-10004", name: "Voucher usage limit", owner: "kiettt8", description: "Kiểm tra số lần user đã sử dụng voucher.", conditions: [{ field: "User promotion usage count", operator: "Less than", value: "3" }] }
+  { id: "RE-10001", name: "MMF account eligibility", owner: "kiettt8", description: "Checks whether the user has an MMF account.", conditions: [{ field: "MMF account status (104)", operator: "Is", value: "Has no account" }] },
+  { id: "RE-10002", name: "High risk user check", owner: "nghiatn", description: "Checks the user's risk status.", conditions: [{ field: "Risk filter (95)", operator: "Is", value: "Low risk" }] },
+  { id: "RE-10003", name: "New user segment", owner: "linhnt22", description: "Checks whether the user is in the New User segment.", conditions: [{ field: "Data segment (81)", operator: "Is", value: "New User" }] },
+  { id: "RE-10004", name: "Voucher usage limit", owner: "kiettt8", description: "Checks how many vouchers the user has used.", conditions: [{ field: "Counter user (10)", operator: "Less than", value: "3" }] }
 ];
 let nextRuleNumber = 10005;
 let activeRuleForm = { mode: "create", id: null };
@@ -1782,16 +1782,14 @@ function initRuleList() {
 }
 
 const ruleConditionOptions = [
-  ["User profile", ["KYC level", "NFC status", "eKYC status", "Account level"]],
-  ["Account & segment", ["MMF account status", "Segment", "Risk status"]],
-  ["Dynamic filter", ["Promotion code usage count", "User promotion usage count", "User transaction count"]],
-  ["Dynamic counter", ["Promotion code redemption count", "User voucher usage count", "Campaign participation count"]]
+  ["Main rule types", ["Dynamic filter (100)", "Dynamic counter (103)", "Risk filter (95)", "Data segment (81)", "Counter user period (86)", "Counter user (10)", "User profile filter (109)", "MMF account status (104)"]],
+  ["No calls found in last 44 days", ["Filter voucher by app ID, including used (99)", "Time ranges (107)", "Cross-campaign user counter (31)", "Filter voucher by app ID (98)"]]
 ];
 
 function ruleConditionRow(condition = {}, readonly = false) {
   const row = document.createElement("div");
   row.className = "rule-condition-row";
-  row.innerHTML = `<select class="rule-condition-field" aria-label="Rule condition" ${readonly ? "disabled" : ""}><option value="">Select rule condition</option>${ruleConditionOptions.map(([group, items]) => `<optgroup label="${group}">${items.map(item => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("")}</optgroup>`).join("")}</select>
+  row.innerHTML = `<select class="rule-condition-field" aria-label="Rule type" ${readonly ? "disabled" : ""}><option value="">Select rule type</option>${ruleConditionOptions.map(([group, items]) => `<optgroup label="${group}">${items.map(item => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("")}</optgroup>`).join("")}</select>
     <select class="rule-condition-operator" aria-label="Operator" ${readonly ? "disabled" : ""}><option value="">Operator</option><option>Is</option><option>Is not</option><option>Greater than</option><option>Greater than or equal to</option><option>Less than</option><option>Less than or equal to</option></select>
     <input class="rule-condition-value" aria-label="Condition value" placeholder="Select or enter value" ${readonly ? "readonly" : ""}>
     ${readonly ? "" : '<button type="button" class="rule-condition-remove" aria-label="Remove condition">×</button>'}`;

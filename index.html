@@ -730,7 +730,7 @@
 
   <template id="ruleListTemplate">
     <div class="screen asset-screen rule-engine-screen">
-      <section class="asset-filter-panel" aria-label="Tìm và lọc rule">
+      <section class="asset-filter-panel" aria-label="Search and filter rules">
         <div class="asset-filter-grid rule-filter-grid">
           <input id="ruleSearch" type="search" aria-label="Search Rule ID or Rule Name" placeholder="Rule ID / Rule Name">
           <select id="ruleCreatedBy" aria-label="Created by"><option value="">Created by</option></select>
@@ -741,7 +741,7 @@
         <div class="asset-list-toolbar"><button class="asset-btn primary" id="ruleAddNew"><span class="plus-mark" aria-hidden="true"></span>Add new</button></div>
         <div class="asset-table-wrap rule-table-wrap">
           <table class="asset-table rule-table"><thead><tr><th>Rule ID</th><th>Rule Name</th><th>Created by</th><th>Action</th></tr></thead><tbody id="ruleRows"></tbody></table>
-          <div class="rule-empty-state" id="ruleEmptyState" hidden>Không tìm thấy rule phù hợp.</div>
+          <div class="rule-empty-state" id="ruleEmptyState" hidden>No matching rules found.</div>
         </div>
         <div class="asset-pagination"><span id="ruleCount"></span><button aria-label="Previous page" disabled>‹</button><button class="active">1</button><button aria-label="Next page" disabled>›</button><select aria-label="Items per page"><option>10 / page</option></select></div>
       </section>
