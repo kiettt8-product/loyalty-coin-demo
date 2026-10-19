@@ -958,7 +958,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .dynamic-filter-groups { display: grid; gap: 10px; }
 .dynamic-filter-group { display: grid; gap: 12px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 4px; background: #fff; }
 .dynamic-filter-group-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
-.dynamic-filter-group-head label { display: grid; gap: 6px; min-width: 220px; color: #001f3e; font-size: 14px; }
+.dynamic-filter-group-head label { display: flex; align-items: center; gap: 8px; min-width: 220px; color: #001f3e; font-size: 14px; }
 .dynamic-filter-group-head label select { width: min(100%, 260px); }
 .dynamic-filter-group-rows { display: grid; gap: 8px; }
 .dynamic-filter-condition-row { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(160px, .8fr) minmax(180px, 1fr) 32px; gap: 8px; align-items: center; }
