@@ -718,6 +718,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .voucher-advanced-content { display: block; padding: 16px; border-top: 0; }
 .voucher-condition-list { display: grid; gap: 12px; }
 .voucher-condition-row { display: grid; grid-template-columns: minmax(250px, 1.2fr) minmax(180px, 1fr) minmax(200px, 1.15fr) 32px; gap: 16px; align-items: start; }
+.voucher-condition-row[data-condition-id^="counter-"] { align-items: end; }
 .voucher-condition-picker { position: relative; min-width: 0; }
 .voucher-condition-picker > input,
 .voucher-condition-row > select,
