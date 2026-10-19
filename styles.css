@@ -930,10 +930,9 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .asset-table.rule-table th:nth-child(3) { width: 25%; }
 .asset-table.rule-table th:nth-child(4), .asset-table.rule-table td:nth-child(4) { width: 180px; }
 .asset-table.rule-table td:nth-child(1) { color: #0033c9; font-variant-numeric: tabular-nums; }
-.asset-table.rule-table td:last-child { text-align: left; }
-.rule-row-actions { display: flex; align-items: center; gap: 14px; width: auto; white-space: nowrap; }
-.rule-row-actions button { padding: 0; border: 0; background: transparent; color: #1447e6; font-size: 13px; }
-.rule-row-actions .danger-action { color: #e3173c; }
+.asset-table.rule-table td:last-child { text-align: center; }
+.rule-row-actions { display: flex; align-items: center; justify-content: center; gap: 4px; width: auto; white-space: nowrap; }
+.rule-row-actions .asset-icon-button { flex: 0 0 32px; }
 .rule-empty-state { position: absolute; inset: 48px 0 0; display: grid; place-items: center; color: #717182; }
 .rule-empty-state[hidden] { display: none; }
 .rule-page-heading { margin-bottom: 16px; }

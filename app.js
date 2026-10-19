@@ -1728,11 +1728,12 @@ function renderPromotionRows(rows = promotionState.campaigns) {
 
 function renderRuleRows(rules = ruleEngineRules) {
   const body = document.getElementById("ruleRows");
+  const actionIcon = (kind, label, id) => `<button type="button" class="asset-icon-button rule-action-${kind}" data-rule-action="${kind}" data-rule-id="${escapeHtml(id)}" aria-label="${label}" title="${label}"><img src="assets/action-${kind}.svg" alt="" aria-hidden="true"></button>`;
   body.innerHTML = rules.map(rule => `<tr>
     <td class="rule-id-cell">${escapeHtml(rule.id)}</td>
     <td>${escapeHtml(rule.name)}</td>
     <td>${escapeHtml(rule.owner)}</td>
-    <td><div class="rule-row-actions"><button type="button" data-rule-action="view" data-rule-id="${escapeHtml(rule.id)}">View</button><button type="button" data-rule-action="edit" data-rule-id="${escapeHtml(rule.id)}">Edit</button><button type="button" class="danger-action" data-rule-action="delete" data-rule-id="${escapeHtml(rule.id)}">Delete</button></div></td>
+    <td><div class="rule-row-actions">${actionIcon("view", "View", rule.id)}${actionIcon("edit", "Edit", rule.id)}${actionIcon("delete", "Delete", rule.id)}</div></td>
   </tr>`).join("");
   document.getElementById("ruleEmptyState").hidden = rules.length > 0;
   document.getElementById("ruleCount").textContent = rules.length ? `1-${rules.length} of ${rules.length} items` : "0 items";
