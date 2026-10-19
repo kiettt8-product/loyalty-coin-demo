@@ -939,10 +939,10 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-config-card { margin-bottom: 0; }
 .rule-config-content { display: grid; gap: 16px; padding: 24px; }
 .rule-config-content #ruleAddCondition { justify-self: start; }
-.rule-config-field { display: grid; gap: 7px; max-width: 720px; color: #344054; font-size: 13px; }
+.rule-config-field { display: grid; gap: 8px; max-width: 720px; color: #001f3e; font-size: 14px; line-height: 17px; }
 .rule-config-field b { color: #fb2c36; }
 .rule-config-field textarea { min-height: 76px; }
-.rule-condition-heading { margin: 0; color: #717182; line-height: 20px; }
+.rule-condition-heading { margin: 0; color: #66798b; font-size: 14px; line-height: 20px; }
 .rule-condition-rows { display: grid; gap: 10px; }
 .rule-condition-row { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(180px, .8fr) minmax(200px, 1fr) 34px; gap: 12px; align-items: center; }
 .rule-condition-row select, .rule-condition-row input { min-width: 0; height: 32px; }
