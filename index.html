@@ -749,26 +749,27 @@
   </template>
 
   <template id="ruleFormTemplate">
-    <form class="screen asset-screen asset-massive-screen rule-engine-screen rule-config-screen" id="ruleConfigForm" novalidate>
-        <section class="asset-form-section">
-          <h1 id="ruleFormTitle">Basic Information</h1>
-          <div class="asset-section-body rule-info-grid">
-            <label class="asset-field required rule-name-field"><span>Rule name</span><input id="ruleName" required maxlength="120" placeholder="Rule name"></label>
-            <label class="asset-field rule-id-field" id="ruleIdField" hidden><span>Rule ID</span><input id="ruleId"></label>
-            <label class="asset-field rule-owner-field" id="ruleOwnerField" hidden><span>Created by</span><input id="ruleOwner"></label>
-            <label class="asset-field rule-description-field"><span>Description</span><textarea id="ruleDescription" rows="2" placeholder="Description"></textarea></label>
+    <div class="screen asset-screen rule-engine-screen rule-config-screen">
+      <div class="rule-page-heading"><div><button class="rule-back-link" id="ruleBackToList">← All rules</button><h1 id="ruleFormTitle">Add new rule</h1><p>Tạo rule độc lập để các hệ thống tích hợp có thể gọi bằng Rule ID.</p></div></div>
+      <form id="ruleConfigForm">
+        <section class="other-section rule-config-card">
+          <h1>Rule information</h1>
+          <div class="rule-config-content">
+          <label class="rule-config-field"><span>Rule name <b>*</b></span><input id="ruleName" required maxlength="120" placeholder="Nhập tên rule"></label>
+          <label class="rule-config-field"><span>Description</span><textarea id="ruleDescription" rows="3" placeholder="Mô tả mục đích sử dụng của rule"></textarea></label>
           </div>
         </section>
-        <section class="asset-form-section">
-          <h1>Rule Conditions</h1>
-          <div class="asset-section-body rule-condition-section">
-            <p class="rule-condition-heading">Conditions checked when a service calls this Rule ID.</p>
+        <section class="other-section rule-config-card">
+          <h1>Rule conditions</h1>
+          <div class="rule-config-content">
+            <p class="rule-condition-heading">Thêm các điều kiện cần kiểm tra khi service gọi Rule ID.</p>
             <div id="ruleConditionRows" class="rule-condition-rows"></div>
-            <button type="button" class="asset-btn secondary" id="ruleAddCondition"><span class="plus-mark" aria-hidden="true"></span>Add condition</button>
+            <button type="button" class="asset-btn secondary" id="ruleAddCondition">+ Add condition</button>
           </div>
         </section>
-        <div class="asset-form-actions" id="ruleFormActions"><button type="button" class="asset-btn secondary" id="ruleCancel">Cancel</button><button type="submit" class="asset-btn primary" id="ruleSave">Save</button></div>
-    </form>
+        <div class="rule-form-actions"><button type="button" class="asset-btn secondary" id="ruleCancel">Cancel</button><button type="submit" class="asset-btn primary">Save rule</button></div>
+      </form>
+    </div>
   </template>
 
   <script src="app.js"></script>

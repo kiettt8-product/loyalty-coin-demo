@@ -1793,7 +1793,7 @@ function ruleConditionRow(condition = {}, readonly = false) {
   row.className = "rule-condition-row";
   row.innerHTML = `<select class="rule-condition-field" aria-label="Rule condition" ${readonly ? "disabled" : ""}><option value="">Select rule condition</option>${ruleConditionOptions.map(([group, items]) => `<optgroup label="${group}">${items.map(item => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("")}</optgroup>`).join("")}</select>
     <select class="rule-condition-operator" aria-label="Operator" ${readonly ? "disabled" : ""}><option value="">Operator</option><option>Is</option><option>Is not</option><option>Greater than</option><option>Greater than or equal to</option><option>Less than</option><option>Less than or equal to</option></select>
-    <input class="rule-condition-value" aria-label="Condition value" placeholder="Select or enter value" ${readonly ? "disabled" : ""}>
+    <input class="rule-condition-value" aria-label="Condition value" placeholder="Select or enter value" ${readonly ? "readonly" : ""}>
     ${readonly ? "" : '<button type="button" class="rule-condition-remove" aria-label="Remove condition">×</button>'}`;
   row.querySelector(".rule-condition-field").value = condition.field || "";
   row.querySelector(".rule-condition-operator").value = condition.operator || "";
@@ -1807,27 +1807,21 @@ function initRuleForm(payload = {}) {
   const rule = ruleEngineRules.find(item => item.id === payload.id);
   const readonly = payload.mode === "view";
   activeRuleForm = { mode: payload.mode || "create", id: payload.id || null };
-  document.getElementById("ruleFormTitle").textContent = readonly ? "Rule Information" : "Basic Information";
+  document.getElementById("ruleFormTitle").textContent = readonly ? `Rule ${rule?.id || ""}` : payload.mode === "edit" ? "Edit rule" : "Add new rule";
   document.getElementById("ruleName").value = rule?.name || "";
   document.getElementById("ruleDescription").value = rule?.description || "";
-  document.getElementById("ruleName").disabled = readonly;
-  document.getElementById("ruleDescription").disabled = readonly;
-  document.getElementById("ruleIdField").hidden = !rule;
-  document.getElementById("ruleOwnerField").hidden = !rule;
-  document.getElementById("ruleId").value = rule?.id || "";
-  document.getElementById("ruleOwner").value = rule?.owner || "";
-  document.getElementById("ruleId").disabled = true;
-  document.getElementById("ruleOwner").disabled = true;
+  document.getElementById("ruleName").readOnly = readonly;
+  document.getElementById("ruleDescription").readOnly = readonly;
   const rows = document.getElementById("ruleConditionRows");
   (rule?.conditions?.length ? rule.conditions : [{}]).forEach(condition => rows.append(ruleConditionRow(condition, readonly)));
   document.getElementById("ruleAddCondition").hidden = readonly;
-  document.getElementById("ruleSave").hidden = readonly;
+  form.querySelector('[type="submit"]').hidden = readonly;
   document.getElementById("ruleAddCondition").onclick = () => rows.append(ruleConditionRow());
   rows.onclick = event => {
     if (event.target.closest(".rule-condition-remove")) event.target.closest(".rule-condition-row").remove();
   };
   const back = () => route("rule-list");
-  document.getElementById("ruleCancel").textContent = readonly ? "Back" : "Cancel";
+  document.getElementById("ruleBackToList").onclick = back;
   document.getElementById("ruleCancel").onclick = back;
   form.onsubmit = event => {
     event.preventDefault();
