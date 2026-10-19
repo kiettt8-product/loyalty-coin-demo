@@ -47,6 +47,15 @@ const state = {
   ]
 };
 
+let ruleEngineRules = [
+  { id: "RE-10001", name: "MMF account eligibility", owner: "kiettt8", description: "Kiểm tra user đã mở tài khoản MMF hay chưa.", conditions: [{ field: "MMF account status", operator: "Is", value: "Has no account" }] },
+  { id: "RE-10002", name: "High risk user check", owner: "nghiatn", description: "Kiểm tra trạng thái risk của user.", conditions: [{ field: "Risk status", operator: "Is", value: "Low risk" }] },
+  { id: "RE-10003", name: "New user segment", owner: "linhnt22", description: "Kiểm tra user có thuộc segment New User.", conditions: [{ field: "Segment", operator: "Is", value: "New User" }] },
+  { id: "RE-10004", name: "Voucher usage limit", owner: "kiettt8", description: "Kiểm tra số lần user đã sử dụng voucher.", conditions: [{ field: "User promotion usage count", operator: "Less than", value: "3" }] }
+];
+let nextRuleNumber = 10005;
+let activeRuleForm = { mode: "create", id: null };
+
 const budgetMktCatalog = {
   shared: {
     code: "DLS_260528_563",
@@ -639,7 +648,9 @@ const templates = {
   "ai-banner": document.getElementById("aiBannerTemplate"),
   "budget-approval": document.getElementById("budgetApprovalTemplate"),
   "coin-direct-discount": document.getElementById("coinDirectDiscountTemplate"),
-  "gotit-direct-discount": document.getElementById("gotitDirectDiscountTemplate")
+  "gotit-direct-discount": document.getElementById("gotitDirectDiscountTemplate"),
+  "rule-list": document.getElementById("ruleListTemplate"),
+  "rule-form": document.getElementById("ruleFormTemplate")
 };
 
 const directDiscountMerchants = [
@@ -710,6 +721,7 @@ function route(name, payload = {}) {
   state.route = name;
   document.body.classList.toggle("asset-mode", name.startsWith("asset-") || name.startsWith("promotion-") || name.startsWith("voucher-"));
   document.body.classList.toggle("voucher-mode", name.startsWith("voucher-"));
+  document.body.classList.toggle("rule-engine-mode", name.startsWith("rule-"));
   main.onclick = null;
   main.replaceChildren(templates[name].content.cloneNode(true));
   document.querySelectorAll("[data-route]").forEach(button => button.classList.toggle("active",
@@ -718,6 +730,7 @@ function route(name, payload = {}) {
     || (["asset-massive", "asset-coin-create"].includes(name) && button.dataset.route === "asset-list")
     || (name === "voucher-create" && button.dataset.route === "voucher-assets")
     || (name.startsWith("promotion-") && button.dataset.route === "promotion-list")
+    || (name === "rule-form" && button.dataset.route === "rule-list")
   ));
   if (name === "list") initList();
   if (name === "form") initForm(payload);
@@ -729,6 +742,8 @@ function route(name, payload = {}) {
   if (name === "voucher-create") initVoucherAssetCreate();
   if (name === "promotion-list") initPromotionList();
   if (name === "promotion-form") initPromotionForm(payload);
+  if (name === "rule-list") initRuleList();
+  if (name === "rule-form") initRuleForm(payload);
   if (name === "budget-approval") initBudgetApproval();
   if (["ai-banner", "coin-direct-discount", "gotit-direct-discount"].includes(name)) {
     const otherMenu = document.getElementById("othersMenu");
@@ -758,6 +773,13 @@ function route(name, payload = {}) {
     assetParent.setAttribute("aria-expanded", "true");
     userProfileMenu.hidden = false;
     userProfileParent.setAttribute("aria-expanded", "true");
+  }
+  if (name.startsWith("rule-")) {
+    const campaignMenu = document.getElementById("campaignManagementMenu");
+    const campaignParent = document.querySelector('[data-nav-target="campaignManagementMenu"]');
+    campaignMenu.hidden = false;
+    campaignParent.setAttribute("aria-expanded", "true");
+    campaignParent.querySelector("span").textContent = "⌃";
   }
   document.getElementById("sidebar").classList.remove("open");
   main.focus({ preventScroll: true });
@@ -1702,6 +1724,121 @@ function renderPromotionRows(rows = promotionState.campaigns) {
   </tr>`).join("");
   document.getElementById("promoEmptyState").hidden = ordered.length > 0;
   document.getElementById("promoItemCount").textContent = ordered.length ? `1-${Math.min(ordered.length, 10)} of 733 items` : "0 items";
+}
+
+function renderRuleRows(rules = ruleEngineRules) {
+  const body = document.getElementById("ruleRows");
+  body.innerHTML = rules.map(rule => `<tr>
+    <td class="rule-id-cell">${escapeHtml(rule.id)}</td>
+    <td>${escapeHtml(rule.name)}</td>
+    <td>${escapeHtml(rule.owner)}</td>
+    <td><div class="rule-row-actions"><button type="button" data-rule-action="view" data-rule-id="${escapeHtml(rule.id)}">View</button><button type="button" data-rule-action="edit" data-rule-id="${escapeHtml(rule.id)}">Edit</button><button type="button" class="danger-action" data-rule-action="delete" data-rule-id="${escapeHtml(rule.id)}">Delete</button></div></td>
+  </tr>`).join("");
+  document.getElementById("ruleEmptyState").hidden = rules.length > 0;
+  document.getElementById("ruleCount").textContent = `${rules.length} rules`;
+}
+
+function initRuleList() {
+  const owner = document.getElementById("ruleCreatedBy");
+  [...new Set(ruleEngineRules.map(rule => rule.owner))].sort().forEach(name => owner.add(new Option(name, name)));
+  const search = () => {
+    const query = document.getElementById("ruleSearch").value.trim().toLocaleLowerCase();
+    const createdBy = owner.value;
+    renderRuleRows(ruleEngineRules.filter(rule =>
+      (!query || rule.id.toLocaleLowerCase().includes(query) || rule.name.toLocaleLowerCase().includes(query))
+      && (!createdBy || rule.owner === createdBy)
+    ));
+  };
+  document.getElementById("ruleAddNew").onclick = () => route("rule-form", { mode: "create" });
+  document.getElementById("ruleSearchButton").onclick = search;
+  document.getElementById("ruleSearch").onkeydown = event => { if (event.key === "Enter") search(); };
+  document.getElementById("ruleReset").onclick = () => {
+    document.getElementById("ruleSearch").value = "";
+    owner.value = "";
+    search();
+  };
+  document.getElementById("ruleRows").onclick = event => {
+    const button = event.target.closest("[data-rule-action]");
+    if (!button) return;
+    const rule = ruleEngineRules.find(item => item.id === button.dataset.ruleId);
+    if (!rule) return;
+    if (button.dataset.ruleAction === "delete") {
+      if (!window.confirm(`Delete rule ${rule.id}?`)) return;
+      ruleEngineRules = ruleEngineRules.filter(item => item.id !== rule.id);
+      search();
+      toast(`Rule ${rule.id} deleted.`);
+      return;
+    }
+    route("rule-form", { mode: button.dataset.ruleAction, id: rule.id });
+  };
+  renderRuleRows();
+}
+
+const ruleConditionOptions = [
+  ["User profile", ["KYC level", "NFC status", "eKYC status", "Account level"]],
+  ["Account & segment", ["MMF account status", "Segment", "Risk status"]],
+  ["Dynamic filter", ["Promotion code usage count", "User promotion usage count", "User transaction count"]],
+  ["Dynamic counter", ["Promotion code redemption count", "User voucher usage count", "Campaign participation count"]]
+];
+
+function ruleConditionRow(condition = {}, readonly = false) {
+  const row = document.createElement("div");
+  row.className = "rule-condition-row";
+  row.innerHTML = `<select class="rule-condition-field" aria-label="Rule condition" ${readonly ? "disabled" : ""}><option value="">Select rule condition</option>${ruleConditionOptions.map(([group, items]) => `<optgroup label="${group}">${items.map(item => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("")}</optgroup>`).join("")}</select>
+    <select class="rule-condition-operator" aria-label="Operator" ${readonly ? "disabled" : ""}><option value="">Operator</option><option>Is</option><option>Is not</option><option>Greater than</option><option>Greater than or equal to</option><option>Less than</option><option>Less than or equal to</option></select>
+    <input class="rule-condition-value" aria-label="Condition value" placeholder="Select or enter value" ${readonly ? "readonly" : ""}>
+    ${readonly ? "" : '<button type="button" class="rule-condition-remove" aria-label="Remove condition">×</button>'}`;
+  row.querySelector(".rule-condition-field").value = condition.field || "";
+  row.querySelector(".rule-condition-operator").value = condition.operator || "";
+  row.querySelector(".rule-condition-value").value = condition.value || "";
+  if (!readonly) row.querySelectorAll("select,input").forEach(control => { control.required = true; });
+  return row;
+}
+
+function initRuleForm(payload = {}) {
+  const form = document.getElementById("ruleConfigForm");
+  const rule = ruleEngineRules.find(item => item.id === payload.id);
+  const readonly = payload.mode === "view";
+  activeRuleForm = { mode: payload.mode || "create", id: payload.id || null };
+  document.getElementById("ruleFormTitle").textContent = readonly ? `Rule ${rule?.id || ""}` : payload.mode === "edit" ? "Edit rule" : "Add new rule";
+  document.getElementById("ruleName").value = rule?.name || "";
+  document.getElementById("ruleDescription").value = rule?.description || "";
+  document.getElementById("ruleName").readOnly = readonly;
+  document.getElementById("ruleDescription").readOnly = readonly;
+  const rows = document.getElementById("ruleConditionRows");
+  (rule?.conditions?.length ? rule.conditions : [{}]).forEach(condition => rows.append(ruleConditionRow(condition, readonly)));
+  document.getElementById("ruleAddCondition").hidden = readonly;
+  form.querySelector('[type="submit"]').hidden = readonly;
+  document.getElementById("ruleAddCondition").onclick = () => rows.append(ruleConditionRow());
+  rows.onclick = event => {
+    if (event.target.closest(".rule-condition-remove")) event.target.closest(".rule-condition-row").remove();
+  };
+  const back = () => route("rule-list");
+  document.getElementById("ruleBackToList").onclick = back;
+  document.getElementById("ruleCancel").onclick = back;
+  form.onsubmit = event => {
+    event.preventDefault();
+    const conditions = [...rows.querySelectorAll(".rule-condition-row")].map(row => ({
+      field: row.querySelector(".rule-condition-field").value,
+      operator: row.querySelector(".rule-condition-operator").value,
+      value: row.querySelector(".rule-condition-value").value.trim()
+    }));
+    if (!conditions.length) { toast("Add at least one rule condition.", "error"); return; }
+    if (!conditions.every(condition => condition.field && condition.operator && condition.value)) { toast("Complete all rule condition fields.", "error"); return; }
+    const name = document.getElementById("ruleName").value.trim();
+    if (!name) return;
+    if (activeRuleForm.mode === "edit" && rule) {
+      rule.name = name;
+      rule.description = document.getElementById("ruleDescription").value.trim();
+      rule.conditions = conditions;
+      toast(`Rule ${rule.id} updated.`);
+    } else {
+      const id = `RE-${nextRuleNumber++}`;
+      ruleEngineRules.unshift({ id, name, description: document.getElementById("ruleDescription").value.trim(), conditions, owner: "kiettt8" });
+      toast(`Rule created. Rule ID: ${id}`);
+    }
+    route("rule-list");
+  };
 }
 
 function initPromotionList() {

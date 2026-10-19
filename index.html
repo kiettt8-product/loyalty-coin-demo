@@ -46,6 +46,7 @@
         <button data-route="promotion-list">Promotion Code</button>
         <button>Revoke Voucher</button>
       </div>
+      <button class="nav-parent rule-engine-nav" data-route="rule-list"><img class="nav-icon" src="assets/nav-campaign.svg" alt="">Rule Engine</button>
       <button class="nav-parent" aria-expanded="false"><img class="nav-icon" src="assets/nav-inventory.svg" alt="">Inventory Management<span>⌄</span></button>
       <button class="nav-parent" data-nav-target="budgetManagementMenu" aria-expanded="false"><img class="nav-icon" src="assets/nav-budget.svg" alt="">Budget Management<span>⌄</span></button>
       <div class="nav-sub budget-menu" id="budgetManagementMenu" hidden>
@@ -724,6 +725,40 @@
 
         <div class="other-form-actions"><button type="button" class="asset-btn primary" id="saveDirectDiscountConfig">Save changes</button></div>
       </div>
+    </div>
+  </template>
+
+  <template id="ruleListTemplate">
+    <div class="screen rule-engine-screen">
+      <div class="rule-page-heading"><div><h1>Rule Engine</h1><p>Quản lý rule dùng chung và tích hợp qua Rule ID.</p></div><button class="btn primary" id="ruleAddNew">+ Add New</button></div>
+      <section class="rule-filter-panel" aria-label="Tìm và lọc rule">
+        <label class="rule-search-field"><span>Search</span><input id="ruleSearch" type="search" placeholder="Tìm theo Rule ID hoặc Rule Name"></label>
+        <label class="rule-created-filter"><span>Created by</span><select id="ruleCreatedBy"><option value="">All users</option></select></label>
+        <div class="rule-filter-actions"><button class="btn secondary" id="ruleReset">Reset</button><button class="btn primary" id="ruleSearchButton">Search</button></div>
+      </section>
+      <section class="rule-table-card">
+        <div class="rule-table-heading"><h2>Rules</h2><span id="ruleCount"></span></div>
+        <div class="rule-table-scroll"><table class="rule-table"><thead><tr><th>Rule ID</th><th>Rule Name</th><th>Created by</th><th>Action</th></tr></thead><tbody id="ruleRows"></tbody></table><div class="rule-empty-state" id="ruleEmptyState" hidden>Không tìm thấy rule phù hợp.</div></div>
+      </section>
+    </div>
+  </template>
+
+  <template id="ruleFormTemplate">
+    <div class="screen rule-engine-screen rule-config-screen">
+      <div class="rule-page-heading"><div><button class="rule-back-link" id="ruleBackToList">← All rules</button><h1 id="ruleFormTitle">Add new rule</h1><p>Tạo rule độc lập để các hệ thống tích hợp có thể gọi bằng Rule ID.</p></div></div>
+      <form id="ruleConfigForm">
+        <section class="rule-config-card">
+          <h2>Rule information</h2>
+          <label class="rule-config-field"><span>Rule name <b>*</b></span><input id="ruleName" required maxlength="120" placeholder="Nhập tên rule"></label>
+          <label class="rule-config-field"><span>Description</span><textarea id="ruleDescription" rows="3" placeholder="Mô tả mục đích sử dụng của rule"></textarea></label>
+        </section>
+        <section class="rule-config-card">
+          <div class="rule-condition-heading"><div><h2>Rule conditions</h2><p>Thêm các điều kiện cần kiểm tra khi service gọi Rule ID.</p></div></div>
+          <div id="ruleConditionRows" class="rule-condition-rows"></div>
+          <button type="button" class="btn secondary" id="ruleAddCondition">+ Add condition</button>
+        </section>
+        <div class="rule-form-actions"><button type="button" class="btn secondary" id="ruleCancel">Cancel</button><button type="submit" class="btn primary">Save rule</button></div>
+      </form>
     </div>
   </template>
 
