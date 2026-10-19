@@ -808,7 +808,7 @@ function voucherConditionRowMarkup(index) {
     <div class="voucher-condition-picker"><input type="text" class="voucher-condition-search" placeholder="Select rule condition" autocomplete="off" aria-label="Select rule condition" aria-expanded="false"><div class="voucher-condition-menu" hidden role="listbox"></div></div>
     <div class="voucher-condition-operator"><select aria-label="Operator" disabled><option value="">Operator</option></select></div>
     <div class="voucher-condition-value"><select aria-label="Select value" disabled><option value="">Select value</option></select></div>
-    <button type="button" class="voucher-condition-remove" aria-label="Remove rule" title="Remove rule">×</button>
+    <button type="button" class="voucher-condition-remove" aria-label="Remove rule" title="Remove rule" hidden>×</button>
   </div>`;
 }
 
@@ -831,6 +831,7 @@ function configureVoucherCondition(row, option) {
   picker.value = option.label;
   picker.setAttribute("aria-expanded", "false");
   menu.hidden = true;
+  row.querySelector(".voucher-condition-remove").hidden = false;
 
   if (option.kind === "counter") {
     operatorHost.innerHTML = `<div class="voucher-condition-operator-note">Limit settings</div>`;
@@ -850,6 +851,10 @@ function bindVoucherConditionRow(row) {
     renderVoucherConditionMenu(menu, picker.value === voucherAdvancedRuleOptions.find(option => option.id === row.dataset.conditionId)?.label ? "" : picker.value);
     menu.hidden = false;
     picker.setAttribute("aria-expanded", "true");
+    const rect = picker.getBoundingClientRect();
+    const belowSpace = window.innerHeight - rect.bottom - 76;
+    const aboveSpace = rect.top - 76;
+    picker.parentElement.classList.toggle("opens-up", belowSpace < 180 && aboveSpace > belowSpace);
   };
   picker.addEventListener("focus", openMenu);
   picker.addEventListener("click", openMenu);
@@ -857,6 +862,7 @@ function bindVoucherConditionRow(row) {
     delete row.dataset.conditionId;
     row.querySelector(".voucher-condition-operator").innerHTML = `<select aria-label="Operator" disabled><option value="">Operator</option></select>`;
     row.querySelector(".voucher-condition-value").innerHTML = `<select aria-label="Select value" disabled><option value="">Select value</option></select>`;
+    updateVoucherConditionRemoveButtons();
     renderVoucherConditionMenu(menu, picker.value);
     menu.hidden = false;
     picker.setAttribute("aria-expanded", "true");
@@ -868,9 +874,18 @@ function bindVoucherConditionRow(row) {
     if (option) configureVoucherCondition(row, option);
   });
   row.querySelector(".voucher-condition-remove").addEventListener("click", () => {
+    document.removeEventListener("click", closeOnOutsideClick);
     row.remove();
     if (!document.querySelector("#voucherConditionList .voucher-condition-row")) addVoucherConditionRow();
+    updateVoucherConditionRemoveButtons();
   });
+  const closeOnOutsideClick = event => {
+    if (row.contains(event.target)) return;
+    menu.hidden = true;
+    picker.setAttribute("aria-expanded", "false");
+    picker.parentElement.classList.remove("opens-up");
+  };
+  document.addEventListener("click", closeOnOutsideClick);
   picker.addEventListener("keydown", event => {
     if (event.key === "Escape") {
       menu.hidden = true;
@@ -895,6 +910,14 @@ function addVoucherConditionRow() {
   const conditionRow = row.firstElementChild;
   list.append(conditionRow);
   bindVoucherConditionRow(conditionRow);
+  updateVoucherConditionRemoveButtons();
+}
+
+function updateVoucherConditionRemoveButtons() {
+  const rows = [...document.querySelectorAll("#voucherConditionList .voucher-condition-row")];
+  rows.forEach(row => {
+    row.querySelector(".voucher-condition-remove").hidden = rows.length === 1 && !row.dataset.conditionId;
+  });
 }
 
 function initVoucherAssetList() {
