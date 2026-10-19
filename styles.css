@@ -719,6 +719,14 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .voucher-condition-list { display: grid; gap: 12px; }
 .voucher-condition-row { display: grid; grid-template-columns: minmax(250px, 1.2fr) minmax(180px, 1fr) minmax(200px, 1.15fr) 32px; gap: 16px; align-items: start; }
 .voucher-condition-row[data-condition-id^="counter-"] { align-items: end; }
+.voucher-condition-row[data-condition-id="dynamic-filter"] { grid-template-columns: minmax(250px, 1.2fr) 32px; align-items: start; }
+.voucher-condition-row[data-condition-id="dynamic-filter"] .voucher-condition-operator,
+.voucher-condition-row[data-condition-id="dynamic-filter"] .voucher-condition-value { display: none; }
+.voucher-dynamic-filter-builder { grid-column: 1 / -1; display: grid; gap: 10px; min-width: 0; padding: 12px; border: 1px solid #e5e7eb; border-radius: 4px; background: #fff; }
+.voucher-dynamic-filter-rows { display: grid; gap: 8px; }
+.voucher-dynamic-filter-row { width: 100%; grid-template-columns: minmax(200px, 1fr) minmax(160px, .8fr) minmax(180px, 1fr) 32px; gap: 8px; }
+.voucher-dynamic-filter-row .dynamic-filter-remove { transform: none; }
+.voucher-dynamic-filter-builder > .asset-btn { justify-self: start; }
 .voucher-condition-picker { position: relative; min-width: 0; }
 .voucher-condition-picker > input,
 .voucher-condition-row > select,

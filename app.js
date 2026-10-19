@@ -820,6 +820,7 @@ const voucherAdvancedRuleOptions = [
   { group: "Check customer segment", id: "segment", label: "Check segment membership", operators: ["Is in", "Is not in"], values: ["New users", "Monthly active users", "High value users"] },
   { group: "Check account status", id: "mmf", label: "Check MMF account status", operators: ["Is"], values: ["Has active account", "Has no account"] },
   { group: "Check risk", id: "risk", label: "Check risk status", operators: ["Is"], values: ["Not flagged", "Flagged"] },
+  { group: "Dynamic filter", id: "dynamic-filter", label: "Dynamic filter", kind: "dynamic-filter" },
   { group: "Limit number of times", id: "counter-user", label: "Per user", kind: "counter", countBy: "User" },
   { group: "Limit number of times", id: "counter-key", label: "Per key", kind: "counter", countBy: "One key" },
   { group: "Limit number of times", id: "counter-multiple", label: "Per multiple keys", kind: "counter", countBy: "Multiple keys" }
@@ -844,16 +845,37 @@ function renderVoucherConditionMenu(menu, search = "") {
   }).join("") || `<div class="voucher-condition-empty">No matching conditions</div>`;
 }
 
+function voucherDynamicFilterRow() {
+  const row = dynamicFilterConditionRow({}, false, dynamicFilterChecks);
+  row.classList.add("voucher-dynamic-filter-row");
+  row.querySelector(".dynamic-filter-remove").classList.add("voucher-dynamic-filter-remove");
+  return row;
+}
+
 function configureVoucherCondition(row, option) {
   const picker = row.querySelector(".voucher-condition-search");
   const menu = row.querySelector(".voucher-condition-menu");
   const operatorHost = row.querySelector(".voucher-condition-operator");
   const valueHost = row.querySelector(".voucher-condition-value");
+  row.querySelector(".voucher-dynamic-filter-builder")?.remove();
+  operatorHost.hidden = false;
+  valueHost.hidden = false;
   row.dataset.conditionId = option.id;
   picker.value = option.label;
   picker.setAttribute("aria-expanded", "false");
   menu.hidden = true;
   row.querySelector(".voucher-condition-remove").hidden = false;
+
+  if (option.kind === "dynamic-filter") {
+    operatorHost.hidden = true;
+    valueHost.hidden = true;
+    const builder = document.createElement("div");
+    builder.className = "voucher-dynamic-filter-builder";
+    builder.innerHTML = `<div class="dynamic-filter-title">Filter conditions</div><div class="voucher-dynamic-filter-rows"></div><button type="button" class="asset-btn secondary voucher-dynamic-filter-add">+ Add condition</button>`;
+    builder.querySelector(".voucher-dynamic-filter-rows").append(voucherDynamicFilterRow());
+    row.append(builder);
+    return;
+  }
 
   if (option.kind === "counter") {
     operatorHost.innerHTML = `<div class="voucher-condition-operator-note">Limit settings</div>`;
@@ -992,6 +1014,16 @@ function initVoucherAssetCreate() {
     };
   });
   addVoucherConditionRow();
+  document.getElementById("voucherConditionList").addEventListener("click", event => {
+    const rows = event.currentTarget;
+    if (event.target.closest(".voucher-dynamic-filter-add")) {
+      rows.querySelector(".voucher-dynamic-filter-rows").append(voucherDynamicFilterRow());
+    } else if (event.target.closest(".voucher-dynamic-filter-remove")) {
+      const dynamicRows = rows.querySelector(".voucher-dynamic-filter-rows");
+      event.target.closest(".dynamic-filter-condition-row").remove();
+      if (!dynamicRows.children.length) dynamicRows.append(voucherDynamicFilterRow());
+    }
+  });
   document.getElementById("voucherAddRule").addEventListener("click", addVoucherConditionRow);
   document.getElementById("voucherAdvancedToggle").addEventListener("click", event => {
     const button = event.currentTarget;
