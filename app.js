@@ -48,10 +48,10 @@ const state = {
 };
 
 let ruleEngineRules = [
-  { id: "RE-10001", name: "MMF account eligibility", owner: "kiettt8", description: "Checks whether the user has an MMF account.", conditions: [{ field: "MMF account status (104)", operator: "Is", value: "Has no account" }] },
-  { id: "RE-10002", name: "High risk user check", owner: "nghiatn", description: "Checks the user's risk status.", conditions: [{ field: "Risk filter (95)", operator: "Is", value: "Low risk" }] },
-  { id: "RE-10003", name: "New user segment", owner: "linhnt22", description: "Checks whether the user is in the New User segment.", conditions: [{ field: "Data segment (81)", operator: "Is", value: "New User" }] },
-  { id: "RE-10004", name: "Voucher usage limit", owner: "kiettt8", description: "Checks how many vouchers the user has used.", conditions: [{ field: "Counter user (10)", operator: "Less than", value: "3" }] }
+  { id: "RE-10001", name: "MMF account eligibility", owner: "kiettt8", description: "Checks whether the user has an MMF account.", conditions: [{ field: "mmf", operator: "Is", value: "Has no account" }] },
+  { id: "RE-10002", name: "High risk user check", owner: "nghiatn", description: "Checks the user's risk status.", conditions: [{ field: "risk", operator: "Is", value: "Flagged" }] },
+  { id: "RE-10003", name: "New user segment", owner: "linhnt22", description: "Checks whether the user is in the New User segment.", conditions: [{ field: "segment", operator: "Is in", value: "New users" }] },
+  { id: "RE-10004", name: "Voucher usage limit", owner: "kiettt8", description: "Checks how many vouchers the user has used.", conditions: [{ field: "103", groups: [{ match: "all", conditions: [{ field: "user-voucher-usage", operator: "Less than", value: "3" }] }] }] }
 ];
 let nextRuleNumber = 10005;
 let activeRuleForm = { mode: "create", id: null };
@@ -1782,22 +1782,137 @@ function initRuleList() {
 }
 
 const ruleConditionOptions = [
-  ["Main rule types", ["Dynamic filter (100)", "Dynamic counter (103)", "Risk filter (95)", "Data segment (81)", "Counter user period (86)", "Counter user (10)", "User profile filter (109)", "MMF account status (104)"]],
-  ["No calls found in last 44 days", ["Filter voucher by app ID, including used (99)", "Time ranges (107)", "Cross-campaign user counter (31)", "Filter voucher by app ID (98)"]]
+  { group: "Check user profile", value: "kyc", label: "Check KYC level", operators: ["Is", "Is not"], values: ["Level 1", "Level 2", "Level 3"] },
+  { group: "Check user profile", value: "nfc", label: "Check NFC status", operators: ["Is", "Is not"], values: ["Active", "Inactive"] },
+  { group: "Check user profile", value: "ekyc", label: "Check eKYC status", operators: ["Is", "Is not"], values: ["Verified", "Not verified"] },
+  { group: "Check user profile", value: "account-level", label: "Check Account level", operators: ["Is", "Is not"], values: ["Standard", "Silver", "Gold"] },
+  { group: "Account & segment", value: "mmf", label: "Check MMF account status", operators: ["Is"], values: ["Has active account", "Has no account"] },
+  { group: "Account & segment", value: "segment", label: "Check segment", operators: ["Is in", "Is not in"], values: ["New users", "Monthly active users", "High value users"] },
+  { group: "Account & segment", value: "risk", label: "Check risk status", operators: ["Is"], values: ["Not flagged", "Flagged"] },
+  { group: "Dynamic filter", value: "100", label: "Dynamic filter", kind: "dynamic-filter" },
+  { group: "Dynamic counter", value: "103", label: "Dynamic counter", kind: "dynamic-counter" }
 ];
+
+const dynamicFilterChecks = [
+  { value: "promotion-code-usage", label: "Promotion code usage count" },
+  { value: "user-promotion-usage", label: "User promotion usage count" },
+  { value: "user-transaction-count", label: "User transaction count" }
+];
+
+const dynamicCounterChecks = [
+  { value: "promotion-code-redemption", label: "Promotion code redemption count" },
+  { value: "user-voucher-usage", label: "User voucher usage count" },
+  { value: "campaign-participation", label: "Campaign participation count" }
+];
+
+function renderRuleConditionMenu(menu, search = "") {
+  const query = search.trim().toLowerCase();
+  const groups = [...new Set(ruleConditionOptions.map(option => option.group))];
+  menu.innerHTML = groups.map(group => {
+    const items = ruleConditionOptions.filter(option => option.group === group && (!query || `${group} ${option.label}`.toLowerCase().includes(query)));
+    if (!items.length) return "";
+    return `<div class="voucher-condition-group">${escapeHtml(group)}</div>${items.map(option => `<button type="button" class="voucher-condition-option" role="option" data-rule-type="${escapeHtml(option.value)}">${escapeHtml(option.label)}</button>`).join("")}`;
+  }).join("") || `<div class="voucher-condition-empty">No matching conditions</div>`;
+}
+
+function dynamicFilterConditionRow(condition = {}, readonly = false, checks = dynamicFilterChecks) {
+  const row = document.createElement("div");
+  row.className = "dynamic-filter-condition-row";
+  row.innerHTML = `<select class="dynamic-filter-check" aria-label="Check" ${readonly ? "disabled" : ""}><option value="">Select a check</option>${checks.map(item => `<option value="${item.value}">${item.label}</option>`).join("")}</select>
+    <select class="dynamic-filter-operator" aria-label="Condition" ${readonly ? "disabled" : ""}><option value="">Condition</option><option>Is</option><option>Is not</option><option>Greater than</option><option>At least</option><option>Less than</option><option>At most</option></select>
+    <input class="dynamic-filter-value" aria-label="Value" placeholder="Enter value" ${readonly ? "disabled" : ""}>
+    ${readonly ? "" : '<button type="button" class="rule-condition-remove dynamic-filter-remove" aria-label="Remove condition">×</button>'}`;
+  row.querySelector(".dynamic-filter-check").value = condition.field || "";
+  row.querySelector(".dynamic-filter-operator").value = condition.operator || "";
+  row.querySelector(".dynamic-filter-value").value = condition.value || "";
+  if (!readonly) row.querySelectorAll("select,input").forEach(control => { control.required = true; });
+  return row;
+}
+
+function dynamicFilterGroup(group = {}, readonly = false, canRemove = true, checks = dynamicFilterChecks) {
+  const card = document.createElement("section");
+  card.className = "dynamic-filter-group";
+  card.innerHTML = `<div class="dynamic-filter-group-head"><label><span>Match</span><select class="dynamic-filter-match" aria-label="Match conditions" ${readonly ? "disabled" : ""}><option value="all">All conditions</option><option value="any">Any condition</option></select></label>${readonly || !canRemove ? "" : '<button type="button" class="rule-condition-remove dynamic-filter-remove-group" aria-label="Remove group">×</button>'}</div>
+    <div class="dynamic-filter-group-rows"></div>${readonly ? "" : '<button type="button" class="asset-btn secondary dynamic-filter-add-condition">+ Add condition</button>'}`;
+  const match = card.querySelector(".dynamic-filter-match");
+  match.value = group.match || "all";
+  const rows = card.querySelector(".dynamic-filter-group-rows");
+  (group.conditions?.length ? group.conditions : [{}]).forEach(condition => rows.append(dynamicFilterConditionRow(condition, readonly, checks)));
+  return card;
+}
 
 function ruleConditionRow(condition = {}, readonly = false) {
   const row = document.createElement("div");
   row.className = "rule-condition-row";
-  row.innerHTML = `<select class="rule-condition-field" aria-label="Rule type" ${readonly ? "disabled" : ""}><option value="">Select rule type</option>${ruleConditionOptions.map(([group, items]) => `<optgroup label="${group}">${items.map(item => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("")}</optgroup>`).join("")}</select>
-    <select class="rule-condition-operator" aria-label="Operator" ${readonly ? "disabled" : ""}><option value="">Operator</option><option>Is</option><option>Is not</option><option>Greater than</option><option>Greater than or equal to</option><option>Less than</option><option>Less than or equal to</option></select>
-    <input class="rule-condition-value" aria-label="Condition value" placeholder="Select or enter value" ${readonly ? "readonly" : ""}>
-    ${readonly ? "" : '<button type="button" class="rule-condition-remove" aria-label="Remove condition">×</button>'}`;
-  row.querySelector(".rule-condition-field").value = condition.field || "";
+  row.innerHTML = `<div class="voucher-condition-picker rule-type-picker"><input type="text" class="rule-condition-search" placeholder="Select rule condition" autocomplete="off" aria-label="Select rule condition" aria-expanded="false" ${readonly ? "disabled" : ""}><div class="voucher-condition-menu rule-condition-menu" hidden role="listbox"></div></div>
+    <select class="rule-condition-operator" aria-label="Operator" ${readonly ? "disabled" : ""}><option value="">Operator</option><option>Is</option><option>Is not</option><option>Is in</option><option>Is not in</option><option>Greater than</option><option>At least</option><option>Less than</option><option>At most</option></select>
+    <input class="rule-condition-value" aria-label="Value" placeholder="Select value" ${readonly ? "disabled" : ""}>
+    ${readonly ? "" : '<button type="button" class="rule-condition-remove" aria-label="Remove rule">×</button>'}`;
+  const picker = row.querySelector(".rule-condition-search");
+  const selectedOption = ruleConditionOptions.find(item => item.value === condition.field);
+  picker.value = selectedOption?.label || "";
+  row.dataset.ruleType = condition.field || "";
   row.querySelector(".rule-condition-operator").value = condition.operator || "";
   row.querySelector(".rule-condition-value").value = condition.value || "";
-  if (!readonly) row.querySelectorAll("select,input").forEach(control => { control.required = true; });
+  if (!readonly) {
+    row.querySelector(".rule-condition-search").required = true;
+  }
+  const builder = document.createElement("div");
+  builder.className = "dynamic-filter-builder";
+  builder.hidden = !["100", "103"].includes(condition.field);
+  builder.innerHTML = `<div class="dynamic-filter-title">${condition.field === "103" ? "Dynamic counter" : "Dynamic filter"}</div><div class="dynamic-filter-groups"></div>${readonly ? "" : '<button type="button" class="asset-btn secondary dynamic-filter-add-group">+ Add group</button>'}`;
+  const groups = builder.querySelector(".dynamic-filter-groups");
+  const checks = condition.field === "103" ? dynamicCounterChecks : dynamicFilterChecks;
+  (condition.groups?.length ? condition.groups : [{}]).forEach((group, index) => groups.append(dynamicFilterGroup(group, readonly, index > 0, checks)));
+  row.append(builder);
+  syncRuleConditionRow(row, readonly);
   return row;
+}
+
+function syncRuleConditionRow(row, readonly = false) {
+  const field = row.dataset.ruleType;
+  const option = ruleConditionOptions.find(item => item.value === field);
+  const isDynamic = ["100", "103"].includes(field);
+  const operator = row.querySelector(".rule-condition-operator");
+  const value = row.querySelector(".rule-condition-value");
+  const builder = row.querySelector(".dynamic-filter-builder");
+  row.classList.toggle("is-dynamic", isDynamic);
+  operator.hidden = isDynamic;
+  operator.disabled = readonly || isDynamic;
+  operator.required = !readonly && !isDynamic;
+  value.hidden = isDynamic;
+  value.disabled = readonly || isDynamic;
+  value.required = !readonly && !isDynamic;
+  builder.hidden = !isDynamic;
+  if (option && !isDynamic) {
+    const operatorSelect = operator;
+    const currentOperator = operatorSelect.value;
+    operatorSelect.innerHTML = `<option value="">Operator</option>${(option.operators || []).map(item => `<option>${escapeHtml(item)}</option>`).join("")}`;
+    operatorSelect.value = currentOperator;
+    value.placeholder = "Select value";
+    if (option.values?.length) {
+      const currentValue = value.value;
+      const valueSelect = document.createElement("select");
+      valueSelect.className = "rule-condition-value";
+      valueSelect.setAttribute("aria-label", "Select value");
+      valueSelect.innerHTML = `<option value="">Select value</option>${option.values.map(item => `<option>${escapeHtml(item)}</option>`).join("")}`;
+      valueSelect.value = currentValue;
+      value.replaceWith(valueSelect);
+    }
+  } else if (isDynamic && value.tagName !== "INPUT") {
+    const input = document.createElement("input");
+    input.className = "rule-condition-value";
+    input.setAttribute("aria-label", "Value");
+    input.placeholder = "Select value";
+    value.replaceWith(input);
+  }
+  builder.querySelector(".dynamic-filter-title").textContent = field === "103" ? "Dynamic counter" : "Dynamic filter";
+  const checks = field === "103" ? dynamicCounterChecks : dynamicFilterChecks;
+  builder.querySelectorAll(".dynamic-filter-check").forEach(select => {
+    const current = select.value;
+    select.innerHTML = `<option value="">Select a check</option>${checks.map(item => `<option value="${item.value}">${item.label}</option>`).join("")}`;
+    select.value = current;
+  });
 }
 
 function initRuleForm(payload = {}) {
@@ -1814,21 +1929,103 @@ function initRuleForm(payload = {}) {
   document.getElementById("ruleAddCondition").hidden = readonly;
   form.querySelector('[type="submit"]').hidden = readonly;
   document.getElementById("ruleAddCondition").onclick = () => rows.append(ruleConditionRow());
+  rows.onfocusin = event => {
+    if (!event.target.matches(".rule-condition-search")) return;
+    const row = event.target.closest(".rule-condition-row");
+    const menu = row.querySelector(".rule-condition-menu");
+    const current = ruleConditionOptions.find(option => option.value === row.dataset.ruleType)?.label;
+    renderRuleConditionMenu(menu, event.target.value === current ? "" : event.target.value);
+    menu.hidden = false;
+    event.target.setAttribute("aria-expanded", "true");
+    const rect = event.target.getBoundingClientRect();
+    const belowSpace = window.innerHeight - rect.bottom - 76;
+    const aboveSpace = rect.top - 76;
+    event.target.parentElement.classList.toggle("opens-up", belowSpace < 180 && aboveSpace > belowSpace);
+  };
+  rows.oninput = event => {
+    if (!event.target.matches(".rule-condition-search")) return;
+    const row = event.target.closest(".rule-condition-row");
+    delete row.dataset.ruleType;
+    row.querySelector(".rule-condition-operator").innerHTML = '<option value="">Operator</option>';
+    const oldValue = row.querySelector(".rule-condition-value");
+    const input = document.createElement("input");
+    input.className = "rule-condition-value";
+    input.setAttribute("aria-label", "Select value");
+    input.placeholder = "Select value";
+    oldValue.replaceWith(input);
+    syncRuleConditionRow(row, readonly);
+    renderRuleConditionMenu(row.querySelector(".rule-condition-menu"), event.target.value);
+    row.querySelector(".rule-condition-menu").hidden = false;
+    event.target.setAttribute("aria-expanded", "true");
+  };
+  rows.onkeydown = event => {
+    if (!event.target.matches(".rule-condition-search")) return;
+    if (event.key === "Escape") {
+      const menu = event.target.closest(".rule-type-picker").querySelector(".rule-condition-menu");
+      menu.hidden = true;
+      event.target.setAttribute("aria-expanded", "false");
+      event.target.blur();
+    } else if (event.key === "Enter") {
+      const firstOption = event.target.closest(".rule-type-picker").querySelector("[data-rule-type]");
+      if (firstOption) { event.preventDefault(); firstOption.click(); }
+    }
+  };
   rows.onclick = event => {
-    if (event.target.closest(".rule-condition-remove")) event.target.closest(".rule-condition-row").remove();
+    const choice = event.target.closest("[data-rule-type]");
+    if (choice) {
+      const row = choice.closest(".rule-condition-row");
+      const option = ruleConditionOptions.find(item => item.value === choice.dataset.ruleType);
+      row.querySelector(".rule-condition-search").value = option.label;
+      row.dataset.ruleType = option.value;
+      row.querySelector(".rule-condition-search").setAttribute("aria-expanded", "false");
+      row.querySelector(".rule-condition-menu").hidden = true;
+      row.querySelector(".rule-condition-operator").value = "";
+      row.querySelector(".rule-condition-value").value = "";
+      syncRuleConditionRow(row, readonly);
+    } else if (event.target.closest(".dynamic-filter-add-condition")) {
+      const group = event.target.closest(".dynamic-filter-group");
+      const rootRow = event.target.closest(".rule-condition-row");
+      const checks = rootRow.dataset.ruleType === "103" ? dynamicCounterChecks : dynamicFilterChecks;
+      group.querySelector(".dynamic-filter-group-rows").append(dynamicFilterConditionRow({}, false, checks));
+    } else if (event.target.closest(".dynamic-filter-add-group")) {
+      const rootRow = event.target.closest(".rule-condition-row");
+      const checks = rootRow.dataset.ruleType === "103" ? dynamicCounterChecks : dynamicFilterChecks;
+      rootRow.querySelector(".dynamic-filter-groups").append(dynamicFilterGroup({}, false, true, checks));
+    } else if (event.target.closest(".dynamic-filter-remove-group")) {
+      event.target.closest(".dynamic-filter-group").remove();
+    } else if (event.target.closest(".dynamic-filter-remove")) {
+      event.target.closest(".dynamic-filter-condition-row").remove();
+    } else if (event.target.closest(".rule-condition-remove")) {
+      event.target.closest(".rule-condition-row").remove();
+    }
   };
   const back = () => route("rule-list");
   document.getElementById("ruleCancel").textContent = readonly ? "Back" : "Cancel";
   document.getElementById("ruleCancel").onclick = back;
   form.onsubmit = event => {
     event.preventDefault();
-    const conditions = [...rows.querySelectorAll(".rule-condition-row")].map(row => ({
-      field: row.querySelector(".rule-condition-field").value,
-      operator: row.querySelector(".rule-condition-operator").value,
-      value: row.querySelector(".rule-condition-value").value.trim()
-    }));
-    if (!conditions.length) { toast("Add at least one rule condition.", "error"); return; }
-    if (!conditions.every(condition => condition.field && condition.operator && condition.value)) { toast("Complete all rule condition fields.", "error"); return; }
+    const conditions = [...rows.querySelectorAll(":scope > .rule-condition-row")].map(row => {
+      const field = row.dataset.ruleType || "";
+      if (["100", "103"].includes(field)) {
+        return {
+          field,
+          groups: [...row.querySelectorAll(".dynamic-filter-group")].map(group => ({
+            match: group.querySelector(".dynamic-filter-match").value,
+            conditions: [...group.querySelectorAll(".dynamic-filter-condition-row")].map(conditionRow => ({
+              field: conditionRow.querySelector(".dynamic-filter-check").value,
+              operator: conditionRow.querySelector(".dynamic-filter-operator").value,
+              value: conditionRow.querySelector(".dynamic-filter-value").value.trim()
+            }))
+          }))
+        };
+      }
+      return { field, operator: row.querySelector(".rule-condition-operator").value, value: row.querySelector(".rule-condition-value").value.trim() };
+    });
+    if (!conditions.length) { toast("Add at least one rule.", "error"); return; }
+    const complete = conditions.every(condition => condition.field && (["100", "103"].includes(condition.field)
+      ? condition.groups.length && condition.groups.every(group => group.conditions.length && group.conditions.every(item => item.field && item.operator && item.value))
+      : condition.operator && condition.value));
+    if (!complete) { toast("Complete all rule fields.", "error"); return; }
     const name = document.getElementById("ruleName").value.trim();
     if (!name) return;
     if (activeRuleForm.mode === "edit" && rule) {
