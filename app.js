@@ -1735,7 +1735,7 @@ function renderRuleRows(rules = ruleEngineRules) {
     <td><div class="rule-row-actions"><button type="button" data-rule-action="view" data-rule-id="${escapeHtml(rule.id)}">View</button><button type="button" data-rule-action="edit" data-rule-id="${escapeHtml(rule.id)}">Edit</button><button type="button" class="danger-action" data-rule-action="delete" data-rule-id="${escapeHtml(rule.id)}">Delete</button></div></td>
   </tr>`).join("");
   document.getElementById("ruleEmptyState").hidden = rules.length > 0;
-  document.getElementById("ruleCount").textContent = `${rules.length} rules`;
+  document.getElementById("ruleCount").textContent = rules.length ? `1-${rules.length} of ${rules.length} items` : "0 items";
 }
 
 function initRuleList() {
@@ -1756,6 +1756,12 @@ function initRuleList() {
     document.getElementById("ruleSearch").value = "";
     owner.value = "";
     search();
+  };
+  document.getElementById("ruleCollapseFilter").onclick = event => {
+    const controls = [...document.querySelectorAll(".rule-filter-grid > :not(.rule-filter-actions)")];
+    const hide = !controls[0].hidden;
+    controls.forEach(control => { control.hidden = hide; });
+    event.currentTarget.innerHTML = `${hide ? "Expand" : "Collapse"} <span>${hide ? "⌄" : "⌃"}</span>`;
   };
   document.getElementById("ruleRows").onclick = event => {
     const button = event.target.closest("[data-rule-action]");
