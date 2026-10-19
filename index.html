@@ -240,8 +240,13 @@
           </div>
 
           <div class="voucher-rule-box voucher-advanced-rule">
-            <div class="voucher-rule-title"><span class="chevron-right" aria-hidden="true"></span>Advance Rule</div>
-            <div class="voucher-advanced-content"><select disabled><option>Select rule condition</option></select><select disabled><option>Operator</option></select><input disabled placeholder="Select value"><button type="button" class="asset-btn secondary" disabled>Add Rule</button></div>
+            <button type="button" class="voucher-rule-title voucher-advanced-toggle" id="voucherAdvancedToggle" aria-expanded="true"><span class="chevron-down" aria-hidden="true"></span>Advance Rule</button>
+            <div class="voucher-advanced-content" id="voucherAdvancedContent">
+              <label class="voucher-condition-combine"><span>Match</span><select id="voucherConditionCombine"><option>All conditions</option><option>Any condition</option></select></label>
+              <div class="voucher-condition-list" id="voucherConditionList"></div>
+              <div class="voucher-advanced-actions"><button type="button" class="asset-btn secondary" id="voucherAddRule">Add Rule</button></div>
+              <p class="voucher-rule-hint">Add conditions to decide which users can receive this voucher.</p>
+            </div>
           </div>
         </div>
       </section>

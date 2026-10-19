@@ -790,6 +790,113 @@ function renderVoucherAssetRows(rows = voucherAssets) {
   document.getElementById("voucherItemCount").textContent = rows.length ? `1-${rows.length} of 3024 items` : "0 items";
 }
 
+const voucherAdvancedRuleOptions = [
+  { group: "Check user profile", id: "kyc", label: "Check KYC level", operators: ["Is", "Is not"], values: ["Level 1", "Level 2", "Level 3"] },
+  { group: "Check user profile", id: "nfc", label: "Check NFC status", operators: ["Is", "Is not"], values: ["Active", "Inactive"] },
+  { group: "Check user profile", id: "ekyc", label: "Check eKYC status", operators: ["Is", "Is not"], values: ["Verified", "Not verified"] },
+  { group: "Check user profile", id: "account-level", label: "Check Account level", operators: ["Is", "Is not"], values: ["Standard", "Silver", "Gold"] },
+  { group: "Check customer segment", id: "segment", label: "Check segment membership", operators: ["Is in", "Is not in"], values: ["New users", "Monthly active users", "High value users"] },
+  { group: "Check account status", id: "mmf", label: "Check MMF account status", operators: ["Is"], values: ["Has active account", "Has no account"] },
+  { group: "Check risk", id: "risk", label: "Check risk status", operators: ["Is"], values: ["Not flagged", "Flagged"] },
+  { group: "Limit number of times", id: "counter-user", label: "Per user", kind: "counter", countBy: "User" },
+  { group: "Limit number of times", id: "counter-key", label: "Per key", kind: "counter", countBy: "One key" },
+  { group: "Limit number of times", id: "counter-multiple", label: "Per multiple keys", kind: "counter", countBy: "Multiple keys" }
+];
+
+function voucherConditionRowMarkup(index) {
+  return `<div class="voucher-condition-row" data-condition-index="${index}">
+    <div class="voucher-condition-picker"><input type="text" class="voucher-condition-search" placeholder="Select rule condition" autocomplete="off" aria-label="Select rule condition" aria-expanded="false"><div class="voucher-condition-menu" hidden role="listbox"></div></div>
+    <div class="voucher-condition-operator"><select aria-label="Operator" disabled><option value="">Operator</option></select></div>
+    <div class="voucher-condition-value"><select aria-label="Select value" disabled><option value="">Select value</option></select></div>
+    <button type="button" class="voucher-condition-remove" aria-label="Remove rule" title="Remove rule">×</button>
+  </div>`;
+}
+
+function renderVoucherConditionMenu(menu, search = "") {
+  const query = search.trim().toLowerCase();
+  const groups = [...new Set(voucherAdvancedRuleOptions.map(option => option.group))];
+  menu.innerHTML = groups.map(group => {
+    const options = voucherAdvancedRuleOptions.filter(option => option.group === group && (!query || `${group} ${option.label}`.toLowerCase().includes(query)));
+    if (!options.length) return "";
+    return `<div class="voucher-condition-group">${escapeHtml(group)}</div>${options.map(option => `<button type="button" class="voucher-condition-option" role="option" data-condition-id="${escapeHtml(option.id)}">${escapeHtml(option.label)}</button>`).join("")}`;
+  }).join("") || `<div class="voucher-condition-empty">No matching conditions</div>`;
+}
+
+function configureVoucherCondition(row, option) {
+  const picker = row.querySelector(".voucher-condition-search");
+  const menu = row.querySelector(".voucher-condition-menu");
+  const operatorHost = row.querySelector(".voucher-condition-operator");
+  const valueHost = row.querySelector(".voucher-condition-value");
+  row.dataset.conditionId = option.id;
+  picker.value = option.label;
+  picker.setAttribute("aria-expanded", "false");
+  menu.hidden = true;
+
+  if (option.kind === "counter") {
+    operatorHost.innerHTML = `<div class="voucher-condition-operator-note">Limit settings</div>`;
+    const keyField = option.id === "counter-user" ? "" : `<label>Count key${option.id === "counter-multiple" ? "s" : ""}<input type="text" value="${option.id === "counter-multiple" ? "user ID, campaign" : "user ID"}" aria-label="Count key"></label>`;
+    valueHost.innerHTML = `<div class="voucher-counter-config"><label>Maximum<input type="number" min="1" value="1" aria-label="Maximum uses"></label><label>Reset period<select aria-label="Reset period"><option>Per day</option><option>Per week</option><option>Per month</option><option>Campaign lifetime</option></select></label>${keyField}</div>`;
+    return;
+  }
+
+  operatorHost.innerHTML = `<select aria-label="Operator">${option.operators.map((operator, index) => `<option value="${index}">${escapeHtml(operator)}</option>`).join("")}</select>`;
+  valueHost.innerHTML = `<select aria-label="Select value"><option value="">Select value</option>${option.values.map(value => `<option>${escapeHtml(value)}</option>`).join("")}</select>`;
+}
+
+function bindVoucherConditionRow(row) {
+  const picker = row.querySelector(".voucher-condition-search");
+  const menu = row.querySelector(".voucher-condition-menu");
+  const openMenu = () => {
+    renderVoucherConditionMenu(menu, picker.value === voucherAdvancedRuleOptions.find(option => option.id === row.dataset.conditionId)?.label ? "" : picker.value);
+    menu.hidden = false;
+    picker.setAttribute("aria-expanded", "true");
+  };
+  picker.addEventListener("focus", openMenu);
+  picker.addEventListener("click", openMenu);
+  picker.addEventListener("input", () => {
+    delete row.dataset.conditionId;
+    row.querySelector(".voucher-condition-operator").innerHTML = `<select aria-label="Operator" disabled><option value="">Operator</option></select>`;
+    row.querySelector(".voucher-condition-value").innerHTML = `<select aria-label="Select value" disabled><option value="">Select value</option></select>`;
+    renderVoucherConditionMenu(menu, picker.value);
+    menu.hidden = false;
+    picker.setAttribute("aria-expanded", "true");
+  });
+  menu.addEventListener("click", event => {
+    const button = event.target.closest("[data-condition-id]");
+    if (!button) return;
+    const option = voucherAdvancedRuleOptions.find(item => item.id === button.dataset.conditionId);
+    if (option) configureVoucherCondition(row, option);
+  });
+  row.querySelector(".voucher-condition-remove").addEventListener("click", () => {
+    row.remove();
+    if (!document.querySelector("#voucherConditionList .voucher-condition-row")) addVoucherConditionRow();
+  });
+  picker.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      menu.hidden = true;
+      picker.setAttribute("aria-expanded", "false");
+      picker.blur();
+    }
+    if (event.key === "Enter") {
+      const firstOption = menu.querySelector("[data-condition-id]");
+      if (firstOption) {
+        event.preventDefault();
+        firstOption.click();
+      }
+    }
+  });
+}
+
+function addVoucherConditionRow() {
+  const list = document.getElementById("voucherConditionList");
+  if (!list) return;
+  const row = document.createElement("div");
+  row.innerHTML = voucherConditionRowMarkup(list.children.length).trim();
+  const conditionRow = row.firstElementChild;
+  list.append(conditionRow);
+  bindVoucherConditionRow(conditionRow);
+}
+
 function initVoucherAssetList() {
   renderVoucherAssetRows();
   document.getElementById("voucherAddNew").onclick = () => route("voucher-create");
@@ -838,6 +945,16 @@ function initVoucherAssetCreate() {
       body.hidden = !body.hidden;
       button.textContent = body.hidden ? "›" : "⌄";
     };
+  });
+  addVoucherConditionRow();
+  document.getElementById("voucherAddRule").addEventListener("click", addVoucherConditionRow);
+  document.getElementById("voucherAdvancedToggle").addEventListener("click", event => {
+    const button = event.currentTarget;
+    const content = document.getElementById("voucherAdvancedContent");
+    const expanded = button.getAttribute("aria-expanded") === "true";
+    button.setAttribute("aria-expanded", String(!expanded));
+    button.querySelector("span").className = expanded ? "chevron-right" : "chevron-down";
+    content.hidden = expanded;
   });
   document.querySelector(".voucher-switch").onclick = event => {
     event.currentTarget.classList.toggle("active");
