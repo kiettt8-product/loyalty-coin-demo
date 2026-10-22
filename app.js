@@ -2140,14 +2140,14 @@ function ruleConditionRow(condition = {}, readonly = false) {
   row.innerHTML = `<div class="voucher-condition-picker rule-type-picker"><input type="text" class="voucher-condition-search rule-condition-search" placeholder="Select rule condition" autocomplete="off" aria-label="Select rule condition" aria-expanded="false" ${readonly ? "disabled" : ""}><div class="voucher-condition-menu rule-condition-menu" hidden role="listbox"></div></div>
     <div class="voucher-condition-operator">${voucherSingleSelectMarkup("Operator", [], "", true)}</div>
     <div class="voucher-condition-value">${voucherSingleSelectMarkup("Select value", [], "", true)}</div>
-    <button type="button" class="voucher-condition-remove" aria-label="Remove rule" title="Remove rule" ${readonly ? "hidden" : ""}><img src="assets/action-delete.svg" alt="" aria-hidden="true"></button>
+    <button type="button" class="voucher-condition-remove" aria-label="Remove rule" title="Remove rule" ${readonly || !condition.field ? "hidden" : ""}><img src="assets/action-delete.svg" alt="" aria-hidden="true"></button>
     <div class="rule-configuration"></div>`;
   const selectedOption = ruleConditionOptions.find(item => item.value === condition.field);
   const picker = row.querySelector(".rule-condition-search");
   picker.value = selectedOption?.label || "";
   row.dataset.ruleType = condition.field || "";
   if (selectedOption && selectedOption.operators) configureRuleSimpleCondition(row, selectedOption, condition, readonly);
-  else {
+  else if (condition.field) {
     row.classList.add("is-dynamic");
     row.querySelector(".voucher-condition-operator").hidden = true;
     row.querySelector(".voucher-condition-value").hidden = true;
@@ -2293,6 +2293,7 @@ function initRuleForm(payload = {}) {
       row.querySelector(".voucher-condition-operator").hidden = false;
       row.querySelector(".voucher-condition-value").hidden = false;
       row.querySelector(".rule-configuration").innerHTML = "";
+      row.querySelector(".voucher-condition-remove").hidden = true;
       row.querySelector(".voucher-condition-operator").innerHTML = voucherSingleSelectMarkup("Operator", [], "", true);
       row.querySelector(".voucher-condition-value").innerHTML = voucherSingleSelectMarkup("Select value", [], "", true);
       event.target.parentElement.classList.remove("has-selection");
@@ -2359,6 +2360,7 @@ function initRuleForm(payload = {}) {
       row.querySelector(".rule-condition-search").value = option.label;
       row.querySelector(".rule-condition-search").setAttribute("aria-expanded", "false");
       row.querySelector(".rule-type-picker").classList.add("has-selection");
+      row.querySelector(".voucher-condition-remove").hidden = readonly;
       row.querySelector(".rule-condition-menu").hidden = true;
       if (previousType !== type) {
         row.classList.remove("is-dynamic");
