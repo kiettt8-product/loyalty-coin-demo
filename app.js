@@ -813,17 +813,10 @@ function renderVoucherAssetRows(rows = voucherAssets) {
 }
 
 const voucherAdvancedRuleOptions = [
-  { group: "Check user profile", id: "kyc", label: "Check KYC level", operators: ["Is", "Is not"], values: ["Level 1", "Level 2", "Level 3"] },
-  { group: "Check user profile", id: "nfc", label: "Check NFC status", operators: ["Is", "Is not"], values: ["Active", "Inactive"] },
-  { group: "Check user profile", id: "ekyc", label: "Check eKYC status", operators: ["Is", "Is not"], values: ["Verified", "Not verified"] },
-  { group: "Check user profile", id: "account-level", label: "Check Account level", operators: ["Is", "Is not"], values: ["Standard", "Silver", "Gold"] },
-  { group: "Check customer segment", id: "segment", label: "Check segment membership", operators: ["Is in", "Is not in"], values: ["New users", "Monthly active users", "High value users"] },
-  { group: "Check account status", id: "mmf", label: "Check MMF account status", operators: ["Is"], values: ["Has active account", "Has no account"] },
-  { group: "Check risk", id: "risk", label: "Check risk status", operators: ["Is"], values: ["Not flagged", "Flagged"] },
-  { group: "Dynamic filter", id: "dynamic-filter", label: "Dynamic filter", kind: "dynamic-filter" },
-  { group: "Limit number of times", id: "counter-user", label: "Per user", kind: "counter", countBy: "User" },
-  { group: "Limit number of times", id: "counter-key", label: "Per key", kind: "counter", countBy: "One key" },
-  { group: "Limit number of times", id: "counter-multiple", label: "Per multiple keys", kind: "counter", countBy: "Multiple keys" }
+  { group: "Check user profile", id: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"] },
+  { group: "Check user profile", id: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"] },
+  { group: "Check user profile", id: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"] },
+  { group: "Check user profile", id: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"] }
 ];
 
 function voucherConditionRowMarkup(index) {
@@ -845,13 +838,6 @@ function renderVoucherConditionMenu(menu, search = "") {
   }).join("") || `<div class="voucher-condition-empty">No matching conditions</div>`;
 }
 
-function voucherDynamicFilterRow() {
-  const row = dynamicFilterConditionRow({}, false, dynamicFilterChecks);
-  row.classList.add("voucher-dynamic-filter-row");
-  row.querySelector(".dynamic-filter-remove").classList.add("voucher-dynamic-filter-remove");
-  return row;
-}
-
 function configureVoucherCondition(row, option) {
   const picker = row.querySelector(".voucher-condition-search");
   const menu = row.querySelector(".voucher-condition-menu");
@@ -865,24 +851,6 @@ function configureVoucherCondition(row, option) {
   picker.setAttribute("aria-expanded", "false");
   menu.hidden = true;
   row.querySelector(".voucher-condition-remove").hidden = false;
-
-  if (option.kind === "dynamic-filter") {
-    operatorHost.hidden = true;
-    valueHost.hidden = true;
-    const builder = document.createElement("div");
-    builder.className = "voucher-dynamic-filter-builder";
-    builder.innerHTML = `<div class="dynamic-filter-title">Filter conditions</div><div class="voucher-dynamic-filter-rows"></div><button type="button" class="asset-btn secondary voucher-dynamic-filter-add">+ Add condition</button>`;
-    builder.querySelector(".voucher-dynamic-filter-rows").append(voucherDynamicFilterRow());
-    row.append(builder);
-    return;
-  }
-
-  if (option.kind === "counter") {
-    operatorHost.innerHTML = `<div class="voucher-condition-operator-note">Limit settings</div>`;
-    const keyField = option.id === "counter-user" ? "" : `<label>Count key${option.id === "counter-multiple" ? "s" : ""}<input type="text" value="${option.id === "counter-multiple" ? "user ID, campaign" : "user ID"}" aria-label="Count key"></label>`;
-    valueHost.innerHTML = `<div class="voucher-counter-config"><label>Maximum<input type="number" min="1" value="1" aria-label="Maximum uses"></label><label>Reset period<select aria-label="Reset period"><option>Per day</option><option>Per week</option><option>Per month</option><option>Campaign lifetime</option></select></label>${keyField}</div>`;
-    return;
-  }
 
   operatorHost.innerHTML = `<select aria-label="Operator">${option.operators.map((operator, index) => `<option value="${index}">${escapeHtml(operator)}</option>`).join("")}</select>`;
   valueHost.innerHTML = `<select aria-label="Select value"><option value="">Select value</option>${option.values.map(value => `<option>${escapeHtml(value)}</option>`).join("")}</select>`;
