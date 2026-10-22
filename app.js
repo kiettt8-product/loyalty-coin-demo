@@ -813,28 +813,47 @@ function renderVoucherAssetRows(rows = voucherAssets) {
 }
 
 const voucherAdvancedRuleOptions = [
-  { group: "Check user profile", id: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"] },
-  { group: "Check user profile", id: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"] },
-  { group: "Check user profile", id: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"] },
-  { group: "Check user profile", id: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"] }
+  { group: "Check user profile", id: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
+  { group: "Check user profile", id: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
+  { group: "Check user profile", id: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
+  { group: "Check user profile", id: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"] }
 ];
+const voucherConditionConflicts = {
+  kyc: ["ekyc", "account-level"],
+  ekyc: ["kyc", "account-level"],
+  nfc: ["account-level"],
+  "account-level": ["kyc", "nfc", "ekyc"]
+};
 
 function voucherConditionRowMarkup(index) {
   return `<div class="voucher-condition-row" data-condition-index="${index}">
     <div class="voucher-condition-picker"><input type="text" class="voucher-condition-search" placeholder="Select rule condition" autocomplete="off" aria-label="Select rule condition" aria-expanded="false"><div class="voucher-condition-menu" hidden role="listbox"></div></div>
     <div class="voucher-condition-operator"><select aria-label="Operator" disabled><option value="">Operator</option></select></div>
-    <div class="voucher-condition-value"><select aria-label="Select value" disabled><option value="">Select value</option></select></div>
-    <button type="button" class="voucher-condition-remove" aria-label="Remove rule" title="Remove rule" hidden>×</button>
+    <div class="voucher-condition-value">${voucherValueControlMarkup(true)}</div>
+    <button type="button" class="voucher-condition-remove" aria-label="Remove rule" title="Remove rule" hidden><img src="assets/action-delete.svg" alt="" aria-hidden="true"></button>
   </div>`;
+}
+
+function voucherValueControlMarkup(disabled = false) {
+  return `<button type="button" class="voucher-multi-select-control" aria-label="Select value" aria-expanded="false" ${disabled ? "disabled" : ""}><span class="voucher-multi-select-tags"><span class="voucher-multi-select-placeholder">Select value</span></span><span class="voucher-multi-select-clear" aria-label="Clear values" hidden>×</span><span class="voucher-multi-select-caret" aria-hidden="true"></span></button><div class="voucher-multi-select-menu" hidden role="listbox" aria-multiselectable="true"></div>`;
 }
 
 function renderVoucherConditionMenu(menu, search = "") {
   const query = search.trim().toLowerCase();
+  const currentRow = menu.closest(".voucher-condition-row");
+  const currentId = currentRow?.dataset.conditionId || "";
+  const selectedIds = [...document.querySelectorAll("#voucherConditionList .voucher-condition-row[data-condition-id]")].map(row => row.dataset.conditionId);
+  const usedElsewhere = selectedIds.filter(id => id !== currentId);
   const groups = [...new Set(voucherAdvancedRuleOptions.map(option => option.group))];
   menu.innerHTML = groups.map(group => {
-    const options = voucherAdvancedRuleOptions.filter(option => option.group === group && (!query || `${group} ${option.label}`.toLowerCase().includes(query)));
+    const options = voucherAdvancedRuleOptions.filter(option => option.group === group
+      && (!query || `${group} ${option.label}`.toLowerCase().includes(query))
+      && (!usedElsewhere.includes(option.id) || option.id === currentId));
     if (!options.length) return "";
-    return `<div class="voucher-condition-group">${escapeHtml(group)}</div>${options.map(option => `<button type="button" class="voucher-condition-option" role="option" data-condition-id="${escapeHtml(option.id)}">${escapeHtml(option.label)}</button>`).join("")}`;
+    return `<div class="voucher-condition-group"><span aria-hidden="true"></span>${escapeHtml(group)}</div>${options.map(option => {
+      const disabled = option.id !== currentId && (selectedIds.length >= 2 || selectedIds.some(id => voucherConditionConflicts[id]?.includes(option.id)));
+      return `<button type="button" class="voucher-condition-option" role="option" aria-selected="${option.id === currentId}" ${disabled ? "disabled" : ""} data-condition-id="${escapeHtml(option.id)}">${escapeHtml(option.label)}</button>`;
+    }).join("")}`;
   }).join("") || `<div class="voucher-condition-empty">No matching conditions</div>`;
 }
 
@@ -843,7 +862,6 @@ function configureVoucherCondition(row, option) {
   const menu = row.querySelector(".voucher-condition-menu");
   const operatorHost = row.querySelector(".voucher-condition-operator");
   const valueHost = row.querySelector(".voucher-condition-value");
-  row.querySelector(".voucher-dynamic-filter-builder")?.remove();
   operatorHost.hidden = false;
   valueHost.hidden = false;
   row.dataset.conditionId = option.id;
@@ -853,7 +871,30 @@ function configureVoucherCondition(row, option) {
   row.querySelector(".voucher-condition-remove").hidden = false;
 
   operatorHost.innerHTML = `<select aria-label="Operator">${option.operators.map((operator, index) => `<option value="${index}">${escapeHtml(operator)}</option>`).join("")}</select>`;
-  valueHost.innerHTML = `<select aria-label="Select value"><option value="">Select value</option>${option.values.map(value => `<option>${escapeHtml(value)}</option>`).join("")}</select>`;
+  if (option.multiple) {
+    valueHost.innerHTML = voucherValueControlMarkup();
+    row.dataset.selectedValues = JSON.stringify(option.defaults || []);
+    renderVoucherMultiSelect(row, option);
+  } else {
+    delete row.dataset.selectedValues;
+    valueHost.innerHTML = `<select aria-label="Select value">${option.values.map(value => `<option>${escapeHtml(value)}</option>`).join("")}</select>`;
+    valueHost.querySelector("select").value = option.defaultValue || "";
+  }
+  updateVoucherConditionRemoveButtons();
+}
+
+function renderVoucherMultiSelect(row, option) {
+  const valueHost = row.querySelector(".voucher-condition-value");
+  const control = valueHost.querySelector(".voucher-multi-select-control");
+  const tags = control.querySelector(".voucher-multi-select-tags");
+  const clear = control.querySelector(".voucher-multi-select-clear");
+  const selected = JSON.parse(row.dataset.selectedValues || "[]");
+  tags.innerHTML = selected.length
+    ? selected.map(value => `<span class="voucher-multi-select-tag">${escapeHtml(value)}<button type="button" data-remove-value="${escapeHtml(value)}" aria-label="Remove ${escapeHtml(value)}">×</button></span>`).join("")
+    : `<span class="voucher-multi-select-placeholder">Select value</span>`;
+  clear.hidden = selected.length === 0;
+  const menu = valueHost.querySelector(".voucher-multi-select-menu");
+  menu.innerHTML = option.values.map(value => `<button type="button" role="option" aria-selected="${selected.includes(value)}" data-value="${escapeHtml(value)}">${escapeHtml(value)}<span class="voucher-multi-select-check" aria-hidden="true"></span></button>`).join("");
 }
 
 function bindVoucherConditionRow(row) {
@@ -873,7 +914,7 @@ function bindVoucherConditionRow(row) {
   picker.addEventListener("input", () => {
     delete row.dataset.conditionId;
     row.querySelector(".voucher-condition-operator").innerHTML = `<select aria-label="Operator" disabled><option value="">Operator</option></select>`;
-    row.querySelector(".voucher-condition-value").innerHTML = `<select aria-label="Select value" disabled><option value="">Select value</option></select>`;
+    row.querySelector(".voucher-condition-value").innerHTML = voucherValueControlMarkup(true);
     updateVoucherConditionRemoveButtons();
     renderVoucherConditionMenu(menu, picker.value);
     menu.hidden = false;
@@ -884,6 +925,42 @@ function bindVoucherConditionRow(row) {
     if (!button) return;
     const option = voucherAdvancedRuleOptions.find(item => item.id === button.dataset.conditionId);
     if (option) configureVoucherCondition(row, option);
+  });
+  const valueHost = row.querySelector(".voucher-condition-value");
+  valueHost.addEventListener("click", event => {
+    const option = voucherAdvancedRuleOptions.find(item => item.id === row.dataset.conditionId);
+    if (!option?.multiple) return;
+    const menu = valueHost.querySelector(".voucher-multi-select-menu");
+    const removeValue = event.target.closest("[data-remove-value]");
+    const optionButton = event.target.closest("[data-value]");
+    if (removeValue) {
+      event.stopPropagation();
+      const value = removeValue.dataset.removeValue;
+      row.dataset.selectedValues = JSON.stringify(JSON.parse(row.dataset.selectedValues || "[]").filter(item => item !== value));
+      renderVoucherMultiSelect(row, option);
+      return;
+    }
+    if (event.target.closest(".voucher-multi-select-clear")) {
+      event.stopPropagation();
+      row.dataset.selectedValues = "[]";
+      renderVoucherMultiSelect(row, option);
+      return;
+    }
+    if (optionButton) {
+      event.stopPropagation();
+      const selected = JSON.parse(row.dataset.selectedValues || "[]");
+      const value = optionButton.dataset.value;
+      row.dataset.selectedValues = JSON.stringify(selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value]);
+      renderVoucherMultiSelect(row, option);
+      menu.hidden = false;
+      valueHost.querySelector(".voucher-multi-select-control").setAttribute("aria-expanded", "true");
+      return;
+    }
+    if (event.target.closest(".voucher-multi-select-control")) {
+      const control = valueHost.querySelector(".voucher-multi-select-control");
+      menu.hidden = !menu.hidden;
+      control.setAttribute("aria-expanded", String(!menu.hidden));
+    }
   });
   row.querySelector(".voucher-condition-remove").addEventListener("click", () => {
     document.removeEventListener("click", closeOnOutsideClick);
@@ -896,6 +973,9 @@ function bindVoucherConditionRow(row) {
     menu.hidden = true;
     picker.setAttribute("aria-expanded", "false");
     picker.parentElement.classList.remove("opens-up");
+    const valueMenu = row.querySelector(".voucher-multi-select-menu");
+    if (valueMenu) valueMenu.hidden = true;
+    row.querySelector(".voucher-multi-select-control")?.setAttribute("aria-expanded", "false");
   };
   document.addEventListener("click", closeOnOutsideClick);
   picker.addEventListener("keydown", event => {
@@ -927,6 +1007,12 @@ function addVoucherConditionRow() {
 
 function updateVoucherConditionRemoveButtons() {
   const rows = [...document.querySelectorAll("#voucherConditionList .voucher-condition-row")];
+  const selectedIds = rows.filter(row => row.dataset.conditionId).map(row => row.dataset.conditionId);
+  const hasIncompleteRow = rows.some(row => !row.dataset.conditionId);
+  const hasAvailableCondition = selectedIds.length < 2 && voucherAdvancedRuleOptions.some(option =>
+    !selectedIds.includes(option.id) && !selectedIds.some(id => voucherConditionConflicts[id]?.includes(option.id)));
+  const addButton = document.getElementById("voucherAddRule");
+  if (addButton) addButton.disabled = hasIncompleteRow || !hasAvailableCondition;
   rows.forEach(row => {
     row.querySelector(".voucher-condition-remove").hidden = rows.length === 1 && !row.dataset.conditionId;
   });
@@ -982,16 +1068,6 @@ function initVoucherAssetCreate() {
     };
   });
   addVoucherConditionRow();
-  document.getElementById("voucherConditionList").addEventListener("click", event => {
-    const rows = event.currentTarget;
-    if (event.target.closest(".voucher-dynamic-filter-add")) {
-      rows.querySelector(".voucher-dynamic-filter-rows").append(voucherDynamicFilterRow());
-    } else if (event.target.closest(".voucher-dynamic-filter-remove")) {
-      const dynamicRows = rows.querySelector(".voucher-dynamic-filter-rows");
-      event.target.closest(".dynamic-filter-condition-row").remove();
-      if (!dynamicRows.children.length) dynamicRows.append(voucherDynamicFilterRow());
-    }
-  });
   document.getElementById("voucherAddRule").addEventListener("click", addVoucherConditionRow);
   document.getElementById("voucherAdvancedToggle").addEventListener("click", event => {
     const button = event.currentTarget;
