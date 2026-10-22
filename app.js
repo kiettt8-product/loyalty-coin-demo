@@ -1948,7 +1948,11 @@ function initRuleList() {
 // Only rule types marked as in use in Rule Usage appear here. Keep the familiar
 // CRM Advance Rule groups so this picker reads like the voucher rule picker.
 const ruleConditionOptions = [
-  { group: "Check user profile", value: "109", label: "User profile check" },
+  { group: "Check user profile", value: "profile-kyc", backendField: "109", subtype: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
+  { group: "Check user profile", value: "profile-nfc", backendField: "109", subtype: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
+  { group: "Check user profile", value: "profile-ekyc", backendField: "109", subtype: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
+  { group: "Check user profile", value: "profile-account-level", backendField: "109", subtype: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"] },
+  { group: "Check user profile", value: "109", label: "User profile check", legacy: true },
   { group: "Account & segment", value: "104", label: "MMF account status" },
   { group: "Account & segment", value: "81", label: "Segment check" },
   { group: "Account & segment", value: "95", label: "Risk check" },
@@ -2211,12 +2215,12 @@ function configureRuleSimpleCondition(row, option, condition = {}, readonly = fa
   picker.value = option.label;
   picker.parentElement.classList.add("has-selection");
   const operator = condition.operator || condition.config?.operator || option.operators[0];
-  const configuredValue = condition.value || condition.config?.value || (option.value === "risk-status" && condition.config?.event ? condition.config.event : "");
+  const configuredValue = condition.value || condition.config?.value || option.defaultValue || (option.value === "risk-status" && condition.config?.event ? condition.config.event : "");
   row.querySelector(".voucher-condition-operator").innerHTML = voucherSingleSelectMarkup("Operator", option.operators, operator, readonly);
   const valueHost = row.querySelector(".voucher-condition-value");
   if (option.multiple) {
     valueHost.innerHTML = voucherValueControlMarkup(readonly);
-    row.dataset.selectedValues = JSON.stringify(condition.values || (configuredValue ? [configuredValue] : []));
+    row.dataset.selectedValues = JSON.stringify(condition.values || condition.config?.values || option.defaults || (configuredValue ? [configuredValue] : []));
     const control = valueHost.querySelector(".voucher-multi-select-control");
     control.querySelector(".voucher-multi-select-placeholder").textContent = "Select value";
     renderRuleSimpleMultiValue(row, option);
@@ -2612,13 +2616,13 @@ function initRuleForm(payload = {}) {
     event.preventDefault();
     const conditions = [...rows.querySelectorAll(":scope > .rule-condition-row")].map(row => {
       const field = row.dataset.ruleField || row.dataset.ruleType || "";
-      const option = ruleConditionOptions.find(item => item.value === field);
+      const option = ruleConditionOptions.find(item => item.value === row.dataset.ruleType);
       if (option?.operators) {
         const operator = row.querySelector(".voucher-condition-operator .voucher-single-select-control > span")?.textContent || "";
         const selectedValue = row.querySelector(".voucher-condition-value .voucher-single-select-control > span")?.textContent || "";
         const value = selectedValue === "Select value" ? "" : selectedValue || row.querySelector(".rule-simple-value-input")?.value.trim() || "";
         const values = option.multiple ? JSON.parse(row.dataset.selectedValues || "[]") : undefined;
-        return { field, operator, ...(option.multiple ? { values } : { value }) };
+        return { field, ...(row.dataset.ruleSubtype ? { subRule: row.dataset.ruleSubtype } : {}), operator, ...(option.multiple ? { values } : { value }) };
       }
       if (field === "100") return { field, ...(row.dataset.ruleSubtype ? { subRule: row.dataset.ruleSubtype } : {}), filter: { ...collectRuleFilterGroup(row.querySelector(".rule-filter-group")), errorMessage: row.querySelector("[data-filter-error]").value.trim() } };
       if (field === "103") return { field, ...(row.dataset.ruleSubtype ? { subRule: row.dataset.ruleSubtype } : {}), counters: [...row.querySelectorAll("[data-counter-row]")].map(collectDynamicCounter) };
@@ -2627,7 +2631,8 @@ function initRuleForm(payload = {}) {
     });
     const valid = conditions.length && conditions.every(condition => {
       if (!condition.field) return false;
-      const option = ruleConditionOptions.find(item => item.value === condition.field);
+      const row = [...rows.querySelectorAll(":scope > .rule-condition-row")].find(item => item.dataset.ruleField === condition.field && item.dataset.ruleSubtype === (condition.subRule || ""));
+      const option = ruleConditionOptions.find(item => item.value === row?.dataset.ruleType);
       if (option?.operators) return Boolean(condition.operator && (option.multiple ? condition.values?.length : condition.value));
       if (condition.field === "100") return ruleFilterIsComplete(condition.filter);
       if (condition.field === "103") return condition.counters.length && condition.counters.every(counter => counter.type && counter.limit && (!/PERIOD/.test(counter.type) || (counter.periodLength && counter.periodUnit)) && (!(counter.type.includes("_BY_KEY") || counter.type.includes("_BY_MULTIPLE_KEY")) || counter.keys?.length));
