@@ -50,7 +50,7 @@ const state = {
 let ruleEngineRules = [
   { id: "RE-10001", name: "Monthly user limit", owner: "kiettt8", description: "Limits repeated use for each user in a month.", conditions: [{ field: "103", counters: [{ type: "LIMIT_COUNTER_BY_MULTIPLE_KEY_PERIOD", limit: "2", periodLength: "1", periodUnit: "MONTH", condition: "LESS_THAN_OR_EQUALS", code: "", errorCode: "0", keys: ["requestInfo.userId"] }] }] },
   { id: "RE-10002", name: "System risk check", owner: "nghiatn", description: "Checks a user with the selected CRM risk control.", conditions: [{ field: "95", config: { riskControl: "Đánh giá rủi ro toàn hệ thống", userType: "Malicious" } }] },
-  { id: "RE-10003", name: "Segment membership check", owner: "linhnt22", description: "Checks whether the user matches a selected segment.", conditions: [{ field: "100", filter: { match: "all", items: [{ kind: "method", method: "checkSegment", segmentId: "pp_check_blacklist" }] } }] },
+  { id: "RE-10003", name: "Segment membership check", owner: "linhnt22", description: "Checks whether the user matches a selected segment.", conditions: [{ field: "100", filter: { match: "all", items: [{ kind: "method", method: "checkSegment", segmentId: "508" }] } }] },
   { id: "RE-10004", name: "Daily usage limit", owner: "kiettt8", description: "Limits repeated use for each user per day.", conditions: [{ field: "100", filter: { match: "all", items: [{ kind: "method", method: "counter", condition: "<= 1", counterType: "COUNTER_RATE_LIMIT", maximum: "1", periodLength: "1", periodUnit: "DAY", key: "requestInfo.userId", deltaValue: "1", countByConstant: true, code: "DAILY_USAGE_LIMIT" }] } }] }
 ];
 let nextRuleNumber = 10005;
@@ -1976,10 +1976,11 @@ const ruleDynamicFilterConditionKeys = [
   { value: "event.requestInfo.pmcId", label: "PMC ID" }
 ];
 const ruleCounterRuleKeys = [{ value: "requestInfo.userId", label: "User ID" }];
-const ruleSegmentIds = [
-  "pp_check_blacklist", "pp_check_a30", "pp_check_blacklist_and_a30", "pp_referral_v2",
-  "pp_referral_v2_cashback", "pp_collecting_flower", "pp_sharelink_v3", "pp_p2p_1d", "pp_collecting_fruit"
-].map(id => ({ value: id, label: id }));
+// These are the segment options shown by Promotion Code in the CRM reference.
+const ruleSegments = [
+  { id: "508", name: "Kiett8_N", owner: "kiettt8" },
+  { id: "512", name: "kiettt8_R", owner: "kiettt8" }
+];
 const ruleJmesKeys = [{ value: "requestInfo.embeddedData.columninfo.merchantInfo.providedList", label: "Merchant list", dataType: "ARRAY" }];
 
 const ruleFilterOperators = ["Equals", "Not Equals", "Greater Than", "Greater Than Or Equals", "Less Than", "Less Than Or Equals", "In", "Not In"];
@@ -2026,6 +2027,54 @@ function ruleSelectOptions(items, value = "", placeholder = "Select") {
   }).join("")}`;
 }
 
+function ruleSegmentPickerMarkup(fieldName, selectedId = "", readonly = false) {
+  const selected = ruleSegments.find(segment => segment.id === String(selectedId));
+  return `<div class="rule-segment-picker" data-rule-segment-picker data-selected-label="${selected ? escapeHtml(`${selected.id} - ${selected.name}`) : ""}">
+    <div class="rule-segment-input-wrap"><input type="text" data-segment-search placeholder="Select Segment" value="${selected ? escapeHtml(`${selected.id} - ${selected.name}`) : ""}" autocomplete="off" aria-label="Select Segment" aria-expanded="false" ${readonly ? "disabled" : ""}><span class="rule-picker-search-icon" aria-hidden="true"></span></div>
+    <div class="rule-segment-menu" data-segment-menu hidden>
+      <div class="rule-segment-tabs" role="tablist" aria-label="Segment owner"><button type="button" class="active" data-segment-tab="mine" role="tab" aria-selected="true" ${readonly ? "disabled" : ""}>Created by me</button><button type="button" data-segment-tab="all" role="tab" aria-selected="false" ${readonly ? "disabled" : ""}>All</button></div>
+      <div class="rule-segment-options" data-segment-options role="listbox" aria-label="Segments"></div>
+    </div>
+    <input type="hidden" data-segment-value ${fieldName === "method-field" ? 'data-method-field="segmentId"' : 'data-config-field="segmentId"'} value="${escapeHtml(selected?.id || "")}">
+  </div>`;
+}
+
+function renderRuleSegmentOptions(picker) {
+  const search = picker.querySelector("[data-segment-search]");
+  const selectedLabel = picker.dataset.selectedLabel || "";
+  const query = (search.value === selectedLabel ? "" : search.value).trim().toLowerCase();
+  const tab = picker.dataset.segmentTab || "mine";
+  const options = ruleSegments.filter(segment => (tab === "all" || segment.owner === "kiettt8") && (!query || `${segment.id} ${segment.name}`.toLowerCase().includes(query)));
+  picker.querySelector("[data-segment-options]").innerHTML = options.length
+    ? options.map(segment => `<button type="button" class="rule-segment-option" role="option" aria-selected="${picker.querySelector("[data-segment-value]").value === segment.id}" data-segment-option="${segment.id}">${escapeHtml(segment.id)} - ${escapeHtml(segment.name)}</button>`).join("")
+    : '<div class="rule-segment-empty">No segments found</div>';
+}
+
+function renderRuleUserTypePicker(picker) {
+  const value = picker.querySelector('[data-config-field="userTypes"]');
+  const selected = JSON.parse(value.value || "[]");
+  picker.querySelector("[data-rule-user-tags]").innerHTML = selected.map(item => `<span class="promo-user-type-tag ${promotionUserTypeClass(item)}">${escapeHtml(promotionUserTypeLabel(item))}${item === "Normal User" ? "" : `<button type="button" data-rule-remove-user-type="${escapeHtml(item)}" aria-label="Remove ${escapeHtml(promotionUserTypeLabel(item))}">×</button>`}</span>`).join("");
+  picker.querySelectorAll("[data-rule-user-type]").forEach(option => {
+    const active = selected.includes(option.dataset.ruleUserType);
+    option.classList.toggle("active", active);
+    option.setAttribute("aria-selected", String(active));
+    option.querySelector(".promo-user-type-option-check").textContent = active ? "✓" : "";
+    option.hidden = !option.textContent.toLowerCase().includes(picker.querySelector("[data-rule-user-search]").value.trim().toLowerCase());
+  });
+  picker.querySelector("[data-rule-user-menu]").querySelector(".promo-user-type-empty")?.remove();
+  if (![...picker.querySelectorAll("[data-rule-user-type]")].some(option => !option.hidden)) picker.querySelector("[data-rule-user-menu]").insertAdjacentHTML("beforeend", '<div class="promo-user-type-empty">No user types found</div>');
+}
+
+function ruleUserTypePickerMarkup(config = {}, readonly = false) {
+  const selectedTypes = config.userTypes || (config.userType ? ["Normal User", config.userType] : ["Normal User"]);
+  const selected = promotionCatalog.userTypes.filter(value => selectedTypes.includes(value));
+  const tags = selected.map(value => `<span class="promo-user-type-tag ${promotionUserTypeClass(value)}">${escapeHtml(promotionUserTypeLabel(value))}${readonly || value === "Normal User" ? "" : `<button type="button" data-rule-remove-user-type="${escapeHtml(value)}" aria-label="Remove ${escapeHtml(promotionUserTypeLabel(value))}">×</button>`}</span>`).join("");
+  const options = promotionCatalog.userTypes.map(value => `<button type="button" class="choice-pill promo-user-type-option ${promotionUserTypeClass(value)} ${selected.includes(value) ? "active" : ""}" data-rule-user-type="${escapeHtml(value)}" role="option" aria-selected="${selected.includes(value)}"><span>${escapeHtml(promotionUserTypeLabel(value))}</span><span class="promo-user-type-option-check" aria-hidden="true">${selected.includes(value) ? "✓" : ""}</span></button>`).join("");
+  return `<div class="rule-risk-fields"><label class="rule-risk-control-field"><span>Risk Control</span><select class="rule-risk-control-display" disabled title="${escapeHtml(promotionCatalog.riskControl)}"><option>${escapeHtml(promotionCatalog.riskControl)}</option></select><input type="hidden" data-config-field="riskControl" value="${escapeHtml(config.riskControl || promotionCatalog.riskControl)}"></label>
+    <label class="rule-risk-user-field"><span>User Type</span><div class="promo-user-type-combobox rule-user-type-picker"><div class="asset-tag-select promo-user-type-select" role="combobox" aria-label="User Type" aria-haspopup="listbox" aria-expanded="false" aria-disabled="${readonly}"><span class="promo-user-type-tags" data-rule-user-tags>${tags}</span><input type="text" data-rule-user-search aria-label="Search User Type" autocomplete="off" ${readonly ? "disabled" : ""}><span class="promo-user-type-search-icon" aria-hidden="true"></span></div><div class="promo-user-type-menu" data-rule-user-menu role="listbox" aria-label="User Type options" aria-multiselectable="true" hidden>${options}</div></div><input type="hidden" data-config-field="userTypes" value="${escapeHtml(JSON.stringify(selected))}"></label>
+  </div>`;
+}
+
 function renderRuleConditionMenu(menu, search = "", selectedType = "") {
   const query = search.trim().toLowerCase();
   const groups = [...new Set(ruleConditionOptions.map(option => option.group))];
@@ -2052,7 +2101,7 @@ function ruleFilterMethodMarkup(item = {}, readonly = false) {
   const methodFields = method === "counter"
     ? `<div class="rule-counter-rules"><div class="rule-counter-rules-heading"><strong>Counter rules</strong><span>Part of the counter method</span></div><div class="rule-counter-rule-list">${counterRules.map((counterRule, index) => ruleCounterRuleMarkup(counterRule, readonly, index)).join("")}</div>${readonly ? "" : '<button type="button" class="asset-btn secondary" data-add-counter-rule>+ Add counter rule</button>'}</div>`
       : method === "checkSegment"
-      ? `<label><span>Segment ID</span><select data-method-field="segmentId" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleSegmentIds, item.segmentId || "", "Select a segment")}</select></label>`
+      ? `<label><span>Segment</span>${ruleSegmentPickerMarkup("method-field", item.segmentId || "", readonly)}</label>`
       : method === "jmesFilterSize"
         ? `<label><span>Check field</span><select data-method-field="key" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleJmesKeys.map(key => ({ value: key.value, label: key.label })), item.key || ruleJmesKeys[0].value, "Choose a field")}</select></label><label><span>Condition</span><select data-method-field="operator" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleFilterOperators, item.operator || "Equals", "Choose a condition")}</select></label><label><span>Value</span><input data-method-field="value" value="${escapeHtml(item.value || "")}" placeholder="Enter a value" ${readonly ? "disabled" : ""}></label>`
         : method === "checkUM"
@@ -2121,8 +2170,8 @@ function dynamicCounterMarkup(counters = [], readonly = false, title = "Dynamic 
 function renderRuleTypeFields(field, config = {}, readonly = false, typeLabel = "") {
   if (field === "100") return dynamicFilterMarkup(config.filter || {}, readonly, typeLabel || "Dynamic filter");
   if (field === "103") return dynamicCounterMarkup(config.counters || [], readonly, typeLabel || "Dynamic counter");
-  if (field === "95") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>Risk check</strong><p>Choose the same risk control and user type used in Promotion Code.</p></div></div><div class="rule-counter-grid"><label><span>Risk control</span><select data-config-field="riskControl" ${readonly ? "disabled" : ""}>${ruleSelectOptions([{ value: promotionCatalog.riskControl, label: "System-wide risk check" }], config.riskControl || promotionCatalog.riskControl, "Select a risk control")}</select></label><label><span>User type</span><select data-config-field="userType" ${readonly ? "disabled" : ""}>${ruleSelectOptions(promotionCatalog.userTypes, config.userType || "", "Select a user type")}</select></label></div></div>`;
-  if (field === "81") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>Segment check</strong><p>Select a segment to check.</p></div></div><label class="rule-config-field"><span>Segment ID</span><select data-config-field="segmentId" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleSegmentIds, config.segmentId || "", "Select a segment")}</select></label></div>`;
+  if (field === "95") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>Risk check</strong></div></div>${ruleUserTypePickerMarkup(config, readonly)}</div>`;
+  if (field === "81") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>Segment check</strong></div></div><label class="rule-config-field"><span>Segment</span>${ruleSegmentPickerMarkup("config-field", config.segmentId || "", readonly)}</label></div>`;
   if (field === "10") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>User limit</strong><p>Set a user's count for this rule.</p></div><span class="rule-type-badge">Rule 10</span></div><div class="rule-counter-grid"><label><span>Code</span><input data-config-field="code" value="${escapeHtml(config.code || "")}" placeholder="Enter code" ${readonly ? "disabled" : ""}></label><label><span>Maximum count</span><input type="number" min="1" data-config-field="counter" value="${escapeHtml(config.counter || "")}" placeholder="Enter maximum" ${readonly ? "disabled" : ""}></label></div></div>`;
   if (field === "86") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>User limit per period</strong><p>Set a user's count and reset period.</p></div><span class="rule-type-badge">Rule 86</span></div><div class="rule-counter-grid"><label><span>Code</span><input data-config-field="code" value="${escapeHtml(config.code || "")}" placeholder="Enter code" ${readonly ? "disabled" : ""}></label><label><span>Maximum count</span><input type="number" min="1" data-config-field="counter" value="${escapeHtml(config.counter || "")}" placeholder="Enter maximum" ${readonly ? "disabled" : ""}></label><label><span>Reset period</span><select data-config-field="periodUnit" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleTimeUnits, config.periodUnit || "DAY", "Select a period")}</select></label></div></div>`;
   if (field === "109") return `<div class="rule-builder rule-tech-only"><div class="rule-builder-heading"><div><strong>User profile check</strong><p>This rule uses profile field IDs. Keep the field mapping visible to Tech until CRM labels are confirmed.</p></div><span class="rule-type-badge">Rule 109</span></div><div class="rule-counter-grid"><label><span>Profile field ID</span><select data-config-field="fieldId" ${readonly ? "disabled" : ""}>${ruleSelectOptions([{ value: "0", label: "0 · Expression" }, { value: "1", label: "1 · Greater than or equal" }, { value: "2", label: "2 · In list" }, { value: "3", label: "3 · In list" }, { value: "4", label: "4 · In list" }], config.fieldId || "", "Select a profile field")}</select></label><label><span>Condition</span><select data-config-field="operator" ${readonly ? "disabled" : ""}>${ruleSelectOptions(["IN", "GTOE"], config.operator || "", "Select a condition")}</select></label><label><span>Value</span><input data-config-field="value" value="${escapeHtml(config.value || "")}" placeholder="Enter value" ${readonly ? "disabled" : ""}></label></div></div>`;
@@ -2245,7 +2294,10 @@ function syncRuleMultiSelect(select) {
 
 function collectSimpleRuleConfig(row) {
   const config = {};
-  row.querySelectorAll("[data-config-field]").forEach(control => { config[control.dataset.configField] = control.value.trim(); });
+  row.querySelectorAll("[data-config-field]").forEach(control => {
+    config[control.dataset.configField] = control.dataset.configField === "userTypes" ? JSON.parse(control.value || "[]") : control.value.trim();
+  });
+  if (config.userTypes?.length) config.userType = config.userTypes.find(value => value !== "Normal User") || "Normal User";
   return config;
 }
 
@@ -2293,6 +2345,23 @@ function initRuleForm(payload = {}) {
   };
   rows.addEventListener("focusin", event => { if (event.target.matches(".rule-condition-search")) openRulePicker(event.target); });
   rows.addEventListener("click", event => { if (event.target.matches(".rule-condition-search")) openRulePicker(event.target); });
+  rows.addEventListener("focusin", event => {
+    const search = event.target.closest("[data-segment-search]");
+    if (!search) return;
+    const picker = search.closest("[data-rule-segment-picker]");
+    if (search.value === (picker.dataset.selectedLabel || "")) search.value = "";
+    picker.querySelector("[data-segment-menu]").hidden = false;
+    search.setAttribute("aria-expanded", "true");
+    renderRuleSegmentOptions(picker);
+  });
+  rows.addEventListener("click", event => {
+    const search = event.target.closest("[data-segment-search]");
+    if (!search) return;
+    const picker = search.closest("[data-rule-segment-picker]");
+    picker.querySelector("[data-segment-menu]").hidden = false;
+    search.setAttribute("aria-expanded", "true");
+    renderRuleSegmentOptions(picker);
+  });
   rows.oninput = event => {
     if (event.target.matches(".rule-condition-search")) {
       const row = event.target.closest(".rule-condition-row");
@@ -2315,6 +2384,19 @@ function initRuleForm(payload = {}) {
       const row = event.target.closest(".rule-condition-row");
       const option = ruleConditionOptions.find(item => item.value === row.dataset.ruleType);
       if (option?.multiple) { renderRuleSimpleMultiValue(row, option); row.querySelector(".voucher-multi-select-menu").hidden = false; }
+    }
+    if (event.target.matches("[data-segment-search]")) {
+      const picker = event.target.closest("[data-rule-segment-picker]");
+      if (event.target.value !== (picker.dataset.selectedLabel || "")) picker.querySelector("[data-segment-value]").value = "";
+      renderRuleSegmentOptions(picker);
+      picker.querySelector("[data-segment-menu]").hidden = false;
+      event.target.setAttribute("aria-expanded", "true");
+    }
+    if (event.target.matches("[data-rule-user-search]")) {
+      const picker = event.target.closest(".rule-user-type-picker");
+      renderRuleUserTypePicker(picker);
+      picker.querySelector("[data-rule-user-menu]").hidden = false;
+      picker.querySelector(".promo-user-type-select").setAttribute("aria-expanded", "true");
     }
   };
   rows.onkeydown = event => {
@@ -2352,6 +2434,60 @@ function initRuleForm(payload = {}) {
     }
   };
   rows.onclick = event => {
+    const segmentTab = event.target.closest("[data-segment-tab]");
+    if (segmentTab) {
+      const picker = segmentTab.closest("[data-rule-segment-picker]");
+      picker.dataset.segmentTab = segmentTab.dataset.segmentTab;
+      picker.querySelectorAll("[data-segment-tab]").forEach(tab => {
+        const active = tab === segmentTab;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", String(active));
+      });
+      renderRuleSegmentOptions(picker);
+      return;
+    }
+    const segmentOption = event.target.closest("[data-segment-option]");
+    if (segmentOption) {
+      const picker = segmentOption.closest("[data-rule-segment-picker]");
+      const segment = ruleSegments.find(item => item.id === segmentOption.dataset.segmentOption);
+      const search = picker.querySelector("[data-segment-search]");
+      search.value = `${segment.id} - ${segment.name}`;
+      picker.dataset.selectedLabel = search.value;
+      picker.querySelector("[data-segment-value]").value = segment.id;
+      picker.querySelector("[data-segment-menu]").hidden = true;
+      search.setAttribute("aria-expanded", "false");
+      renderRuleSegmentOptions(picker);
+      return;
+    }
+    const userTypeOption = event.target.closest("[data-rule-user-type]");
+    if (userTypeOption) {
+      const picker = userTypeOption.closest(".rule-user-type-picker");
+      const hidden = picker.querySelector('[data-config-field="userTypes"]');
+      const selected = new Set(JSON.parse(hidden.value || "[]"));
+      const value = userTypeOption.dataset.ruleUserType;
+      if (value !== "Normal User") selected.has(value) ? selected.delete(value) : selected.add(value);
+      selected.add("Normal User");
+      hidden.value = JSON.stringify(promotionCatalog.userTypes.filter(item => selected.has(item)));
+      renderRuleUserTypePicker(picker);
+      picker.querySelector("[data-rule-user-menu]").hidden = false;
+      picker.querySelector("[data-rule-user-search]").focus();
+      return;
+    }
+    const removeUserType = event.target.closest("[data-rule-remove-user-type]");
+    if (removeUserType) {
+      const picker = removeUserType.closest(".rule-user-type-picker");
+      const hidden = picker.querySelector('[data-config-field="userTypes"]');
+      const value = removeUserType.dataset.ruleRemoveUserType;
+      hidden.value = JSON.stringify(JSON.parse(hidden.value || "[]").filter(item => item !== value));
+      renderRuleUserTypePicker(picker);
+      return;
+    }
+    if (event.target.closest("[data-rule-user-search]")) {
+      const picker = event.target.closest(".rule-user-type-picker");
+      picker.querySelector("[data-rule-user-menu]").hidden = false;
+      picker.querySelector(".promo-user-type-select").setAttribute("aria-expanded", "true");
+      return;
+    }
     const choice = event.target.closest(".voucher-condition-option[data-rule-type]");
     if (choice) {
       const row = choice.closest(".rule-condition-row");
@@ -2460,6 +2596,14 @@ function initRuleForm(payload = {}) {
       menu.closest(".rule-type-picker").querySelector(".rule-condition-search")?.setAttribute("aria-expanded", "false");
     });
     rows.querySelectorAll(".voucher-single-select-menu, .voucher-multi-select-menu").forEach(menu => { menu.hidden = true; });
+    rows.querySelectorAll("[data-segment-menu], [data-rule-user-menu]").forEach(menu => { menu.hidden = true; });
+    rows.querySelectorAll("[data-segment-search]").forEach(input => input.setAttribute("aria-expanded", "false"));
+    rows.querySelectorAll("[data-rule-segment-picker]").forEach(picker => {
+      const input = picker.querySelector("[data-segment-search]");
+      const selected = ruleSegments.find(segment => segment.id === picker.querySelector("[data-segment-value]").value);
+      if (selected && !input.value) input.value = `${selected.id} - ${selected.name}`;
+    });
+    rows.querySelectorAll(".rule-user-type-picker .promo-user-type-select").forEach(control => control.setAttribute("aria-expanded", "false"));
   };
   document.addEventListener("click", form.ruleMenuCloseHandler);
   document.getElementById("ruleCancel").textContent = readonly ? "Back" : "Cancel";
