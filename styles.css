@@ -1246,7 +1246,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
   .rule-counter-rule { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* Keep the segment picker beside its rule type on wide screens. */
+/* Keep compact rule pickers beside their rule type on wide screens. */
 .rule-condition-row:has(.rule-compact-config) {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px;
   align-items: end;
@@ -1261,6 +1261,26 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 }
 .rule-condition-row:has(.rule-compact-config) .rule-segment-input-wrap > input {
   height: 32px;
+}
+.rule-risk-compact-config > .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.rule-risk-compact-config .promo-user-type-select {
+  height: 32px;
+  min-height: 32px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.rule-risk-compact-config .promo-user-type-search-icon {
+  top: 8px;
 }
 .rule-condition-row:has(.rule-compact-config) .rule-picker-search-icon {
   top: 9px;
