@@ -1245,6 +1245,44 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 @media (max-width: 900px) {
   .rule-counter-rule { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Keep the segment picker beside its rule type on wide screens. */
+.rule-condition-row:has(.rule-compact-config) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px;
+  align-items: end;
+}
+.rule-condition-row:has(.rule-compact-config) .rule-configuration {
+  grid-column: 2;
+  grid-row: 1;
+}
+.rule-condition-row:has(.rule-compact-config) .rule-compact-config {
+  width: 100%;
+  max-width: none;
+}
+.rule-condition-row:has(.rule-compact-config) .rule-segment-input-wrap > input {
+  height: 32px;
+}
+.rule-condition-row:has(.rule-compact-config) .rule-picker-search-icon {
+  top: 9px;
+}
+.rule-condition-row:has(.rule-compact-config) > .rule-condition-remove {
+  grid-column: 3;
+  grid-row: 1;
+}
+@media (max-width: 900px) {
+  .rule-condition-row:has(.rule-compact-config) {
+    grid-template-columns: minmax(0, 1fr) 32px;
+    align-items: start;
+  }
+  .rule-condition-row:has(.rule-compact-config) .rule-configuration {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .rule-condition-row:has(.rule-compact-config) > .rule-condition-remove {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
 @media (max-width: 600px) {
   .rule-counter-rule { grid-template-columns: 1fr; }
   .rule-counter-rule-head { grid-column: 1; }
