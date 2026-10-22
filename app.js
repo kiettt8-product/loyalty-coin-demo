@@ -1955,8 +1955,14 @@ const ruleConditionOptions = [
   { group: "Account & segment", value: "mmf-status", label: "Check MMF account status", operators: ["IN", "NOT IN"], values: ["Has no account"] },
   { group: "Account & segment", value: "segment-check", label: "Check segment", operators: ["IN", "NOT IN"], values: [], valueInput: "Enter segment" },
   { group: "Account & segment", value: "risk-status", label: "Check risk status", operators: ["IN", "NOT IN"], values: [], valueInput: "Enter status" },
-  { group: "Promotion usage", value: "100", label: "Check promotion use", description: "Add checks for promotion use, user activity, or transactions." },
-  { group: "Usage limits", value: "103", label: "Set usage limits", description: "Set how many times a promotion or campaign can be used." }
+  { group: "Promotion usage", value: "filter-promotion-code", backendField: "100", subtype: "promotion-code-usage", label: "Promotion code usage count" },
+  { group: "Promotion usage", value: "filter-user-promotion", backendField: "100", subtype: "user-promotion-usage", label: "User promotion usage count" },
+  { group: "Promotion usage", value: "filter-user-transaction", backendField: "100", subtype: "user-transaction-count", label: "User transaction count" },
+  { group: "Usage limits", value: "counter-promotion-code", backendField: "103", subtype: "promotion-code-redemption", label: "Promotion code redemption count" },
+  { group: "Usage limits", value: "counter-user-voucher", backendField: "103", subtype: "user-voucher-usage", label: "User voucher usage count" },
+  { group: "Usage limits", value: "counter-campaign", backendField: "103", subtype: "campaign-participation", label: "Campaign participation count" },
+  { group: "Promotion usage", value: "100", backendField: "100", label: "Promotion usage checks", legacy: true },
+  { group: "Usage limits", value: "103", backendField: "103", label: "Usage limits", legacy: true }
 ];
 
 const ruleFilterKeys = [
@@ -2022,7 +2028,7 @@ function renderRuleConditionMenu(menu, search = "", selectedType = "") {
   const query = search.trim().toLowerCase();
   const groups = [...new Set(ruleConditionOptions.map(option => option.group))];
   const options = groups.map(group => {
-    const items = ruleConditionOptions.filter(option => option.group === group && (!query || `${group} ${option.label} ${option.description}`.toLowerCase().includes(query)));
+    const items = ruleConditionOptions.filter(option => !option.legacy && option.group === group && (!query || `${group} ${option.label}`.toLowerCase().includes(query)));
     if (!items.length) return "";
     return `<div class="voucher-condition-group"><span aria-hidden="true"></span>${escapeHtml(group)}</div>${items.map(option => `<button type="button" class="voucher-condition-option" role="option" aria-selected="${option.value === selectedType}" data-rule-type="${option.value}">${escapeHtml(option.label)}</button>`).join("")}`;
   }).join("") || `<div class="voucher-condition-empty">No matching rules</div>`;
@@ -2095,8 +2101,8 @@ function ruleKeyMultiSelectMarkup(selected = [], readonly = false, ariaLabel = "
   return `<details class="rule-multi-select" data-multi-field="${escapeHtml(fieldName)}"><summary aria-label="${escapeHtml(ariaLabel)}"><span class="rule-multi-selected"></span><span class="rule-multi-placeholder">Choose fields</span><span class="rule-multi-chevron" aria-hidden="true">⌄</span></summary><div class="rule-multi-options">${options}</div></details>`;
 }
 
-function dynamicFilterMarkup(filter = {}, readonly = false) {
-  return `<div class="rule-builder rule-dynamic-filter-builder"><div class="rule-builder-heading"><div><strong>Checks</strong><p>Add the customer and transaction checks this rule needs.</p></div></div><label class="rule-config-field"><span>Message when checks fail</span><input data-filter-error value="${escapeHtml(filter.errorMessage || "")}" placeholder="Enter a message" ${readonly ? "disabled" : ""}></label>${ruleFilterGroupMarkup(filter, readonly)}</div>`;
+function dynamicFilterMarkup(filter = {}, readonly = false, title = "Promotion usage checks") {
+  return `<div class="rule-builder rule-dynamic-filter-builder"><div class="rule-builder-heading"><div><strong>${escapeHtml(title)}</strong><p>Add the checks this rule needs.</p></div></div><label class="rule-config-field"><span>Message when checks fail</span><input data-filter-error value="${escapeHtml(filter.errorMessage || "")}" placeholder="Enter a message" ${readonly ? "disabled" : ""}></label>${ruleFilterGroupMarkup(filter, readonly)}</div>`;
 }
 
 function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
@@ -2117,14 +2123,14 @@ function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
   </section>`;
 }
 
-function dynamicCounterMarkup(counters = [], readonly = false) {
+function dynamicCounterMarkup(counters = [], readonly = false, title = "Usage limits") {
   const rows = counters.length ? counters : [{}];
-  return `<div class="rule-builder rule-dynamic-counter-builder"><div class="rule-builder-heading"><div><strong>Usage limits</strong><p>Choose how often this rule can pass and when the limit resets.</p></div></div><div class="rule-counter-list">${rows.map((counter, index) => dynamicCounterRowMarkup(counter, readonly, index)).join("")}</div>${readonly ? "" : '<button type="button" class="asset-btn secondary" data-add-counter>+ Add limit</button>'}</div>`;
+  return `<div class="rule-builder rule-dynamic-counter-builder"><div class="rule-builder-heading"><div><strong>${escapeHtml(title)}</strong><p>Set a maximum and when the limit resets.</p></div></div><div class="rule-counter-list">${rows.map((counter, index) => dynamicCounterRowMarkup(counter, readonly, index)).join("")}</div>${readonly ? "" : '<button type="button" class="asset-btn secondary" data-add-counter>+ Add limit</button>'}</div>`;
 }
 
-function renderRuleTypeFields(field, config = {}, readonly = false) {
-  if (field === "100") return dynamicFilterMarkup(config.filter || {}, readonly);
-  if (field === "103") return dynamicCounterMarkup(config.counters || [], readonly);
+function renderRuleTypeFields(field, config = {}, readonly = false, typeLabel = "") {
+  if (field === "100") return dynamicFilterMarkup(config.filter || {}, readonly, typeLabel || "Promotion usage checks");
+  if (field === "103") return dynamicCounterMarkup(config.counters || [], readonly, typeLabel || "Usage limits");
   if (field === "95") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>Check risk status</strong><p>Choose which risk event and levels to check.</p></div></div><label class="rule-config-field"><span>Risk event</span><select data-config-field="event" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleRiskEvents, config.event || "", "Choose an event")}</select></label><fieldset class="rule-risk-levels"><legend>Risk levels</legend>${["Low", "Medium", "High"].map(level => `<label><input type="checkbox" data-risk-level="${level.toUpperCase()}" ${config.levels?.includes(level.toUpperCase()) ? "checked" : ""} ${readonly ? "disabled" : ""}>${level}</label>`).join("")}</fieldset><details class="rule-advanced-fields"><summary>More settings</summary><div>${["AppUser", "DeviceID", "SystemID", "Group Zalo ID", "Trans ID"].map(key => `<label><input type="checkbox" data-risk-key="${escapeHtml(key)}" ${config.keys?.includes(key) ? "checked" : ""} ${readonly ? "disabled" : ""}>Use ${escapeHtml(key)}</label>`).join("")}</div></details></div>`;
   if (field === "81") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>Segment check</strong><p>Choose a segment and the data used to check membership.</p></div><span class="rule-type-badge">Rule 81</span></div><label class="rule-config-field"><span>Segment</span><select data-config-field="segmentId" ${readonly ? "disabled" : ""}>${ruleSelectOptions(["pp_check_blacklist", "pp_check_a30", "pp_check_blacklist_and_a30", "pp_referral_v2", "pp_referral_v2_cashback", "pp_collecting_flower", "pp_sharelink_v3", "pp_p2p_1d", "pp_collecting_fruit"], config.segmentId || "", "Select a segment")}</select></label><fieldset class="rule-risk-levels"><legend>Check using</legend>${["BankConnectorCode", "BimID", "SourceTransID", "First 6 Card No", "AppID", "Trans ID", "Time"].map(key => `<label><input type="checkbox" data-segment-key="${escapeHtml(key)}" ${config.keys?.includes(key) ? "checked" : ""} ${readonly ? "disabled" : ""}>${escapeHtml(key)}</label>`).join("")}</fieldset><label class="rule-config-field"><span>App IDs to filter</span><input data-config-field="appIds" value="${escapeHtml(config.appIds || "")}" placeholder="Enter App IDs" ${readonly ? "disabled" : ""}></label>${config.keys?.includes("Time") ? `<div class="rule-counter-grid"><label><span>Start date</span><input type="date" data-config-field="startDate" value="${escapeHtml(config.startDate || "")}" ${readonly ? "disabled" : ""}></label><label><span>End date</span><input type="date" data-config-field="endDate" value="${escapeHtml(config.endDate || "")}" ${readonly ? "disabled" : ""}></label></div>` : ""}</div>`;
   if (field === "10") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>User limit</strong><p>Set a user's count for this rule.</p></div><span class="rule-type-badge">Rule 10</span></div><div class="rule-counter-grid"><label><span>Code</span><input data-config-field="code" value="${escapeHtml(config.code || "")}" placeholder="Enter code" ${readonly ? "disabled" : ""}></label><label><span>Maximum count</span><input type="number" min="1" data-config-field="counter" value="${escapeHtml(config.counter || "")}" placeholder="Enter maximum" ${readonly ? "disabled" : ""}></label></div></div>`;
@@ -2142,16 +2148,20 @@ function ruleConditionRow(condition = {}, readonly = false) {
     <div class="voucher-condition-value">${voucherSingleSelectMarkup("Select value", [], "", true)}</div>
     <button type="button" class="voucher-condition-remove" aria-label="Remove rule" title="Remove rule" ${readonly || !condition.field ? "hidden" : ""}><img src="assets/action-delete.svg" alt="" aria-hidden="true"></button>
     <div class="rule-configuration"></div>`;
-  const selectedOption = ruleConditionOptions.find(item => item.value === condition.field);
+  const selectedOption = ruleConditionOptions.find(item => item.backendField === condition.field && item.subtype === condition.subRule)
+    || ruleConditionOptions.find(item => item.value === condition.field)
+    || ruleConditionOptions.find(item => item.legacy && item.backendField === condition.field);
   const picker = row.querySelector(".rule-condition-search");
   picker.value = selectedOption?.label || "";
-  row.dataset.ruleType = condition.field || "";
+  row.dataset.ruleType = selectedOption?.value || condition.field || "";
+  row.dataset.ruleField = selectedOption?.backendField || condition.field || "";
+  row.dataset.ruleSubtype = selectedOption?.subtype || condition.subRule || "";
   if (selectedOption && selectedOption.operators) configureRuleSimpleCondition(row, selectedOption, condition, readonly);
   else if (condition.field) {
     row.classList.add("is-dynamic");
     row.querySelector(".voucher-condition-operator").hidden = true;
     row.querySelector(".voucher-condition-value").hidden = true;
-    row.querySelector(".rule-configuration").innerHTML = renderRuleTypeFields(condition.field, condition, readonly);
+    row.querySelector(".rule-configuration").innerHTML = renderRuleTypeFields(row.dataset.ruleField, condition, readonly, selectedOption?.label || "");
   }
   row.querySelectorAll("[data-multi-field]").forEach(syncRuleMultiSelect);
   return row;
@@ -2289,6 +2299,8 @@ function initRuleForm(payload = {}) {
     if (event.target.matches(".rule-condition-search")) {
       const row = event.target.closest(".rule-condition-row");
       row.dataset.ruleType = "";
+      row.dataset.ruleField = "";
+      row.dataset.ruleSubtype = "";
       row.classList.remove("is-dynamic");
       row.querySelector(".voucher-condition-operator").hidden = false;
       row.querySelector(".voucher-condition-value").hidden = false;
@@ -2357,6 +2369,8 @@ function initRuleForm(payload = {}) {
       const option = ruleConditionOptions.find(item => item.value === type);
       const previousType = row.dataset.ruleType;
       row.dataset.ruleType = type;
+      row.dataset.ruleField = option.backendField || type;
+      row.dataset.ruleSubtype = option.subtype || "";
       row.querySelector(".rule-condition-search").value = option.label;
       row.querySelector(".rule-condition-search").setAttribute("aria-expanded", "false");
       row.querySelector(".rule-type-picker").classList.add("has-selection");
@@ -2371,7 +2385,7 @@ function initRuleForm(payload = {}) {
           row.classList.add("is-dynamic");
           row.querySelector(".voucher-condition-operator").hidden = true;
           row.querySelector(".voucher-condition-value").hidden = true;
-          row.querySelector(".rule-configuration").innerHTML = renderRuleTypeFields(type, {}, readonly);
+          row.querySelector(".rule-configuration").innerHTML = renderRuleTypeFields(row.dataset.ruleField, {}, readonly, option.label);
         }
       }
       return;
@@ -2458,7 +2472,7 @@ function initRuleForm(payload = {}) {
   form.onsubmit = event => {
     event.preventDefault();
     const conditions = [...rows.querySelectorAll(":scope > .rule-condition-row")].map(row => {
-      const field = row.dataset.ruleType || "";
+      const field = row.dataset.ruleField || row.dataset.ruleType || "";
       const option = ruleConditionOptions.find(item => item.value === field);
       if (option?.operators) {
         const operator = row.querySelector(".voucher-condition-operator .voucher-single-select-control > span")?.textContent || "";
@@ -2467,8 +2481,8 @@ function initRuleForm(payload = {}) {
         const values = option.multiple ? JSON.parse(row.dataset.selectedValues || "[]") : undefined;
         return { field, operator, ...(option.multiple ? { values } : { value }) };
       }
-      if (field === "100") return { field, filter: { ...collectRuleFilterGroup(row.querySelector(".rule-filter-group")), errorMessage: row.querySelector("[data-filter-error]").value.trim() } };
-      if (field === "103") return { field, counters: [...row.querySelectorAll("[data-counter-row]")].map(collectDynamicCounter) };
+      if (field === "100") return { field, ...(row.dataset.ruleSubtype ? { subRule: row.dataset.ruleSubtype } : {}), filter: { ...collectRuleFilterGroup(row.querySelector(".rule-filter-group")), errorMessage: row.querySelector("[data-filter-error]").value.trim() } };
+      if (field === "103") return { field, ...(row.dataset.ruleSubtype ? { subRule: row.dataset.ruleSubtype } : {}), counters: [...row.querySelectorAll("[data-counter-row]")].map(collectDynamicCounter) };
       if (["95", "81", "10", "86", "109"].includes(field)) return { field, config: collectSimpleRuleConfig(row, field) };
       return { field };
     });
