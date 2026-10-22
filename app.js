@@ -1955,14 +1955,17 @@ const ruleConditionOptions = [
   { group: "Account & segment", value: "mmf-status", label: "Check MMF account status", operators: ["IN", "NOT IN"], values: ["Has no account"] },
   { group: "Account & segment", value: "segment-check", label: "Check segment", operators: ["IN", "NOT IN"], values: [], valueInput: "Enter segment" },
   { group: "Account & segment", value: "risk-status", label: "Check risk status", operators: ["IN", "NOT IN"], values: [], valueInput: "Enter status" },
-  { group: "Promotion usage", value: "filter-promotion-code", backendField: "100", subtype: "promotion-code-usage", label: "Promotion code usage count" },
-  { group: "Promotion usage", value: "filter-user-promotion", backendField: "100", subtype: "user-promotion-usage", label: "User promotion usage count" },
-  { group: "Promotion usage", value: "filter-user-transaction", backendField: "100", subtype: "user-transaction-count", label: "User transaction count" },
-  { group: "Usage limits", value: "counter-promotion-code", backendField: "103", subtype: "promotion-code-redemption", label: "Promotion code redemption count" },
-  { group: "Usage limits", value: "counter-user-voucher", backendField: "103", subtype: "user-voucher-usage", label: "User voucher usage count" },
-  { group: "Usage limits", value: "counter-campaign", backendField: "103", subtype: "campaign-participation", label: "Campaign participation count" },
-  { group: "Promotion usage", value: "100", backendField: "100", label: "Promotion usage checks", legacy: true },
-  { group: "Usage limits", value: "103", backendField: "103", label: "Usage limits", legacy: true }
+  { group: "Custom rules", value: "dynamic-filter", backendField: "100", label: "Custom checks", help: "Combine field conditions with checks such as segment, KYC, or schedule." },
+  { group: "Custom rules", value: "dynamic-counter", backendField: "103", label: "Activity counter", help: "Count records by selected fields, with an optional time period." },
+  // Keep old saved sub-rule values readable, but do not present these promotion-specific presets to new users.
+  { group: "Custom rules", value: "filter-promotion-code", backendField: "100", subtype: "promotion-code-usage", label: "Custom checks", legacy: true },
+  { group: "Custom rules", value: "filter-user-promotion", backendField: "100", subtype: "user-promotion-usage", label: "Custom checks", legacy: true },
+  { group: "Custom rules", value: "filter-user-transaction", backendField: "100", subtype: "user-transaction-count", label: "Custom checks", legacy: true },
+  { group: "Custom rules", value: "counter-promotion-code", backendField: "103", subtype: "promotion-code-redemption", label: "Activity counter", legacy: true },
+  { group: "Custom rules", value: "counter-user-voucher", backendField: "103", subtype: "user-voucher-usage", label: "Activity counter", legacy: true },
+  { group: "Custom rules", value: "counter-campaign", backendField: "103", subtype: "campaign-participation", label: "Activity counter", legacy: true },
+  { group: "Custom rules", value: "100", backendField: "100", label: "Custom checks", legacy: true },
+  { group: "Custom rules", value: "103", backendField: "103", label: "Activity counter", legacy: true }
 ];
 
 const ruleFilterKeys = [
@@ -1995,18 +1998,18 @@ const ruleCounterTypes = [
   { value: "COUNTER_RATE_LIMIT", label: "Limit repeated use" }
 ];
 const dynamicCounterTypes = [
-  { value: "LIMIT_COUNTER", label: "Total uses" },
-  { value: "LIMIT_COUNTER_PERIOD", label: "Uses per period" },
-  { value: "LIMIT_COUNTER_BY_KEY", label: "Uses by one field" },
-  { value: "LIMIT_COUNTER_BY_KEY_PERIOD", label: "Uses by one field per period" },
-  { value: "LIMIT_COUNTER_BY_KEY_SPECIFIC_VALUE", label: "Uses for a field value" },
-  { value: "LIMIT_COUNTER_BY_KEY_SPECIFIC_VALUE_PERIOD", label: "Uses for a field value per period" },
-  { value: "LIMIT_COUNTER_BY_MULTIPLE_KEY", label: "Uses by selected fields" },
-  { value: "LIMIT_COUNTER_BY_MULTIPLE_KEY_PERIOD", label: "Uses by selected fields per period" }
+  { value: "LIMIT_COUNTER", label: "Total count" },
+  { value: "LIMIT_COUNTER_PERIOD", label: "Count per time period" },
+  { value: "LIMIT_COUNTER_BY_KEY", label: "Count by one field" },
+  { value: "LIMIT_COUNTER_BY_KEY_PERIOD", label: "Count by one field per period" },
+  { value: "LIMIT_COUNTER_BY_KEY_SPECIFIC_VALUE", label: "Count for a field value" },
+  { value: "LIMIT_COUNTER_BY_KEY_SPECIFIC_VALUE_PERIOD", label: "Count for a field value per period" },
+  { value: "LIMIT_COUNTER_BY_MULTIPLE_KEY", label: "Count by selected fields" },
+  { value: "LIMIT_COUNTER_BY_MULTIPLE_KEY_PERIOD", label: "Count by selected fields per period" }
 ];
 const dynamicFilterMethods = [
   { value: "checkSegment", label: "Check segment", code: "checkSegment" },
-  { value: "counter", label: "Limit repeated use", code: "counter" },
+  { value: "counter", label: "Count and limit records", code: "counter" },
   { value: "jmesFilterSize", label: "Check list size", code: "jmesFilterSize" },
   { value: "checkEKYC", label: "Check eKYC", code: "checkEKYC" },
   { value: "checkNFC", label: "Check biometrics status", code: "checkNFC" },
@@ -2101,8 +2104,8 @@ function ruleKeyMultiSelectMarkup(selected = [], readonly = false, ariaLabel = "
   return `<details class="rule-multi-select" data-multi-field="${escapeHtml(fieldName)}"><summary aria-label="${escapeHtml(ariaLabel)}"><span class="rule-multi-selected"></span><span class="rule-multi-placeholder">Choose fields</span><span class="rule-multi-chevron" aria-hidden="true">⌄</span></summary><div class="rule-multi-options">${options}</div></details>`;
 }
 
-function dynamicFilterMarkup(filter = {}, readonly = false, title = "Promotion usage checks") {
-  return `<div class="rule-builder rule-dynamic-filter-builder"><div class="rule-builder-heading"><div><strong>${escapeHtml(title)}</strong><p>Add the checks this rule needs.</p></div></div><label class="rule-config-field"><span>Message when checks fail</span><input data-filter-error value="${escapeHtml(filter.errorMessage || "")}" placeholder="Enter a message" ${readonly ? "disabled" : ""}></label>${ruleFilterGroupMarkup(filter, readonly)}</div>`;
+function dynamicFilterMarkup(filter = {}, readonly = false, title = "Custom checks") {
+  return `<div class="rule-builder rule-dynamic-filter-builder"><div class="rule-builder-heading"><div><strong>${escapeHtml(title)}</strong><p>Combine field conditions with checks such as segment, KYC, or schedule.</p></div></div><label class="rule-config-field"><span>Message when checks fail</span><input data-filter-error value="${escapeHtml(filter.errorMessage || "")}" placeholder="Enter a message" ${readonly ? "disabled" : ""}></label>${ruleFilterGroupMarkup(filter, readonly)}</div>`;
 }
 
 function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
@@ -2111,10 +2114,10 @@ function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
   const hasKeys = type.includes("_BY_KEY") || type.includes("_BY_MULTIPLE_KEY");
   const hasSpecificValue = type.includes("SPECIFIC_VALUE");
   return `<section class="rule-counter-card" data-counter-row>
-    <div class="rule-counter-head"><strong>Limit ${index + 1}</strong>${readonly ? "" : '<button type="button" class="rule-item-remove" data-remove-counter aria-label="Remove limit">×</button>'}</div>
+    <div class="rule-counter-head"><strong>Counter ${index + 1}</strong>${readonly ? "" : '<button type="button" class="rule-item-remove" data-remove-counter aria-label="Remove counter">×</button>'}</div>
     <div class="rule-counter-grid">
-      <label><span>Limit type</span><select data-counter-field="type" aria-label="Limit type" ${readonly ? "disabled" : ""}>${ruleSelectOptions(dynamicCounterTypes, type, "Choose a limit type")}</select></label>
-      <label><span>Limit</span><input type="number" min="1" data-counter-field="limit" value="${escapeHtml(counter.limit || "")}" placeholder="Enter maximum" ${readonly ? "disabled" : ""}></label>
+      <label><span>Count type</span><select data-counter-field="type" aria-label="Count type" ${readonly ? "disabled" : ""}>${ruleSelectOptions(dynamicCounterTypes, type, "Choose how to count")}</select></label>
+      <label><span>Maximum count</span><input type="number" min="1" data-counter-field="limit" value="${escapeHtml(counter.limit || "")}" placeholder="Enter maximum" ${readonly ? "disabled" : ""}></label>
       ${hasPeriod ? `<label><span>Reset every</span><span class="rule-period-control"><input type="number" min="1" data-counter-field="periodLength" value="${escapeHtml(counter.periodLength || "1")}" ${readonly ? "disabled" : ""}><select data-counter-field="periodUnit" aria-label="Period unit" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleTimeUnits, counter.periodUnit || "DAY", "Unit")}</select></span></label>` : ""}
       ${hasKeys ? `<label class="rule-counter-keys"><span>Fields to count</span>${ruleKeyMultiSelectMarkup(counter.keys || [], readonly, `Limit ${index + 1} fields`, "keys")}</label>` : ""}
       ${hasSpecificValue ? `<label><span>Field value</span><input data-counter-field="specificValue" value="${escapeHtml(counter.specificValue || "")}" placeholder="Enter a value" ${readonly ? "disabled" : ""}></label>` : ""}
@@ -2123,14 +2126,14 @@ function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
   </section>`;
 }
 
-function dynamicCounterMarkup(counters = [], readonly = false, title = "Usage limits") {
+function dynamicCounterMarkup(counters = [], readonly = false, title = "Activity counter") {
   const rows = counters.length ? counters : [{}];
-  return `<div class="rule-builder rule-dynamic-counter-builder"><div class="rule-builder-heading"><div><strong>${escapeHtml(title)}</strong><p>Set a maximum and when the limit resets.</p></div></div><div class="rule-counter-list">${rows.map((counter, index) => dynamicCounterRowMarkup(counter, readonly, index)).join("")}</div>${readonly ? "" : '<button type="button" class="asset-btn secondary" data-add-counter>+ Add limit</button>'}</div>`;
+  return `<div class="rule-builder rule-dynamic-counter-builder"><div class="rule-builder-heading"><div><strong>${escapeHtml(title)}</strong><p>Count records by selected fields, with an optional time period.</p></div></div><div class="rule-counter-list">${rows.map((counter, index) => dynamicCounterRowMarkup(counter, readonly, index)).join("")}</div>${readonly ? "" : '<button type="button" class="asset-btn secondary" data-add-counter>+ Add counter</button>'}</div>`;
 }
 
 function renderRuleTypeFields(field, config = {}, readonly = false, typeLabel = "") {
-  if (field === "100") return dynamicFilterMarkup(config.filter || {}, readonly, typeLabel || "Promotion usage checks");
-  if (field === "103") return dynamicCounterMarkup(config.counters || [], readonly, typeLabel || "Usage limits");
+  if (field === "100") return dynamicFilterMarkup(config.filter || {}, readonly, typeLabel || "Custom checks");
+  if (field === "103") return dynamicCounterMarkup(config.counters || [], readonly, typeLabel || "Activity counter");
   if (field === "95") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>Check risk status</strong><p>Choose which risk event and levels to check.</p></div></div><label class="rule-config-field"><span>Risk event</span><select data-config-field="event" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleRiskEvents, config.event || "", "Choose an event")}</select></label><fieldset class="rule-risk-levels"><legend>Risk levels</legend>${["Low", "Medium", "High"].map(level => `<label><input type="checkbox" data-risk-level="${level.toUpperCase()}" ${config.levels?.includes(level.toUpperCase()) ? "checked" : ""} ${readonly ? "disabled" : ""}>${level}</label>`).join("")}</fieldset><details class="rule-advanced-fields"><summary>More settings</summary><div>${["AppUser", "DeviceID", "SystemID", "Group Zalo ID", "Trans ID"].map(key => `<label><input type="checkbox" data-risk-key="${escapeHtml(key)}" ${config.keys?.includes(key) ? "checked" : ""} ${readonly ? "disabled" : ""}>Use ${escapeHtml(key)}</label>`).join("")}</div></details></div>`;
   if (field === "81") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>Segment check</strong><p>Choose a segment and the data used to check membership.</p></div><span class="rule-type-badge">Rule 81</span></div><label class="rule-config-field"><span>Segment</span><select data-config-field="segmentId" ${readonly ? "disabled" : ""}>${ruleSelectOptions(["pp_check_blacklist", "pp_check_a30", "pp_check_blacklist_and_a30", "pp_referral_v2", "pp_referral_v2_cashback", "pp_collecting_flower", "pp_sharelink_v3", "pp_p2p_1d", "pp_collecting_fruit"], config.segmentId || "", "Select a segment")}</select></label><fieldset class="rule-risk-levels"><legend>Check using</legend>${["BankConnectorCode", "BimID", "SourceTransID", "First 6 Card No", "AppID", "Trans ID", "Time"].map(key => `<label><input type="checkbox" data-segment-key="${escapeHtml(key)}" ${config.keys?.includes(key) ? "checked" : ""} ${readonly ? "disabled" : ""}>${escapeHtml(key)}</label>`).join("")}</fieldset><label class="rule-config-field"><span>App IDs to filter</span><input data-config-field="appIds" value="${escapeHtml(config.appIds || "")}" placeholder="Enter App IDs" ${readonly ? "disabled" : ""}></label>${config.keys?.includes("Time") ? `<div class="rule-counter-grid"><label><span>Start date</span><input type="date" data-config-field="startDate" value="${escapeHtml(config.startDate || "")}" ${readonly ? "disabled" : ""}></label><label><span>End date</span><input type="date" data-config-field="endDate" value="${escapeHtml(config.endDate || "")}" ${readonly ? "disabled" : ""}></label></div>` : ""}</div>`;
   if (field === "10") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>User limit</strong><p>Set a user's count for this rule.</p></div><span class="rule-type-badge">Rule 10</span></div><div class="rule-counter-grid"><label><span>Code</span><input data-config-field="code" value="${escapeHtml(config.code || "")}" placeholder="Enter code" ${readonly ? "disabled" : ""}></label><label><span>Maximum count</span><input type="number" min="1" data-config-field="counter" value="${escapeHtml(config.counter || "")}" placeholder="Enter maximum" ${readonly ? "disabled" : ""}></label></div></div>`;
