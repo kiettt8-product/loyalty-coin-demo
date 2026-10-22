@@ -1952,7 +1952,7 @@ const ruleConditionOptions = [
   { group: "Check user profile", value: "profile-nfc", backendField: "109", subtype: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
   { group: "Check user profile", value: "profile-ekyc", backendField: "109", subtype: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
   { group: "Check user profile", value: "profile-account-level", backendField: "109", subtype: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"] },
-  { group: "Check user profile", value: "109", label: "User profile check", legacy: true },
+  { group: "Check user profile", value: "109", backendField: "109", label: "User profile check", legacy: true },
   { group: "Account & segment", value: "104", label: "MMF account status" },
   { group: "Account & segment", value: "81", label: "Segment check" },
   { group: "Account & segment", value: "95", label: "Risk check" },
@@ -2191,9 +2191,11 @@ function ruleConditionRow(condition = {}, readonly = false) {
     <div class="voucher-condition-value">${voucherSingleSelectMarkup("Select value", [], "", true)}</div>
     <button type="button" class="voucher-condition-remove" aria-label="Remove rule" title="Remove rule" ${readonly || !condition.field ? "hidden" : ""}><img src="assets/action-delete.svg" alt="" aria-hidden="true"></button>
     <div class="rule-configuration"></div>`;
-  const selectedOption = ruleConditionOptions.find(item => item.backendField === condition.field && item.subtype === condition.subRule)
-    || ruleConditionOptions.find(item => item.value === condition.field)
-    || ruleConditionOptions.find(item => item.legacy && item.backendField === condition.field);
+  const selectedOption = condition.field
+    ? ruleConditionOptions.find(item => item.backendField === condition.field && item.subtype === condition.subRule)
+      || ruleConditionOptions.find(item => item.value === condition.field)
+      || ruleConditionOptions.find(item => item.legacy && item.backendField === condition.field)
+    : undefined;
   const picker = row.querySelector(".rule-condition-search");
   picker.value = selectedOption?.label || "";
   row.dataset.ruleType = selectedOption?.value || condition.field || "";
