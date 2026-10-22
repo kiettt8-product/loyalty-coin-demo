@@ -49,8 +49,8 @@ const state = {
 
 let ruleEngineRules = [
   { id: "RE-10001", name: "Monthly user limit", owner: "kiettt8", description: "Limits repeated use for each user in a month.", conditions: [{ field: "103", counters: [{ type: "LIMIT_COUNTER_BY_MULTIPLE_KEY_PERIOD", limit: "2", periodLength: "1", periodUnit: "MONTH", condition: "LESS_THAN_OR_EQUALS", code: "", errorCode: "0", keys: ["requestInfo.userId"] }] }] },
-  { id: "RE-10002", name: "High risk user check", owner: "nghiatn", description: "Checks selected risk levels.", conditions: [{ field: "95", config: { event: "pp_check_blacklist", levels: ["HIGH"], keys: [] } }] },
-  { id: "RE-10003", name: "Segment membership check", owner: "linhnt22", description: "Checks whether the user matches a selected segment.", conditions: [{ field: "100", filter: { match: "all", items: [{ kind: "method", method: "checkSegment", segmentId: "pp_check_blacklist", segmentKey: "requestInfo.extraInfo.pack" }] } }] },
+  { id: "RE-10002", name: "System risk check", owner: "nghiatn", description: "Checks a user with the selected CRM risk control.", conditions: [{ field: "95", config: { riskControl: "Đánh giá rủi ro toàn hệ thống", userType: "Malicious" } }] },
+  { id: "RE-10003", name: "Segment membership check", owner: "linhnt22", description: "Checks whether the user matches a selected segment.", conditions: [{ field: "100", filter: { match: "all", items: [{ kind: "method", method: "checkSegment", segmentId: "pp_check_blacklist" }] } }] },
   { id: "RE-10004", name: "Daily usage limit", owner: "kiettt8", description: "Limits repeated use for each user per day.", conditions: [{ field: "100", filter: { match: "all", items: [{ kind: "method", method: "counter", condition: "<= 1", counterType: "COUNTER_RATE_LIMIT", maximum: "1", periodLength: "1", periodUnit: "DAY", key: "requestInfo.userId", deltaValue: "1", countByConstant: true, code: "DAILY_USAGE_LIMIT" }] } }] }
 ];
 let nextRuleNumber = 10005;
@@ -1970,11 +1970,16 @@ const ruleFilterKeys = [
   { value: "promotioninfo.campaigncode", label: "Campaign code", path: "promotioninfo.campaigncode", dataType: "STRING" },
   { value: "retryDataTimes", label: "Retry count", path: "retryDataTimes", dataType: "INTEGER" }
 ];
-const ruleDynamicFilterConditionKeys = ruleFilterKeys;
-const ruleSegmentKeys = [
-  { value: "requestInfo.extraInfo.pack", label: "Campaign pack" },
-  { value: "requestInfo.ccBankCode", label: "Bank code" }
+// Only field paths shown in Rule Usage examples are offered in Dynamic Filter.
+const ruleDynamicFilterConditionKeys = [
+  { value: "requestInfo.embeddedData.columninfo.merchantInfo.providedList", label: "Merchant list" },
+  { value: "event.requestInfo.pmcId", label: "PMC ID" }
 ];
+const ruleCounterRuleKeys = [{ value: "requestInfo.userId", label: "User ID" }];
+const ruleSegmentIds = [
+  "pp_check_blacklist", "pp_check_a30", "pp_check_blacklist_and_a30", "pp_referral_v2",
+  "pp_referral_v2_cashback", "pp_collecting_flower", "pp_sharelink_v3", "pp_p2p_1d", "pp_collecting_fruit"
+].map(id => ({ value: id, label: id }));
 const ruleJmesKeys = [{ value: "requestInfo.embeddedData.columninfo.merchantInfo.providedList", label: "Merchant list", dataType: "ARRAY" }];
 
 const ruleFilterOperators = ["Equals", "Not Equals", "Greater Than", "Greater Than Or Equals", "Less Than", "Less Than Or Equals", "In", "Not In"];
@@ -1994,7 +1999,7 @@ function ruleCounterRuleMarkup(counterRule = {}, readonly = false, index = 0) {
     <label><span>Rule type</span><select data-counter-rule-field="type" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleCounterTypes, counterType, "Choose a counter rule")}</select></label>
     <label><span>Maximum count</span><input type="number" min="1" data-counter-rule-field="limit" value="${escapeHtml(counterRule.limit || counterRule.maximum || "")}" placeholder="Enter maximum" ${readonly ? "disabled" : ""}></label>
     ${hasPeriod ? `<label><span>Reset every</span><span class="rule-period-control"><input type="number" min="1" data-counter-rule-field="periodLength" value="${escapeHtml(counterRule.periodLength || "1")}" placeholder="Length" ${readonly ? "disabled" : ""}><select data-counter-rule-field="periodUnit" aria-label="Period unit" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleTimeUnits, counterRule.periodUnit || "DAY", "Unit")}</select></span></label>` : ""}
-    ${hasKey ? `<label><span>Count by field</span><select data-counter-rule-field="key" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleFilterKeys.map(key => ({ value: key.value, label: key.label })), counterRule.key || "", "Choose a field")}</select></label>` : ""}
+    ${hasKey ? `<label><span>Count by field</span><select data-counter-rule-field="key" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleCounterRuleKeys, counterRule.key || "", "Choose a field")}</select></label>` : ""}
   </div>`;
 }
 const dynamicCounterTypes = [
@@ -2014,8 +2019,6 @@ const dynamicFilterMethods = [
   { value: "checkUM", label: "Check KYC level", code: "checkUM" },
   { value: "checkCronExpression", label: "Check schedule", code: "checkCronExpression" },
 ];
-const ruleRiskEvents = ["pp_check_blacklist", "pp_check_a30", "pp_check_blacklist_and_a30", "pp_referral_v2", "pp_referral_v2_cashback", "pp_collecting_flower", "pp_sharelink_v3", "pp_p2p_1d", "pp_check_blacklist_and_a30_062020", "pp_collecting_fruit"];
-
 function ruleSelectOptions(items, value = "", placeholder = "Select") {
   return `<option value="">${escapeHtml(placeholder)}</option>${items.map(item => {
     const option = typeof item === "string" ? { value: item, label: item } : item;
@@ -2049,7 +2052,7 @@ function ruleFilterMethodMarkup(item = {}, readonly = false) {
   const methodFields = method === "counter"
     ? `<div class="rule-counter-rules"><div class="rule-counter-rules-heading"><strong>Counter rules</strong><span>Part of the counter method</span></div><div class="rule-counter-rule-list">${counterRules.map((counterRule, index) => ruleCounterRuleMarkup(counterRule, readonly, index)).join("")}</div>${readonly ? "" : '<button type="button" class="asset-btn secondary" data-add-counter-rule>+ Add counter rule</button>'}</div>`
       : method === "checkSegment"
-      ? `<label><span>Segment ID</span><input data-method-field="segmentId" value="${escapeHtml(item.segmentId || "")}" placeholder="Enter segment ID" ${readonly ? "disabled" : ""}></label><label><span>Customer field</span><select data-method-field="segmentKey" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleSegmentKeys, item.segmentKey || "", "Choose a field")}</select></label>`
+      ? `<label><span>Segment ID</span><select data-method-field="segmentId" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleSegmentIds, item.segmentId || "", "Select a segment")}</select></label>`
       : method === "jmesFilterSize"
         ? `<label><span>Check field</span><select data-method-field="key" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleJmesKeys.map(key => ({ value: key.value, label: key.label })), item.key || ruleJmesKeys[0].value, "Choose a field")}</select></label><label><span>Condition</span><select data-method-field="operator" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleFilterOperators, item.operator || "Equals", "Choose a condition")}</select></label><label><span>Value</span><input data-method-field="value" value="${escapeHtml(item.value || "")}" placeholder="Enter a value" ${readonly ? "disabled" : ""}></label>`
         : method === "checkUM"
@@ -2118,8 +2121,8 @@ function dynamicCounterMarkup(counters = [], readonly = false, title = "Dynamic 
 function renderRuleTypeFields(field, config = {}, readonly = false, typeLabel = "") {
   if (field === "100") return dynamicFilterMarkup(config.filter || {}, readonly, typeLabel || "Dynamic filter");
   if (field === "103") return dynamicCounterMarkup(config.counters || [], readonly, typeLabel || "Dynamic counter");
-  if (field === "95") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>Check risk status</strong><p>Choose which risk event and levels to check.</p></div></div><label class="rule-config-field"><span>Risk event</span><select data-config-field="event" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleRiskEvents, config.event || "", "Choose an event")}</select></label><fieldset class="rule-risk-levels"><legend>Risk levels</legend>${["Low", "Medium", "High"].map(level => `<label><input type="checkbox" data-risk-level="${level.toUpperCase()}" ${config.levels?.includes(level.toUpperCase()) ? "checked" : ""} ${readonly ? "disabled" : ""}>${level}</label>`).join("")}</fieldset><details class="rule-advanced-fields"><summary>More settings</summary><div>${["AppUser", "DeviceID", "SystemID", "Group Zalo ID", "Trans ID"].map(key => `<label><input type="checkbox" data-risk-key="${escapeHtml(key)}" ${config.keys?.includes(key) ? "checked" : ""} ${readonly ? "disabled" : ""}>Use ${escapeHtml(key)}</label>`).join("")}</div></details></div>`;
-  if (field === "81") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>Segment check</strong><p>Choose a segment and the data used to check membership.</p></div><span class="rule-type-badge">Rule 81</span></div><label class="rule-config-field"><span>Segment</span><select data-config-field="segmentId" ${readonly ? "disabled" : ""}>${ruleSelectOptions(["pp_check_blacklist", "pp_check_a30", "pp_check_blacklist_and_a30", "pp_referral_v2", "pp_referral_v2_cashback", "pp_collecting_flower", "pp_sharelink_v3", "pp_p2p_1d", "pp_collecting_fruit"], config.segmentId || "", "Select a segment")}</select></label><fieldset class="rule-risk-levels"><legend>Check using</legend>${["BankConnectorCode", "BimID", "SourceTransID", "First 6 Card No", "AppID", "Trans ID", "Time"].map(key => `<label><input type="checkbox" data-segment-key="${escapeHtml(key)}" ${config.keys?.includes(key) ? "checked" : ""} ${readonly ? "disabled" : ""}>${escapeHtml(key)}</label>`).join("")}</fieldset><label class="rule-config-field"><span>App IDs to filter</span><input data-config-field="appIds" value="${escapeHtml(config.appIds || "")}" placeholder="Enter App IDs" ${readonly ? "disabled" : ""}></label>${config.keys?.includes("Time") ? `<div class="rule-counter-grid"><label><span>Start date</span><input type="date" data-config-field="startDate" value="${escapeHtml(config.startDate || "")}" ${readonly ? "disabled" : ""}></label><label><span>End date</span><input type="date" data-config-field="endDate" value="${escapeHtml(config.endDate || "")}" ${readonly ? "disabled" : ""}></label></div>` : ""}</div>`;
+  if (field === "95") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>Risk check</strong><p>Choose the same risk control and user type used in Promotion Code.</p></div></div><div class="rule-counter-grid"><label><span>Risk control</span><select data-config-field="riskControl" ${readonly ? "disabled" : ""}>${ruleSelectOptions([{ value: promotionCatalog.riskControl, label: "System-wide risk check" }], config.riskControl || promotionCatalog.riskControl, "Select a risk control")}</select></label><label><span>User type</span><select data-config-field="userType" ${readonly ? "disabled" : ""}>${ruleSelectOptions(promotionCatalog.userTypes, config.userType || "", "Select a user type")}</select></label></div></div>`;
+  if (field === "81") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>Segment check</strong><p>Select a segment to check.</p></div></div><label class="rule-config-field"><span>Segment ID</span><select data-config-field="segmentId" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleSegmentIds, config.segmentId || "", "Select a segment")}</select></label></div>`;
   if (field === "10") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>User limit</strong><p>Set a user's count for this rule.</p></div><span class="rule-type-badge">Rule 10</span></div><div class="rule-counter-grid"><label><span>Code</span><input data-config-field="code" value="${escapeHtml(config.code || "")}" placeholder="Enter code" ${readonly ? "disabled" : ""}></label><label><span>Maximum count</span><input type="number" min="1" data-config-field="counter" value="${escapeHtml(config.counter || "")}" placeholder="Enter maximum" ${readonly ? "disabled" : ""}></label></div></div>`;
   if (field === "86") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>User limit per period</strong><p>Set a user's count and reset period.</p></div><span class="rule-type-badge">Rule 86</span></div><div class="rule-counter-grid"><label><span>Code</span><input data-config-field="code" value="${escapeHtml(config.code || "")}" placeholder="Enter code" ${readonly ? "disabled" : ""}></label><label><span>Maximum count</span><input type="number" min="1" data-config-field="counter" value="${escapeHtml(config.counter || "")}" placeholder="Enter maximum" ${readonly ? "disabled" : ""}></label><label><span>Reset period</span><select data-config-field="periodUnit" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleTimeUnits, config.periodUnit || "DAY", "Select a period")}</select></label></div></div>`;
   if (field === "109") return `<div class="rule-builder rule-tech-only"><div class="rule-builder-heading"><div><strong>User profile check</strong><p>This rule uses profile field IDs. Keep the field mapping visible to Tech until CRM labels are confirmed.</p></div><span class="rule-type-badge">Rule 109</span></div><div class="rule-counter-grid"><label><span>Profile field ID</span><select data-config-field="fieldId" ${readonly ? "disabled" : ""}>${ruleSelectOptions([{ value: "0", label: "0 · Expression" }, { value: "1", label: "1 · Greater than or equal" }, { value: "2", label: "2 · In list" }, { value: "3", label: "3 · In list" }, { value: "4", label: "4 · In list" }], config.fieldId || "", "Select a profile field")}</select></label><label><span>Condition</span><select data-config-field="operator" ${readonly ? "disabled" : ""}>${ruleSelectOptions(["IN", "GTOE"], config.operator || "", "Select a condition")}</select></label><label><span>Value</span><input data-config-field="value" value="${escapeHtml(config.value || "")}" placeholder="Enter value" ${readonly ? "disabled" : ""}></label></div></div>`;
@@ -2240,14 +2243,9 @@ function syncRuleMultiSelect(select) {
   summary.innerHTML = selected.map(option => `<span class="rule-multi-chip">${escapeHtml(option.parentElement.textContent.replace(option.parentElement.querySelector("small")?.textContent || "", "").trim())}<button type="button" data-remove-multi-value="${escapeHtml(option.value)}" aria-label="Remove ${escapeHtml(option.parentElement.textContent.trim())}" ${option.disabled ? "disabled" : ""}>×</button></span>`).join("");
 }
 
-function collectSimpleRuleConfig(row, field) {
+function collectSimpleRuleConfig(row) {
   const config = {};
   row.querySelectorAll("[data-config-field]").forEach(control => { config[control.dataset.configField] = control.value.trim(); });
-  if (field === "95") {
-    config.levels = [...row.querySelectorAll("[data-risk-level]:checked")].map(input => input.dataset.riskLevel);
-    config.keys = [...row.querySelectorAll("[data-risk-key]:checked")].map(input => input.dataset.riskKey);
-  }
-  if (field === "81") config.keys = [...row.querySelectorAll("[data-segment-key]:checked")].map(input => input.dataset.segmentKey);
   return config;
 }
 
@@ -2257,7 +2255,7 @@ function ruleFilterIsComplete(group) {
     if (item.kind === "group") return ruleFilterIsComplete(item.group);
     if (item.kind === "condition") return Boolean(item.key && item.operator && item.value);
     if (!item.method) return false;
-    if (item.method === "checkSegment") return Boolean(item.segmentId && item.segmentKey);
+    if (item.method === "checkSegment") return Boolean(item.segmentId);
     if (item.method === "counter") return Boolean(item.counterRules?.length && item.counterRules.every(counterRule => {
       const type = counterRule.type || counterRule.counterType;
       return Boolean(type && counterRule.limit && (!/PERIOD/.test(type) || (counterRule.periodLength && counterRule.periodUnit)) && (!/BY_KEY/.test(type) || counterRule.key));
@@ -2351,10 +2349,6 @@ function initRuleForm(payload = {}) {
       const current = collectDynamicCounter(card); current.type = event.target.value;
       card.outerHTML = dynamicCounterRowMarkup(current, readonly, [...card.parentElement.children].indexOf(card));
       rows.querySelectorAll("[data-multi-field]").forEach(syncRuleMultiSelect);
-    }
-    if (event.target.matches("[data-segment-key='Time']")) {
-      const config = collectSimpleRuleConfig(row, "81");
-      row.querySelector(".rule-configuration").innerHTML = renderRuleTypeFields("81", config, readonly);
     }
   };
   rows.onclick = event => {
@@ -2484,7 +2478,7 @@ function initRuleForm(payload = {}) {
       }
       if (field === "100") return { field, ...(row.dataset.ruleSubtype ? { subRule: row.dataset.ruleSubtype } : {}), filter: { ...collectRuleFilterGroup(row.querySelector(".rule-filter-group")), errorMessage: row.querySelector("[data-filter-error]").value.trim() } };
       if (field === "103") return { field, ...(row.dataset.ruleSubtype ? { subRule: row.dataset.ruleSubtype } : {}), counters: [...row.querySelectorAll("[data-counter-row]")].map(collectDynamicCounter) };
-      if (["95", "81", "10", "86", "109"].includes(field)) return { field, config: collectSimpleRuleConfig(row, field) };
+      if (["95", "81", "10", "86", "109"].includes(field)) return { field, config: collectSimpleRuleConfig(row) };
       return { field };
     });
     const valid = conditions.length && conditions.every(condition => {
@@ -2493,7 +2487,7 @@ function initRuleForm(payload = {}) {
       if (option?.operators) return Boolean(condition.operator && (option.multiple ? condition.values?.length : condition.value));
       if (condition.field === "100") return ruleFilterIsComplete(condition.filter);
       if (condition.field === "103") return condition.counters.length && condition.counters.every(counter => counter.type && counter.limit && (!/PERIOD/.test(counter.type) || (counter.periodLength && counter.periodUnit)) && (!(counter.type.includes("_BY_KEY") || counter.type.includes("_BY_MULTIPLE_KEY")) || counter.keys?.length));
-      if (condition.field === "95") return Boolean(condition.config.event && condition.config.levels.length > 0);
+      if (condition.field === "95") return Boolean(condition.config.riskControl && condition.config.userType);
       if (condition.field === "81") return Boolean(condition.config.segmentId);
       if (["10", "86"].includes(condition.field)) return Boolean(condition.config.code && condition.config.counter);
       if (condition.field === "109") return Boolean(condition.config.fieldId && condition.config.operator && condition.config.value);
