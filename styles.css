@@ -741,6 +741,8 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .voucher-condition-option:focus-visible { background: #f0f5ff; outline: 0; }
 .voucher-condition-option[aria-selected="true"] { background: #e6f4ff; }
 .voucher-condition-option:disabled { background: #fff; color: rgba(0,31,62,.25); cursor: not-allowed; }
+.voucher-condition-option.is-already-added { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rule-option-note { color: #8594a3; font-size: 12px; white-space: nowrap; }
 .voucher-condition-value { position: relative; min-width: 0; }
 .voucher-single-select { position: relative; min-width: 0; }
 .voucher-single-select-control { width: 100%; height: 32px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 10px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; color: #001f3e; font-size: 14px; text-align: left; }

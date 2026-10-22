@@ -1947,6 +1947,7 @@ function initRuleList() {
 
 // Only rule types marked as in use in Rule Usage appear here. Keep the familiar
 // CRM Advance Rule groups so this picker reads like the voucher rule picker.
+// Add each check type once. For multiple values, use that check's own multi-select or subrules.
 const ruleConditionOptions = [
   { group: "Check user profile", value: "profile-kyc", backendField: "109", subtype: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
   { group: "Check user profile", value: "profile-nfc", backendField: "109", subtype: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
@@ -2077,13 +2078,16 @@ function ruleCompactUserTypePickerMarkup(config = {}, readonly = false) {
   return `<label class="rule-config-field rule-compact-config rule-risk-compact-config"><span class="sr-only">User Type</span><div class="promo-user-type-combobox rule-user-type-picker"><div class="asset-tag-select promo-user-type-select" role="combobox" aria-label="User Type" aria-haspopup="listbox" aria-expanded="false" aria-disabled="${readonly}"><span class="promo-user-type-tags" data-rule-user-tags>${tags}</span><input type="text" data-rule-user-search aria-label="Search User Type" autocomplete="off" ${readonly ? "disabled" : ""}><span class="promo-user-type-search-icon" aria-hidden="true"></span></div><div class="promo-user-type-menu" data-rule-user-menu role="listbox" aria-label="User Type options" aria-multiselectable="true" hidden>${options}</div></div><input type="hidden" data-config-field="userTypes" value="${escapeHtml(JSON.stringify(selected))}"><input type="hidden" data-config-field="riskControl" value="${escapeHtml(config.riskControl || promotionCatalog.riskControl)}"></label>`;
 }
 
-function renderRuleConditionMenu(menu, search = "", selectedType = "") {
+function renderRuleConditionMenu(menu, search = "", selectedType = "", currentRow = null) {
   const query = search.trim().toLowerCase();
   const groups = [...new Set(ruleConditionOptions.map(option => option.group))];
   const options = groups.map(group => {
     const items = ruleConditionOptions.filter(option => !option.legacy && option.group === group && (!query || `${group} ${option.label}`.toLowerCase().includes(query)));
     if (!items.length) return "";
-    return `<div class="voucher-condition-group"><span aria-hidden="true"></span>${escapeHtml(group)}</div>${items.map(option => `<button type="button" class="voucher-condition-option" role="option" aria-selected="${option.value === selectedType}" data-rule-type="${option.value}">${escapeHtml(option.label)}</button>`).join("")}`;
+    return `<div class="voucher-condition-group"><span aria-hidden="true"></span>${escapeHtml(group)}</div>${items.map(option => {
+      const alreadyAdded = [...(currentRow?.parentElement?.querySelectorAll(":scope > .rule-condition-row") || [])].some(row => row !== currentRow && row.dataset.ruleType === option.value);
+      return `<button type="button" class="voucher-condition-option${alreadyAdded ? " is-already-added" : ""}" role="option" aria-selected="${option.value === selectedType}" ${alreadyAdded ? 'disabled aria-disabled="true" title="Already added"' : ""} data-rule-type="${option.value}">${escapeHtml(option.label)}${alreadyAdded ? '<span class="rule-option-note">Already added</span>' : ""}</button>`;
+    }).join("")}`;
   }).join("") || `<div class="voucher-condition-empty">No matching rules</div>`;
   menu.innerHTML = options;
 }
@@ -2341,7 +2345,7 @@ function initRuleForm(payload = {}) {
     const row = picker.closest(".rule-condition-row");
     const menu = row.querySelector(".rule-condition-menu");
     const selectedLabel = ruleConditionOptions.find(item => item.value === row.dataset.ruleType)?.label || "";
-    renderRuleConditionMenu(menu, picker.value === selectedLabel ? "" : picker.value, row.dataset.ruleType);
+    renderRuleConditionMenu(menu, picker.value === selectedLabel ? "" : picker.value, row.dataset.ruleType, row);
     menu.hidden = false;
     picker.setAttribute("aria-expanded", "true");
     const rect = picker.getBoundingClientRect();
@@ -2453,7 +2457,14 @@ function initRuleForm(payload = {}) {
     const segmentOption = event.target.closest("[data-segment-option]");
     if (segmentOption) {
       const picker = segmentOption.closest("[data-rule-segment-picker]");
-      const segment = ruleSegments.find(item => item.id === segmentOption.dataset.segmentOption);
+      const row = segmentOption.closest(".rule-condition-row");
+      const segmentId = segmentOption.dataset.segmentOption;
+      const duplicateSegment = [...(row?.parentElement?.querySelectorAll(":scope > .rule-condition-row") || [])].some(other => other !== row && other.dataset.ruleType === "81");
+      if (duplicateSegment) {
+        toast("Use one Segment check and select the segment in it.", "error");
+        return;
+      }
+      const segment = ruleSegments.find(item => item.id === segmentId);
       const search = picker.querySelector("[data-segment-search]");
       search.value = `${segment.id} - ${segment.name}`;
       picker.dataset.selectedLabel = search.value;
@@ -2496,6 +2507,7 @@ function initRuleForm(payload = {}) {
     if (choice) {
       const row = choice.closest(".rule-condition-row");
       const type = choice.dataset.ruleType;
+      if (choice.getAttribute("aria-disabled") === "true") return;
       const option = ruleConditionOptions.find(item => item.value === type);
       const previousType = row.dataset.ruleType;
       row.dataset.ruleType = type;
@@ -2614,6 +2626,15 @@ function initRuleForm(payload = {}) {
   document.getElementById("ruleCancel").onclick = () => route("rule-list");
   form.onsubmit = event => {
     event.preventDefault();
+    const seenConditions = new Set();
+    let duplicateCondition = false;
+    for (const row of rows.querySelectorAll(":scope > .rule-condition-row")) {
+      const type = row.dataset.ruleType;
+      if (!type) continue;
+      if (seenConditions.has(type)) duplicateCondition = true;
+      seenConditions.add(type);
+    }
+    if (duplicateCondition) { toast("Remove repeated checks before saving.", "error"); return; }
     const conditions = [...rows.querySelectorAll(":scope > .rule-condition-row")].map(row => {
       const field = row.dataset.ruleField || row.dataset.ruleType || "";
       const option = ruleConditionOptions.find(item => item.value === row.dataset.ruleType);
