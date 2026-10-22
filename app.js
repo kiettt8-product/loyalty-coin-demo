@@ -1945,27 +1945,16 @@ function initRuleList() {
   renderRuleRows();
 }
 
-// Keep the condition picker and simple condition values aligned with CRM Advance Rule.
-// Dynamic conditions still open their own child builder because they need extra settings.
+// The picker only includes rule types marked as in use in the Rule Usage report.
 const ruleConditionOptions = [
-  { group: "Check user profile", value: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true },
-  { group: "Check user profile", value: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"] },
-  { group: "Check user profile", value: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"] },
-  { group: "Check user profile", value: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true },
-  { group: "Account & segment", value: "mmf-status", label: "Check MMF account status", operators: ["IN", "NOT IN"], values: ["Has no account"] },
-  { group: "Account & segment", value: "segment-check", label: "Check segment", operators: ["IN", "NOT IN"], values: [], valueInput: "Enter segment" },
-  { group: "Account & segment", value: "risk-status", label: "Check risk status", operators: ["IN", "NOT IN"], values: [], valueInput: "Enter status" },
-  { group: "Custom rules", value: "dynamic-filter", backendField: "100", label: "Custom checks", help: "Combine field conditions with checks such as segment, KYC, or schedule." },
-  { group: "Custom rules", value: "dynamic-counter", backendField: "103", label: "Activity counter", help: "Count records by selected fields, with an optional time period." },
-  // Keep old saved sub-rule values readable, but do not present these promotion-specific presets to new users.
-  { group: "Custom rules", value: "filter-promotion-code", backendField: "100", subtype: "promotion-code-usage", label: "Custom checks", legacy: true },
-  { group: "Custom rules", value: "filter-user-promotion", backendField: "100", subtype: "user-promotion-usage", label: "Custom checks", legacy: true },
-  { group: "Custom rules", value: "filter-user-transaction", backendField: "100", subtype: "user-transaction-count", label: "Custom checks", legacy: true },
-  { group: "Custom rules", value: "counter-promotion-code", backendField: "103", subtype: "promotion-code-redemption", label: "Activity counter", legacy: true },
-  { group: "Custom rules", value: "counter-user-voucher", backendField: "103", subtype: "user-voucher-usage", label: "Activity counter", legacy: true },
-  { group: "Custom rules", value: "counter-campaign", backendField: "103", subtype: "campaign-participation", label: "Activity counter", legacy: true },
-  { group: "Custom rules", value: "100", backendField: "100", label: "Custom checks", legacy: true },
-  { group: "Custom rules", value: "103", backendField: "103", label: "Activity counter", legacy: true }
+  { group: "Rules in use", value: "100", backendField: "100", label: "Custom checks" },
+  { group: "Rules in use", value: "103", backendField: "103", label: "Activity counter" },
+  { group: "Rules in use", value: "95", label: "Risk check" },
+  { group: "Rules in use", value: "81", label: "Segment check" },
+  { group: "Rules in use", value: "86", label: "User counter per period" },
+  { group: "Rules in use", value: "10", label: "User counter" },
+  { group: "Rules in use", value: "109", label: "User profile check" },
+  { group: "Rules in use", value: "104", label: "MMF account status" }
 ];
 
 const ruleFilterKeys = [
@@ -1985,25 +1974,21 @@ const ruleSegmentKeys = [
   { value: "requestInfo.extraInfo.pack", label: "Campaign pack" },
   { value: "requestInfo.ccBankCode", label: "Bank code" }
 ];
-const ruleKycNameKeys = ruleSegmentKeys;
 const ruleJmesKeys = [{ value: "requestInfo.embeddedData.columninfo.merchantInfo.providedList", label: "Merchant list", dataType: "ARRAY" }];
 
 const ruleFilterOperators = ["Equals", "Not Equals", "Greater Than", "Greater Than Or Equals", "Less Than", "Less Than Or Equals", "In", "Not In"];
 const ruleTimeUnits = [{ value: "MINUTE", label: "Minute" }, { value: "HOUR", label: "Hour" }, { value: "DAY", label: "Day" }, { value: "WEEK", label: "Week" }, { value: "MONTH", label: "Month" }];
 const ruleCounterTypes = [
-  { value: "COUNTER_BASIC", label: "Basic count" },
+  { value: "COUNTER_RATE_LIMIT", label: "Count per field and period" },
+  { value: "COUNTER_BY_KEY_PERIOD", label: "Count by one field per period" },
   { value: "COUNTER_PERIOD", label: "Count per period" },
-  { value: "COUNTER_BY_KEY", label: "Count by key" },
-  { value: "COUNTER_BY_KEY_PERIOD", label: "Count by key and period" },
-  { value: "COUNTER_RATE_LIMIT", label: "Limit repeated use" }
+  { value: "COUNTER_BY_KEY", label: "Count by one field" }
 ];
 const dynamicCounterTypes = [
   { value: "LIMIT_COUNTER", label: "Total count" },
   { value: "LIMIT_COUNTER_PERIOD", label: "Count per time period" },
   { value: "LIMIT_COUNTER_BY_KEY", label: "Count by one field" },
   { value: "LIMIT_COUNTER_BY_KEY_PERIOD", label: "Count by one field per period" },
-  { value: "LIMIT_COUNTER_BY_KEY_SPECIFIC_VALUE", label: "Count for a field value" },
-  { value: "LIMIT_COUNTER_BY_KEY_SPECIFIC_VALUE_PERIOD", label: "Count for a field value per period" },
   { value: "LIMIT_COUNTER_BY_MULTIPLE_KEY", label: "Count by selected fields" },
   { value: "LIMIT_COUNTER_BY_MULTIPLE_KEY_PERIOD", label: "Count by selected fields per period" }
 ];
@@ -2015,8 +2000,6 @@ const dynamicFilterMethods = [
   { value: "checkNFC", label: "Check biometrics status", code: "checkNFC" },
   { value: "checkUM", label: "Check KYC level", code: "checkUM" },
   { value: "checkCronExpression", label: "Check schedule", code: "checkCronExpression" },
-  { value: "checkKYCName", label: "Check name key", code: "checkKYCName" },
-  { value: "checkBindingBank", label: "Check bank link status", code: "checkBindingBank" }
 ];
 const ruleRiskEvents = ["pp_check_blacklist", "pp_check_a30", "pp_check_blacklist_and_a30", "pp_referral_v2", "pp_referral_v2_cashback", "pp_collecting_flower", "pp_sharelink_v3", "pp_p2p_1d", "pp_check_blacklist_and_a30_062020", "pp_collecting_fruit"];
 
@@ -2049,7 +2032,7 @@ function ruleFilterConditionMarkup(condition = {}, readonly = false) {
 
 function ruleFilterMethodMarkup(item = {}, readonly = false) {
   const method = item.method || "";
-  const counterType = item.counterType || "COUNTER_BASIC";
+  const counterType = item.counterType || "COUNTER_RATE_LIMIT";
   const methodCounterHasPeriod = counterType === "COUNTER_PERIOD" || counterType === "COUNTER_BY_KEY_PERIOD" || counterType === "COUNTER_RATE_LIMIT";
   const methodCounterHasKey = counterType === "COUNTER_BY_KEY" || counterType === "COUNTER_BY_KEY_PERIOD" || counterType === "COUNTER_RATE_LIMIT";
   const methodFields = method === "counter"
@@ -2068,11 +2051,9 @@ function ruleFilterMethodMarkup(item = {}, readonly = false) {
           ? `<label><span>KYC level</span><select data-method-field="kycLevel" ${readonly ? "disabled" : ""}>${ruleSelectOptions(["0", "1", "2", "3"], item.kycLevel || "", "Select a level")}</select></label>`
           : method === "checkCronExpression"
             ? `<label><span>Schedule</span><input data-method-field="expression" value="${escapeHtml(item.expression || "")}" placeholder="Enter schedule" ${readonly ? "disabled" : ""}></label>`
-            : method === "checkKYCName"
-              ? `<label><span>Name field</span><select data-method-field="nameKey" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleKycNameKeys, item.nameKey || "", "Choose a field")}</select></label>`
-              : method
-                ? `<p class="rule-field-help">This check reads the user's ${method === "checkNFC" ? "biometrics" : "eKYC"} status.</p>`
-                : `<p class="rule-field-help">Choose a check to see its settings.</p>`;
+          : method
+            ? `<p class="rule-field-help">This check reads the user's ${method === "checkNFC" ? "biometrics" : "eKYC"} status.</p>`
+            : `<p class="rule-field-help">Choose a check to see its settings.</p>`;
   const hasJmesSubconditions = method === "jmesFilterSize";
   const nestedConditions = hasJmesSubconditions ? `<div class="rule-method-subconditions"><span class="rule-field-label">Match these list items</span>${ruleFilterGroupMarkup(item.subConditions || { items: [{ kind: "condition" }] }, readonly, 1)}</div>` : "";
   const label = dynamicFilterMethods.find(option => option.value === method)?.label || "Choose a check";
@@ -2112,7 +2093,6 @@ function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
   const type = counter.type || "";
   const hasPeriod = /PERIOD/.test(type);
   const hasKeys = type.includes("_BY_KEY") || type.includes("_BY_MULTIPLE_KEY");
-  const hasSpecificValue = type.includes("SPECIFIC_VALUE");
   return `<section class="rule-counter-card" data-counter-row>
     <div class="rule-counter-head"><strong>Counter ${index + 1}</strong>${readonly ? "" : '<button type="button" class="rule-item-remove" data-remove-counter aria-label="Remove counter">×</button>'}</div>
     <div class="rule-counter-grid">
@@ -2120,7 +2100,6 @@ function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
       <label><span>Maximum count</span><input type="number" min="1" data-counter-field="limit" value="${escapeHtml(counter.limit || "")}" placeholder="Enter maximum" ${readonly ? "disabled" : ""}></label>
       ${hasPeriod ? `<label><span>Reset every</span><span class="rule-period-control"><input type="number" min="1" data-counter-field="periodLength" value="${escapeHtml(counter.periodLength || "1")}" ${readonly ? "disabled" : ""}><select data-counter-field="periodUnit" aria-label="Period unit" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleTimeUnits, counter.periodUnit || "DAY", "Unit")}</select></span></label>` : ""}
       ${hasKeys ? `<label class="rule-counter-keys"><span>Fields to count</span>${ruleKeyMultiSelectMarkup(counter.keys || [], readonly, `Limit ${index + 1} fields`, "keys")}</label>` : ""}
-      ${hasSpecificValue ? `<label><span>Field value</span><input data-counter-field="specificValue" value="${escapeHtml(counter.specificValue || "")}" placeholder="Enter a value" ${readonly ? "disabled" : ""}></label>` : ""}
       <details class="rule-advanced-fields"><summary>More settings</summary><div><label><span>Condition</span><select data-counter-field="condition" ${readonly ? "disabled" : ""}>${ruleSelectOptions([{ value: "LESS_THAN_OR_EQUALS", label: "Less than or equals" }, { value: "EQUALS", label: "Equals" }, { value: "GREATER_THAN_OR_EQUALS", label: "Greater than or equals" }], counter.condition || "LESS_THAN_OR_EQUALS")}</select></label><label><span>Code</span><input data-counter-field="code" value="${escapeHtml(counter.code || "")}" placeholder="Enter code" ${readonly ? "disabled" : ""}></label><label><span>Error code</span><input type="number" data-counter-field="errorCode" value="${escapeHtml(counter.errorCode || "0")}" ${readonly ? "disabled" : ""}></label></div></details>
     </div>
   </section>`;
@@ -2266,7 +2245,6 @@ function ruleFilterIsComplete(group) {
     if (item.method === "counter") return Boolean(item.condition && item.counterType && item.code && (!/PERIOD/.test(item.counterType) || (item.periodLength && item.periodUnit)) && (!/BY_KEY/.test(item.counterType) || item.key));
     if (item.method === "checkUM") return Boolean(item.kycLevel);
     if (item.method === "checkCronExpression") return Boolean(item.expression);
-    if (item.method === "checkKYCName") return Boolean(item.nameKey);
     if (item.method === "jmesFilterSize") return Boolean(item.key && item.operator && item.value && item.subConditions && ruleFilterIsComplete(item.subConditions));
     return true;
   });
@@ -2494,7 +2472,7 @@ function initRuleForm(payload = {}) {
       const option = ruleConditionOptions.find(item => item.value === condition.field);
       if (option?.operators) return Boolean(condition.operator && (option.multiple ? condition.values?.length : condition.value));
       if (condition.field === "100") return ruleFilterIsComplete(condition.filter);
-      if (condition.field === "103") return condition.counters.length && condition.counters.every(counter => counter.type && counter.limit && (!/PERIOD/.test(counter.type) || (counter.periodLength && counter.periodUnit)) && (!(counter.type.includes("_BY_KEY") || counter.type.includes("_BY_MULTIPLE_KEY")) || counter.keys?.length) && (!counter.type.includes("SPECIFIC_VALUE") || counter.specificValue));
+      if (condition.field === "103") return condition.counters.length && condition.counters.every(counter => counter.type && counter.limit && (!/PERIOD/.test(counter.type) || (counter.periodLength && counter.periodUnit)) && (!(counter.type.includes("_BY_KEY") || counter.type.includes("_BY_MULTIPLE_KEY")) || counter.keys?.length));
       if (condition.field === "95") return Boolean(condition.config.event && condition.config.levels.length > 0);
       if (condition.field === "81") return Boolean(condition.config.segmentId);
       if (["10", "86"].includes(condition.field)) return Boolean(condition.config.code && condition.config.counter);
