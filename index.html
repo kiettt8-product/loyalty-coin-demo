@@ -18,7 +18,7 @@
   <aside class="sidebar" id="sidebar">
     <nav>
       <button class="nav-parent" data-nav-target="userManagementMenu" aria-expanded="false"><img class="nav-icon" src="assets/nav-dashboard.svg" alt="">User Management<span>⌄</span></button>
-      <div class="nav-sub single" id="userManagementMenu" hidden><button>Label List</button></div>
+      <div class="nav-sub single" id="userManagementMenu" hidden><button data-route="roles-list">Role List</button><button>User List</button><button>Label List</button></div>
       <button class="nav-parent" data-nav-target="userProfileMenu" aria-expanded="false"><img class="nav-icon" src="assets/nav-user.svg" alt="">User Profile<span>⌄</span></button>
       <div class="nav-sub single" id="userProfileMenu" hidden><button>Segment</button></div>
       <button class="nav-parent" data-nav-target="assetManagementMenu" aria-expanded="false"><img class="nav-icon" src="assets/nav-asset.svg" alt="">Asset Management<span>⌄</span></button>
@@ -724,6 +724,33 @@
         </section>
 
         <div class="other-form-actions"><button type="button" class="asset-btn primary" id="saveDirectDiscountConfig">Save changes</button></div>
+      </div>
+    </div>
+  </template>
+
+  <template id="rolesListTemplate">
+    <div class="screen roles-screen">
+      <section class="roles-filter-panel">
+        <label for="rolesFilter">Role :</label>
+        <select id="rolesFilter" aria-label="Role"><option value="">Roles</option></select>
+        <div class="roles-filter-actions"><button type="button" class="btn secondary" id="rolesReset">Reset</button><button type="button" class="btn primary" id="rolesSearch">Search</button></div>
+      </section>
+      <section class="roles-list-panel">
+        <div class="roles-list-toolbar"><button type="button" class="btn primary" id="rolesAddNew"><span class="plus-mark" aria-hidden="true"></span>Add New</button></div>
+        <div class="roles-table-wrap"><table class="roles-table"><thead><tr><th>Role</th><th>Updated on</th><th>Added by</th><th>Action</th></tr></thead><tbody id="rolesRows"></tbody></table><div class="roles-empty-state" id="rolesEmptyState" hidden>No matching roles found.</div></div>
+        <div class="roles-pagination"><span id="rolesCount"></span><button type="button" aria-label="Previous page" disabled>‹</button><button type="button" class="active">1</button><button type="button">2</button><button type="button">3</button><span>•••</span><button type="button">8</button><button type="button" aria-label="Next page">›</button><label>Page Size <select aria-label="Page Size"><option>10 / page</option><option>20 / page</option><option>50 / page</option></select></label></div>
+      </section>
+      <div class="roles-modal-backdrop" id="rolesModal" hidden>
+        <section class="roles-modal" role="dialog" aria-modal="true" aria-labelledby="rolesModalTitle">
+          <header class="roles-modal-header"><h1 id="rolesModalTitle">Add new role</h1><button type="button" id="rolesModalClose" aria-label="Close">×</button></header>
+          <form id="rolesForm" novalidate>
+            <div class="roles-modal-body">
+              <label class="roles-name-field"><span><b>*</b> Role</span><div><input id="roleNameInput" maxlength="32" placeholder="Role" autocomplete="off"><small><span id="roleNameCount">0</span> / 32</small></div><em id="roleNameError" hidden></em></label>
+              <div class="roles-permission-table-wrap"><table class="roles-permission-table"><thead><tr><th>Module</th><th>View</th><th>Create</th><th>Edit</th><th>Approve</th><th>Clone</th><th>Generate</th><th>Archive/Delete</th></tr></thead><tbody id="rolesPermissionRows"></tbody></table></div>
+            </div>
+            <footer class="roles-modal-footer"><button type="button" class="btn secondary" id="rolesCancel">Cancel</button><button type="submit" class="btn primary">Save</button></footer>
+          </form>
+        </section>
       </div>
     </div>
   </template>

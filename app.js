@@ -649,6 +649,7 @@ const templates = {
   "budget-approval": document.getElementById("budgetApprovalTemplate"),
   "coin-direct-discount": document.getElementById("coinDirectDiscountTemplate"),
   "gotit-direct-discount": document.getElementById("gotitDirectDiscountTemplate"),
+  "roles-list": document.getElementById("rolesListTemplate"),
   "rule-list": document.getElementById("ruleListTemplate"),
   "rule-form": document.getElementById("ruleFormTemplate")
 };
@@ -730,6 +731,7 @@ function route(name, payload = {}) {
     || (["asset-massive", "asset-coin-create"].includes(name) && button.dataset.route === "asset-list")
     || (name === "voucher-create" && button.dataset.route === "voucher-assets")
     || (name.startsWith("promotion-") && button.dataset.route === "promotion-list")
+    || (name === "roles-list" && button.dataset.route === "roles-list")
     || (name === "rule-form" && button.dataset.route === "rule-list")
   ));
   if (name === "list") initList();
@@ -742,6 +744,7 @@ function route(name, payload = {}) {
   if (name === "voucher-create") initVoucherAssetCreate();
   if (name === "promotion-list") initPromotionList();
   if (name === "promotion-form") initPromotionForm(payload);
+  if (name === "roles-list") initRolesList();
   if (name === "rule-list") initRuleList();
   if (name === "rule-form") initRuleForm(payload);
   if (name === "budget-approval") initBudgetApproval();
@@ -780,6 +783,18 @@ function route(name, payload = {}) {
     campaignMenu.hidden = false;
     campaignParent.setAttribute("aria-expanded", "true");
     campaignParent.querySelector("span").textContent = "⌃";
+  }
+  if (name === "roles-list") {
+    const userMenu = document.getElementById("userManagementMenu");
+    const userParent = document.querySelector('[data-nav-target="userManagementMenu"]');
+    const campaignMenu = document.getElementById("campaignManagementMenu");
+    const campaignParent = document.querySelector('[data-nav-target="campaignManagementMenu"]');
+    userMenu.hidden = false;
+    userParent.setAttribute("aria-expanded", "true");
+    userParent.querySelector("span").textContent = "⌃";
+    campaignMenu.hidden = true;
+    campaignParent.setAttribute("aria-expanded", "false");
+    campaignParent.querySelector("span").textContent = "⌄";
   }
   document.getElementById("sidebar").classList.remove("open");
   main.focus({ preventScroll: true });
@@ -1888,6 +1903,138 @@ function renderPromotionRows(rows = promotionState.campaigns) {
   </tr>`).join("");
   document.getElementById("promoEmptyState").hidden = ordered.length > 0;
   document.getElementById("promoItemCount").textContent = ordered.length ? `1-${Math.min(ordered.length, 10)} of 733 items` : "0 items";
+}
+
+const roleActions = ["View", "Create", "Edit", "Approve", "Clone", "Generate", "Archive/Delete"];
+const roleModules = [
+  ["User Management", 1], ["User List", 1], ["Role List", 1], ["Label List", 1],
+  ["User Profile", 2], ["Segment", 2], ["Asset Management", 3], ["Merchant and Service Logo", 4],
+  ["Notification", 5], ["ZMS", 6], ["Banner", 7], ["Reminder", 8], ["Popup", 9], ["SKU", 10],
+  ["SKU Template", 11], ["Story", 12], ["Voucher", 13], ["ZBS Template", 14], ["Merchant Code", 15],
+  ["Campaign Management", 16], ["Notification Campaign", 16], ["ZMS Campaign", 16], ["Promo Asset Campaign", 17],
+  ["Promo Store Campaign", 17], ["Trigger Based Campaign", 18], ["Revoke Voucher", 19], ["Promotion Code", 20],
+  ["Inventory Management", 21], ["Home Header Inventory", 22], ["Reminder Inventory", 23],
+  ["Home Slider Inventory", 24], ["Product Page Banner Inventory", 25], ["Map Bank Page Banner", 26],
+  ["Popup Inventory", 27], ["SKU Inventory", 28], ["Reward Inventory", 29], ["Task Inventory", 30],
+  ["Group Inventory", 31], ["Rule Engine", 32], ["Rule List", 33],
+  ["Budget Management", 34], ["Budget Approval", 35], ["Campaign Approval", 36],
+  ["Assistant Management", 37], ["Configuration", 38], ["Others", 39], ["Coin to Direct Discount", 40]
+];
+const roleEnabledActionIndexes = {
+  1: [0, 1, 2, 6], 2: [0, 1, 2, 4], 3: [0, 1, 2, 3, 4, 5, 6], 4: [0, 1, 2],
+  5: [0, 1, 2, 3, 4], 6: [0, 1, 2, 3, 4], 7: [0, 1, 2, 3, 4, 5, 6], 8: [0, 1, 2, 3, 4, 6],
+  9: [0, 1, 2, 3, 6], 10: [0], 11: [0, 1, 2], 12: [0, 1, 2, 3, 6], 13: [0, 1, 2, 3, 4],
+  14: [0, 2], 15: [0, 1, 2, 3, 4, 6], 16: [0, 1, 2, 3, 4, 6], 17: [0, 1, 2, 4, 6],
+  18: [0, 1, 2, 3, 4, 6], 19: [0, 1], 20: [0, 1, 2, 6], 21: [0, 1, 2, 3, 6],
+  22: [0, 1, 2, 3, 6], 23: [0, 1, 2, 6], 24: [0, 2], 25: [0, 1, 2, 6], 26: [0, 1, 2, 6],
+  27: [0, 1, 2, 6], 28: [0, 1, 2, 6], 29: [0, 1, 2, 6], 30: [0, 1, 2, 6], 31: [0, 1, 2, 6],
+  32: [0, 1, 2, 6], 33: [0, 1, 2, 6], 34: [0, 1, 2, 3], 35: [0, 1, 3], 36: [0, 2, 3],
+  37: [0, 2], 38: [0, 2], 39: [0], 40: [0]
+};
+let roleRecords = [
+  { name: "trongdd2", updated: "2026-10-23 00:52:33", addedBy: "nghiatn" },
+  { name: "Assistant Management", updated: "2026-10-23 00:52:14", addedBy: "trongdd2" },
+  { name: "Promotion Code", updated: "2026-10-21 13:41:46", addedBy: "trongdd2" },
+  { name: "Coin to Direct Discount", updated: "2026-10-21 13:40:41", addedBy: "trongdd2" },
+  { name: "Asset Managements", updated: "2026-10-19 17:34:02", addedBy: "locdb" },
+  { name: "IDEMP-TEST role", updated: "2026-10-16 14:17:15", addedBy: "thangnq4" },
+  { name: "Coin2DD", updated: "2026-10-09 19:38:32", addedBy: "trongdd2" },
+  { name: "thuan_test", updated: "2026-10-05 17:10:14", addedBy: "master" },
+  { name: "test", updated: "2026-10-05 17:10:00", addedBy: "locdb" },
+  { name: "thailn_test", updated: "2026-09-30 22:05:34", addedBy: "thailn" }
+];
+let rolePermissionValues = {};
+let activeRoleName = "";
+let filteredRoles = [...roleRecords];
+
+function roleRowActionsMarkup(name) {
+  const icon = (kind, label) => `<button type="button" class="asset-icon-button" data-role-action="${kind}" data-role-name="${escapeHtml(name)}" aria-label="${label} ${escapeHtml(name)}" title="${label}"><img src="assets/action-${kind}.svg" alt="" aria-hidden="true"></button>`;
+  return `<div class="roles-row-actions">${icon("edit", "Edit")}${icon("delete", "Delete")}</div>`;
+}
+
+function renderRoleRows(rows = filteredRoles) {
+  const body = document.getElementById("rolesRows");
+  body.innerHTML = rows.map(role => `<tr><td>${escapeHtml(role.name)}</td><td>${escapeHtml(role.updated)}</td><td>${escapeHtml(role.addedBy)}</td><td>${roleRowActionsMarkup(role.name)}</td></tr>`).join("");
+  document.getElementById("rolesEmptyState").hidden = rows.length > 0;
+  document.getElementById("rolesCount").textContent = rows.length ? `1-${Math.min(rows.length, 10)} of 77 items` : "0 items";
+}
+
+function renderRolePermissionRows() {
+  document.getElementById("rolesPermissionRows").innerHTML = roleModules.map(([name, group]) => {
+    const enabled = roleEnabledActionIndexes[group] || [];
+    const child = ["User List", "Role List", "Label List", "Segment", "Merchant and Service Logo", "Notification", "ZMS", "Banner", "Reminder", "Popup", "SKU", "SKU Template", "Story", "Voucher", "ZBS Template", "Merchant Code", "Notification Campaign", "ZMS Campaign", "Promo Asset Campaign", "Promo Store Campaign", "Trigger Based Campaign", "Revoke Voucher", "Promotion Code", "Home Header Inventory", "Reminder Inventory", "Home Slider Inventory", "Product Page Banner Inventory", "Map Bank Page Banner", "Popup Inventory", "SKU Inventory", "Reward Inventory", "Task Inventory", "Group Inventory", "Rule List", "Budget Approval", "Campaign Approval"].includes(name);
+    return `<tr class="${child ? "is-child" : ""}"><td>${escapeHtml(name)}</td>${roleActions.map((action, index) => {
+      const key = `${name}:${action}`;
+      const disabled = !enabled.includes(index);
+      const checked = rolePermissionValues[key] === true;
+      return `<td><input type="checkbox" data-permission="${escapeHtml(key)}" aria-label="${escapeHtml(name)} ${escapeHtml(action)}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}></td>`;
+    }).join("")}</tr>`;
+  }).join("");
+}
+
+function openRoleModal(mode, role = null) {
+  activeRoleName = role?.name || "";
+  rolePermissionValues = { ...(role?.permissions || {}) };
+  document.getElementById("rolesModalTitle").textContent = mode === "edit" ? "Edit role" : "Add new role";
+  document.getElementById("roleNameInput").value = role?.name || "";
+  document.getElementById("roleNameCount").textContent = String((role?.name || "").length);
+  document.getElementById("roleNameError").hidden = true;
+  renderRolePermissionRows();
+  document.getElementById("rolesModal").hidden = false;
+  document.body.classList.add("roles-modal-open");
+  document.getElementById("roleNameInput").focus();
+}
+
+function closeRoleModal() {
+  document.getElementById("rolesModal").hidden = true;
+  document.body.classList.remove("roles-modal-open");
+}
+
+function initRolesList() {
+  const filter = document.getElementById("rolesFilter");
+  const names = [...new Set(roleRecords.map(role => role.name))];
+  filter.replaceChildren(new Option("Roles", ""), ...names.map(name => new Option(name, name)));
+  filteredRoles = [...roleRecords];
+  renderRoleRows();
+  document.getElementById("rolesAddNew").onclick = () => openRoleModal("create");
+  document.getElementById("rolesReset").onclick = () => { filter.value = ""; filteredRoles = [...roleRecords]; renderRoleRows(); };
+  document.getElementById("rolesSearch").onclick = () => { filteredRoles = roleRecords.filter(role => !filter.value || role.name === filter.value); renderRoleRows(); };
+  document.getElementById("rolesModalClose").onclick = closeRoleModal;
+  document.getElementById("rolesCancel").onclick = closeRoleModal;
+  document.getElementById("roleNameInput").oninput = event => { document.getElementById("roleNameCount").textContent = String(event.target.value.length); document.getElementById("roleNameError").hidden = true; };
+  document.getElementById("rolesPermissionRows").onchange = event => {
+    const checkbox = event.target.closest("[data-permission]");
+    if (checkbox) rolePermissionValues[checkbox.dataset.permission] = checkbox.checked;
+  };
+  document.getElementById("rolesRows").onclick = event => {
+    const button = event.target.closest("[data-role-action]");
+    if (!button) return;
+    const role = roleRecords.find(item => item.name === button.dataset.roleName);
+    if (button.dataset.roleAction === "edit") openRoleModal("edit", role);
+    if (button.dataset.roleAction === "delete" && window.confirm(`Delete role "${role.name}"?`)) {
+      roleRecords = roleRecords.filter(item => item.name !== role.name);
+      filteredRoles = roleRecords.filter(item => !filter.value || item.name === filter.value);
+      renderRoleRows();
+      toast("Role deleted");
+    }
+  };
+  document.getElementById("rolesForm").onsubmit = event => {
+    event.preventDefault();
+    const input = document.getElementById("roleNameInput");
+    const name = input.value.trim();
+    const error = document.getElementById("roleNameError");
+    if (!name) { error.textContent = "Role is required"; error.hidden = false; input.focus(); return; }
+    if (roleRecords.some(role => role.name.toLocaleLowerCase() === name.toLocaleLowerCase() && role.name !== activeRoleName)) { error.textContent = "Role already exists"; error.hidden = false; input.focus(); return; }
+    const existing = roleRecords.find(role => role.name === activeRoleName);
+    if (existing) Object.assign(existing, { name, updated: "2026-10-23 12:00:00", addedBy: "kiettt8", permissions: { ...rolePermissionValues } });
+    else roleRecords.unshift({ name, updated: "2026-10-23 12:00:00", addedBy: "kiettt8", permissions: { ...rolePermissionValues } });
+    filter.replaceChildren(new Option("Roles", ""), ...[...new Set(roleRecords.map(role => role.name))].map(roleName => new Option(roleName, roleName)));
+    filter.value = "";
+    filteredRoles = [...roleRecords];
+    renderRoleRows();
+    closeRoleModal();
+    toast("Role saved");
+  };
 }
 
 function renderRuleRows(rules = ruleEngineRules) {
