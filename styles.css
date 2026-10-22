@@ -973,6 +973,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-config-content { display: grid; gap: 16px; padding: 24px; }
 .rule-config-content #ruleAddCondition { justify-self: start; }
 .rule-config-field { display: grid; gap: 8px; max-width: 720px; color: #001f3e; font-size: 14px; line-height: 17px; }
+.rule-compact-config { max-width: 360px; gap: 6px; }
 .rule-config-field b { color: #fb2c36; }
 .rule-config-field textarea { min-height: 76px; }
 .rule-condition-heading { margin: 0; color: #66798b; font-size: 14px; line-height: 20px; }
