@@ -977,11 +977,16 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-config-field textarea { min-height: 76px; }
 .rule-condition-heading { margin: 0; color: #66798b; font-size: 14px; line-height: 20px; }
 .rule-condition-rows { display: grid; gap: 10px; }
-.rule-condition-row { display: grid; grid-template-columns: minmax(220px, 520px) 34px; gap: 12px; align-items: center; }
-.rule-condition-row.is-dynamic .rule-type-picker { grid-column: 1 / 4; }
-.rule-condition-row.is-dynamic .rule-condition-remove { grid-column: 4; grid-row: 1; }
+.rule-condition-row { grid-template-columns: repeat(3, minmax(0, 1fr)) 32px; gap: 16px; align-items: start; }
 .rule-condition-row .rule-configuration { grid-column: 1 / -1; min-width: 0; }
-.rule-condition-row .rule-condition-remove { grid-column: 2; grid-row: 1; }
+.rule-condition-row .voucher-condition-remove { grid-column: 4; grid-row: 1; }
+.rule-condition-row .voucher-condition-remove img { width: 16px; height: 16px; }
+.rule-condition-row .voucher-condition-picker > input { width: 100%; height: 32px; padding: 0 32px 0 10px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; color: #001f3e; font-size: 14px; }
+.rule-condition-row .voucher-condition-picker > input:focus { border-color: #1677ff; outline: 0; box-shadow: 0 0 0 2px rgba(22,119,255,.12); }
+.rule-condition-row .voucher-condition-picker.opens-up .voucher-condition-menu { top: auto; bottom: 36px; }
+.rule-condition-row .voucher-condition-menu { max-height: 290px; }
+.rule-condition-row .rule-simple-value-input { width: 100%; height: 32px; padding: 0 10px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; }
+.rule-condition-row .voucher-condition-value:has(.rule-simple-value-input) { min-width: 0; }
 .rule-condition-row select, .rule-condition-row input { min-width: 0; height: 32px; }
 .rule-type-picker { width: 100%; }
 .rule-type-picker::before, .rule-type-picker::after { display: none; }
@@ -994,13 +999,12 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-type-menu-search { position: sticky; top: 0; z-index: 1; display: block; padding: 8px; border-bottom: 1px solid #f0f0f0; background: #fff; }
 .rule-type-menu-search input { width: 100%; height: 32px; padding: 0 10px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; }
 .rule-type-menu-options { max-height: 230px; overflow-y: auto; }
-.rule-type-option { min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 12px; }
+.rule-type-option { min-height: 32px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 12px 4px 32px; }
 .rule-type-option > span:first-child { display: grid; gap: 3px; }
-.rule-type-option strong { color: #17365d; font-size: 14px; font-weight: 500; }
-.rule-type-option small { color: #66798b; font-size: 12px; }
+.rule-type-option strong, .rule-type-option small { color: inherit; font-size: inherit; font-weight: inherit; }
 .rule-type-option-check { color: #0033c9; opacity: 0; }
 .rule-type-option[aria-selected="true"] .rule-type-option-check { opacity: 1; }
-.rule-config-card:has(.rule-condition-menu:not([hidden])) { position: relative; z-index: 10; overflow: visible; }
+.rule-config-card:has(.rule-condition-menu:not([hidden]), .voucher-single-select-menu:not([hidden]), .voucher-multi-select-menu:not([hidden])) { position: relative; z-index: 10; overflow: visible; }
 .rule-condition-row [hidden], .dynamic-filter-builder[hidden] { display: none !important; }
 .dynamic-filter-builder { grid-column: 1 / -1; display: grid; gap: 10px; padding: 0; border: 0; background: transparent; }
 .dynamic-filter-title { color: #17365d; font-size: 14px; font-weight: 600; }
@@ -1109,10 +1113,12 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 }
 
 /* External Rule Engine builder: keep each rule type's fields together. */
-.rule-condition-rows { gap: 18px; }
-.rule-condition-row { display: grid; grid-template-columns: minmax(240px, 520px) 32px; gap: 12px; align-items: start; padding: 16px; border: 1px solid #e5e7eb; border-radius: 4px; background: #fff; }
-.rule-condition-row .rule-type-picker { grid-column: 1; }
-.rule-condition-row > .rule-condition-remove { grid-column: 2; grid-row: 1; }
+.rule-condition-rows { gap: 12px; }
+.rule-condition-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) 32px; gap: 16px; align-items: start; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.rule-condition-row .rule-type-picker { grid-column: auto; }
+.rule-condition-row > .rule-condition-remove { grid-column: 4; grid-row: 1; }
+.rule-condition-row.is-dynamic .rule-type-picker { grid-column: 1 / 4; }
+.rule-condition-row.is-dynamic > .rule-condition-remove { grid-column: 4; grid-row: 1; }
 .rule-config-screen [hidden] { display: none !important; }
 .rule-condition-row .rule-configuration { grid-column: 1 / -1; min-width: 0; }
 .rule-condition-menu { z-index: 30; }
@@ -1187,7 +1193,12 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
   .rule-counter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 600px) {
-  .rule-condition-row { grid-template-columns: minmax(0, 1fr) 32px; padding: 10px; }
+  .rule-condition-row { grid-template-columns: minmax(0, 1fr) 32px; gap: 8px; }
+  .rule-condition-row .rule-type-picker { grid-column: 1; grid-row: 1; }
+  .rule-condition-row .voucher-condition-operator, .rule-condition-row .voucher-condition-value { grid-column: 1 / -1; grid-row: auto; }
+  .rule-condition-row > .rule-condition-remove { grid-column: 2; grid-row: 1; }
+  .rule-condition-row.is-dynamic .rule-type-picker { grid-column: 1; }
+  .rule-condition-row.is-dynamic > .rule-condition-remove { grid-column: 2; grid-row: 1; }
   .rule-counter-grid, .rule-advanced-fields > div { grid-template-columns: 1fr; }
   .rule-counter-keys { grid-column: auto; }
   .rule-filter-actions { align-items: stretch; flex-direction: column; }
