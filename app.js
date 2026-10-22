@@ -828,14 +828,19 @@ const voucherConditionConflicts = {
 function voucherConditionRowMarkup(index) {
   return `<div class="voucher-condition-row" data-condition-index="${index}">
     <div class="voucher-condition-picker"><input type="text" class="voucher-condition-search" placeholder="Select rule condition" autocomplete="off" aria-label="Select rule condition" aria-expanded="false"><div class="voucher-condition-menu" hidden role="listbox"></div></div>
-    <div class="voucher-condition-operator"><select aria-label="Operator" disabled><option value="">Operator</option></select></div>
-    <div class="voucher-condition-value">${voucherValueControlMarkup(true)}</div>
+    <div class="voucher-condition-operator">${voucherSingleSelectMarkup("Operator", [], "", true)}</div>
+    <div class="voucher-condition-value">${voucherSingleSelectMarkup("Select value", [], "", true)}</div>
     <button type="button" class="voucher-condition-remove" aria-label="Remove rule" title="Remove rule" hidden><img src="assets/action-delete.svg" alt="" aria-hidden="true"></button>
   </div>`;
 }
 
+function voucherSingleSelectMarkup(label, values, selected = "", disabled = false) {
+  const options = values.map(value => `<button type="button" role="option" aria-selected="${value === selected}" data-single-value="${escapeHtml(value)}">${escapeHtml(value)}<span class="voucher-single-select-check" aria-hidden="true"></span></button>`).join("");
+  return `<div class="voucher-single-select${disabled ? " is-disabled" : ""}"><button type="button" class="voucher-single-select-control" aria-label="${escapeHtml(label)}" aria-expanded="false" aria-haspopup="listbox" aria-disabled="${disabled}" ${disabled ? "disabled" : ""}><span>${escapeHtml(selected || label)}</span><i aria-hidden="true"></i></button><div class="voucher-single-select-menu" hidden role="listbox">${options}</div></div>`;
+}
+
 function voucherValueControlMarkup(disabled = false) {
-  return `<button type="button" class="voucher-multi-select-control" aria-label="Select value" aria-expanded="false" ${disabled ? "disabled" : ""}><span class="voucher-multi-select-tags"><span class="voucher-multi-select-placeholder">Select value</span></span><span class="voucher-multi-select-clear" aria-label="Clear values" hidden>×</span><span class="voucher-multi-select-caret" aria-hidden="true"></span></button><div class="voucher-multi-select-menu" hidden role="listbox" aria-multiselectable="true"></div>`;
+  return `<div class="voucher-multi-select-control${disabled ? " is-disabled" : ""}" role="combobox" aria-label="Select value" aria-expanded="false" aria-haspopup="listbox" aria-disabled="${disabled}" tabindex="${disabled ? "-1" : "0"}"><span class="voucher-multi-select-tags"><span class="voucher-multi-select-placeholder">Select value</span></span><input class="voucher-multi-select-search" type="text" aria-label="Search values" autocomplete="off" tabindex="${disabled ? "-1" : "0"}" ${disabled ? "disabled" : ""}><span class="voucher-multi-select-search-icon" aria-hidden="true"></span></div><div class="voucher-multi-select-menu" hidden role="listbox" aria-multiselectable="true"></div>`;
 }
 
 function renderVoucherConditionMenu(menu, search = "") {
@@ -866,19 +871,19 @@ function configureVoucherCondition(row, option) {
   valueHost.hidden = false;
   row.dataset.conditionId = option.id;
   picker.value = option.label;
+  picker.parentElement.classList.add("has-selection");
   picker.setAttribute("aria-expanded", "false");
   menu.hidden = true;
   row.querySelector(".voucher-condition-remove").hidden = false;
 
-  operatorHost.innerHTML = `<select aria-label="Operator">${option.operators.map((operator, index) => `<option value="${index}">${escapeHtml(operator)}</option>`).join("")}</select>`;
+  operatorHost.innerHTML = voucherSingleSelectMarkup("Operator", option.operators, option.operators[0]);
   if (option.multiple) {
     valueHost.innerHTML = voucherValueControlMarkup();
     row.dataset.selectedValues = JSON.stringify(option.defaults || []);
     renderVoucherMultiSelect(row, option);
   } else {
     delete row.dataset.selectedValues;
-    valueHost.innerHTML = `<select aria-label="Select value">${option.values.map(value => `<option>${escapeHtml(value)}</option>`).join("")}</select>`;
-    valueHost.querySelector("select").value = option.defaultValue || "";
+    valueHost.innerHTML = voucherSingleSelectMarkup("Select value", option.values, option.defaultValue || "");
   }
   updateVoucherConditionRemoveButtons();
 }
@@ -887,21 +892,24 @@ function renderVoucherMultiSelect(row, option) {
   const valueHost = row.querySelector(".voucher-condition-value");
   const control = valueHost.querySelector(".voucher-multi-select-control");
   const tags = control.querySelector(".voucher-multi-select-tags");
-  const clear = control.querySelector(".voucher-multi-select-clear");
+  const search = control.querySelector(".voucher-multi-select-search");
   const selected = JSON.parse(row.dataset.selectedValues || "[]");
+  const query = search.value.trim().toLowerCase();
   tags.innerHTML = selected.length
     ? selected.map(value => `<span class="voucher-multi-select-tag">${escapeHtml(value)}<button type="button" data-remove-value="${escapeHtml(value)}" aria-label="Remove ${escapeHtml(value)}">×</button></span>`).join("")
     : `<span class="voucher-multi-select-placeholder">Select value</span>`;
-  clear.hidden = selected.length === 0;
   const menu = valueHost.querySelector(".voucher-multi-select-menu");
-  menu.innerHTML = option.values.map(value => `<button type="button" role="option" aria-selected="${selected.includes(value)}" data-value="${escapeHtml(value)}">${escapeHtml(value)}<span class="voucher-multi-select-check" aria-hidden="true"></span></button>`).join("");
+  const matches = option.values.filter(value => !query || value.toLowerCase().includes(query));
+  menu.innerHTML = matches.map(value => `<button type="button" role="option" aria-selected="${selected.includes(value)}" data-value="${escapeHtml(value)}">${escapeHtml(value)}<span class="voucher-multi-select-check" aria-hidden="true"></span></button>`).join("") || `<div class="voucher-condition-empty">No matching values</div>`;
 }
 
 function bindVoucherConditionRow(row) {
   const picker = row.querySelector(".voucher-condition-search");
   const menu = row.querySelector(".voucher-condition-menu");
   const openMenu = () => {
-    renderVoucherConditionMenu(menu, picker.value === voucherAdvancedRuleOptions.find(option => option.id === row.dataset.conditionId)?.label ? "" : picker.value);
+    const hasSelectedLabel = picker.value === voucherAdvancedRuleOptions.find(option => option.id === row.dataset.conditionId)?.label;
+    picker.parentElement.classList.toggle("has-selection", hasSelectedLabel);
+    renderVoucherConditionMenu(menu, hasSelectedLabel ? "" : picker.value);
     menu.hidden = false;
     picker.setAttribute("aria-expanded", "true");
     const rect = picker.getBoundingClientRect();
@@ -912,9 +920,10 @@ function bindVoucherConditionRow(row) {
   picker.addEventListener("focus", openMenu);
   picker.addEventListener("click", openMenu);
   picker.addEventListener("input", () => {
+    picker.parentElement.classList.remove("has-selection");
     delete row.dataset.conditionId;
-    row.querySelector(".voucher-condition-operator").innerHTML = `<select aria-label="Operator" disabled><option value="">Operator</option></select>`;
-    row.querySelector(".voucher-condition-value").innerHTML = voucherValueControlMarkup(true);
+    row.querySelector(".voucher-condition-operator").innerHTML = voucherSingleSelectMarkup("Operator", [], "", true);
+    row.querySelector(".voucher-condition-value").innerHTML = voucherSingleSelectMarkup("Select value", [], "", true);
     updateVoucherConditionRemoveButtons();
     renderVoucherConditionMenu(menu, picker.value);
     menu.hidden = false;
@@ -927,6 +936,28 @@ function bindVoucherConditionRow(row) {
     if (option) configureVoucherCondition(row, option);
   });
   const valueHost = row.querySelector(".voucher-condition-value");
+  const operatorHost = row.querySelector(".voucher-condition-operator");
+  row.addEventListener("click", event => {
+    const selectedOption = event.target.closest("[data-single-value]");
+    if (selectedOption) {
+      const host = selectedOption.closest(".voucher-single-select");
+      const control = host.querySelector(".voucher-single-select-control");
+      control.querySelector("span").textContent = selectedOption.dataset.singleValue;
+      host.querySelectorAll("[data-single-value]").forEach(item => item.setAttribute("aria-selected", String(item === selectedOption)));
+      host.querySelector(".voucher-single-select-menu").hidden = true;
+      control.setAttribute("aria-expanded", "false");
+      return;
+    }
+    const control = event.target.closest(".voucher-single-select-control");
+    if (!control || control.disabled) return;
+    const host = control.closest(".voucher-single-select");
+    const selectMenu = host.querySelector(".voucher-single-select-menu");
+    const shouldOpen = selectMenu.hidden;
+    row.querySelectorAll(".voucher-single-select-menu, .voucher-condition-menu, .voucher-multi-select-menu").forEach(item => item.hidden = true);
+    row.querySelectorAll("[aria-expanded='true']").forEach(item => item.setAttribute("aria-expanded", "false"));
+    selectMenu.hidden = !shouldOpen;
+    control.setAttribute("aria-expanded", String(shouldOpen));
+  });
   valueHost.addEventListener("click", event => {
     const option = voucherAdvancedRuleOptions.find(item => item.id === row.dataset.conditionId);
     if (!option?.multiple) return;
@@ -940,26 +971,51 @@ function bindVoucherConditionRow(row) {
       renderVoucherMultiSelect(row, option);
       return;
     }
-    if (event.target.closest(".voucher-multi-select-clear")) {
-      event.stopPropagation();
-      row.dataset.selectedValues = "[]";
-      renderVoucherMultiSelect(row, option);
-      return;
-    }
     if (optionButton) {
       event.stopPropagation();
       const selected = JSON.parse(row.dataset.selectedValues || "[]");
       const value = optionButton.dataset.value;
       row.dataset.selectedValues = JSON.stringify(selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value]);
+      valueHost.querySelector(".voucher-multi-select-search").value = "";
       renderVoucherMultiSelect(row, option);
       menu.hidden = false;
-      valueHost.querySelector(".voucher-multi-select-control").setAttribute("aria-expanded", "true");
+      const control = valueHost.querySelector(".voucher-multi-select-control");
+      control.setAttribute("aria-expanded", "true");
+      control.querySelector(".voucher-multi-select-search").focus();
       return;
     }
     if (event.target.closest(".voucher-multi-select-control")) {
       const control = valueHost.querySelector(".voucher-multi-select-control");
-      menu.hidden = !menu.hidden;
-      control.setAttribute("aria-expanded", String(!menu.hidden));
+      menu.hidden = false;
+      control.setAttribute("aria-expanded", "true");
+      control.querySelector(".voucher-multi-select-search").focus();
+    }
+  });
+  valueHost.addEventListener("input", event => {
+    if (!event.target.matches(".voucher-multi-select-search")) return;
+    const option = voucherAdvancedRuleOptions.find(item => item.id === row.dataset.conditionId);
+    renderVoucherMultiSelect(row, option);
+    valueHost.querySelector(".voucher-multi-select-menu").hidden = false;
+    valueHost.querySelector(".voucher-multi-select-control").setAttribute("aria-expanded", "true");
+  });
+  valueHost.addEventListener("keydown", event => {
+    if (!event.target.matches(".voucher-multi-select-search")) return;
+    const menu = valueHost.querySelector(".voucher-multi-select-menu");
+    if (event.key === "Enter") {
+      const firstOption = menu.querySelector('[role="option"]');
+      if (firstOption) { event.preventDefault(); firstOption.click(); }
+    }
+    if (event.key === "Escape") {
+      menu.hidden = true;
+      valueHost.querySelector(".voucher-multi-select-control").setAttribute("aria-expanded", "false");
+      event.target.blur();
+    }
+    if (event.key === "Backspace" && !event.target.value) {
+      const selected = JSON.parse(row.dataset.selectedValues || "[]");
+      if (selected.length) {
+        row.dataset.selectedValues = JSON.stringify(selected.slice(0, -1));
+        renderVoucherMultiSelect(row, voucherAdvancedRuleOptions.find(item => item.id === row.dataset.conditionId));
+      }
     }
   });
   row.querySelector(".voucher-condition-remove").addEventListener("click", () => {
@@ -969,13 +1025,45 @@ function bindVoucherConditionRow(row) {
     updateVoucherConditionRemoveButtons();
   });
   const closeOnOutsideClick = event => {
-    if (row.contains(event.target)) return;
+    if (row.querySelector(".voucher-condition-picker").contains(event.target)) {
+      const valueMenu = row.querySelector(".voucher-multi-select-menu");
+      if (valueMenu) valueMenu.hidden = true;
+      row.querySelector(".voucher-multi-select-control")?.setAttribute("aria-expanded", "false");
+      row.querySelectorAll(".voucher-single-select-menu").forEach(item => item.hidden = true);
+      row.querySelectorAll(".voucher-single-select-control[aria-expanded='true']").forEach(item => item.setAttribute("aria-expanded", "false"));
+      return;
+    }
+    if (valueHost.contains(event.target)) {
+      menu.hidden = true;
+      picker.setAttribute("aria-expanded", "false");
+      picker.parentElement.classList.remove("opens-up");
+      const keepOpen = event.target.closest(".voucher-single-select");
+      row.querySelectorAll(".voucher-single-select").forEach(host => {
+        if (host !== keepOpen) host.querySelector(".voucher-single-select-menu").hidden = true;
+      });
+      return;
+    }
+    if (operatorHost.contains(event.target)) {
+      menu.hidden = true;
+      picker.setAttribute("aria-expanded", "false");
+      picker.parentElement.classList.remove("opens-up");
+      const keepOpen = event.target.closest(".voucher-single-select");
+      row.querySelectorAll(".voucher-single-select").forEach(host => {
+        if (host !== keepOpen) host.querySelector(".voucher-single-select-menu").hidden = true;
+      });
+      return;
+    }
     menu.hidden = true;
     picker.setAttribute("aria-expanded", "false");
     picker.parentElement.classList.remove("opens-up");
     const valueMenu = row.querySelector(".voucher-multi-select-menu");
     if (valueMenu) valueMenu.hidden = true;
-    row.querySelector(".voucher-multi-select-control")?.setAttribute("aria-expanded", "false");
+    const control = row.querySelector(".voucher-multi-select-control");
+    control?.setAttribute("aria-expanded", "false");
+    row.querySelectorAll(".voucher-single-select-control[aria-expanded='true']").forEach(item => item.setAttribute("aria-expanded", "false"));
+    const search = control?.querySelector(".voucher-multi-select-search");
+    if (search) search.value = "";
+    if (control && row.dataset.conditionId) renderVoucherMultiSelect(row, voucherAdvancedRuleOptions.find(option => option.id === row.dataset.conditionId));
   };
   document.addEventListener("click", closeOnOutsideClick);
   picker.addEventListener("keydown", event => {
