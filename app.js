@@ -1949,7 +1949,7 @@ function initRuleList() {
 // Keep these separate from the voucher's internal Advance Rule condition catalog.
 const ruleConditionOptions = [
   { group: "Common rules", value: "100", label: "Check data and segments", description: "Check selected fields, customer details, or list items." },
-  { group: "Common rules", value: "103", label: "Set usage limits", description: "Limit use by customer, key, or time period." },
+  { group: "Common rules", value: "103", label: "Set usage limits", description: "Limit use by customer, field, or time period." },
   { group: "Other rules", value: "95", label: "Check risk status", description: "Check a customer's risk status for an event." }
 ];
 
@@ -2012,13 +2012,13 @@ function ruleSelectOptions(items, value = "", placeholder = "Select") {
   }).join("")}`;
 }
 
-function renderRuleConditionMenu(menu, search = "") {
+function renderRuleConditionMenu(menu, search = "", selectedType = "") {
   const query = search.trim().toLowerCase();
   const groups = [...new Set(ruleConditionOptions.map(option => option.group))];
   const options = groups.map(group => {
     const items = ruleConditionOptions.filter(option => option.group === group && (!query || `${group} ${option.label} ${option.description}`.toLowerCase().includes(query)));
     if (!items.length) return "";
-    return `<div class="voucher-condition-group">${escapeHtml(group)}</div>${items.map(option => `<button type="button" class="voucher-condition-option rule-type-option" role="option" data-rule-type="${option.value}"><span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.description)}</small></span><span class="rule-type-option-check" aria-hidden="true">✓</span></button>`).join("")}`;
+    return `<div class="voucher-condition-group">${escapeHtml(group)}</div>${items.map(option => `<button type="button" class="voucher-condition-option rule-type-option" role="option" aria-selected="${option.value === selectedType}" data-rule-type="${option.value}"><span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.description)}</small></span><span class="rule-type-option-check" aria-hidden="true">✓</span></button>`).join("")}`;
   }).join("") || `<div class="voucher-condition-empty">No matching rules</div>`;
   if (!menu.querySelector(".rule-type-menu-options")) menu.innerHTML = `<label class="rule-type-menu-search"><span class="sr-only">Search rules</span><input type="search" class="rule-condition-search" placeholder="Search rules" autocomplete="off"></label><div class="rule-type-menu-options"></div>`;
   menu.querySelector(".rule-condition-search").value = search;
@@ -2228,7 +2228,7 @@ function initRuleForm(payload = {}) {
   rows.oninput = event => {
     if (!event.target.matches(".rule-condition-search")) return;
     const menu = event.target.closest(".rule-condition-menu");
-    renderRuleConditionMenu(menu, event.target.value);
+    renderRuleConditionMenu(menu, event.target.value, menu.closest(".rule-condition-row").dataset.ruleType);
     menu.hidden = false;
     menu.closest(".rule-type-picker").querySelector(".rule-type-trigger").setAttribute("aria-expanded", "true");
   };
@@ -2271,7 +2271,7 @@ function initRuleForm(payload = {}) {
       const open = menu.hidden;
       rows.querySelectorAll(".rule-condition-menu").forEach(item => { item.hidden = true; item.closest(".rule-type-picker").querySelector(".rule-type-trigger").setAttribute("aria-expanded", "false"); });
       if (open) {
-        renderRuleConditionMenu(menu);
+        renderRuleConditionMenu(menu, "", picker.closest(".rule-condition-row").dataset.ruleType);
         menu.hidden = false;
         trigger.setAttribute("aria-expanded", "true");
         menu.querySelector(".rule-condition-search").focus();
@@ -2283,11 +2283,12 @@ function initRuleForm(payload = {}) {
       const row = choice.closest(".rule-condition-row");
       const type = choice.dataset.ruleType;
       const option = ruleConditionOptions.find(item => item.value === type);
+      const previousType = row.dataset.ruleType;
       row.dataset.ruleType = type;
       row.querySelector(".rule-type-trigger-label").textContent = option.label;
       row.querySelector(".rule-type-trigger").setAttribute("aria-expanded", "false");
       row.querySelector(".rule-condition-menu").hidden = true;
-      row.querySelector(".rule-configuration").innerHTML = renderRuleTypeFields(type, {}, readonly);
+      if (previousType !== type) row.querySelector(".rule-configuration").innerHTML = renderRuleTypeFields(type, {}, readonly);
       return;
     }
     const add = event.target.closest("[data-add-filter]");
