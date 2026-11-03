@@ -2168,14 +2168,7 @@ function initRuleList() {
 function ruleFieldSurfaceLabel(check) {
   const labels = [];
   if (check.surfaces.includes("voucher")) labels.push("Voucher Advance Rule");
-  if (check.surfaces.includes("ruleEngine")) {
-    labels.push("Rule Engine");
-    if (!check.builtin) {
-      const uses = check.ruleEngineUses || { filter: true, counterKey: true };
-      if (uses.filter) labels.push("Filter field");
-      if (uses.counterKey) labels.push("Counter key");
-    }
-  }
+  if (check.surfaces.includes("ruleEngine")) labels.push("Rule Engine");
   return labels.length ? `<span class="rule-field-surface-list">${labels.map(label => `<span class="rule-field-surface-tag">${label}</span>`).join("")}</span>` : '<span class="rule-field-surface-empty">Not available</span>';
 }
 
@@ -2396,13 +2389,6 @@ function initRuleFieldForm(payload = {}) {
   valuesInput.addEventListener("input", syncValuesHelp);
   document.getElementById("ruleFieldVoucher").checked = check?.surfaces.includes("voucher") || false;
   document.getElementById("ruleFieldExternal").checked = check?.surfaces.includes("ruleEngine") || false;
-  const engineUsage = document.getElementById("ruleFieldEngineUsage");
-  const savedEngineUsage = check?.ruleEngineUses || (check ? { filter: true, counterKey: true } : { filter: true, counterKey: false });
-  document.getElementById("ruleFieldUseFilter").checked = Boolean(savedEngineUsage.filter);
-  document.getElementById("ruleFieldUseCounter").checked = Boolean(savedEngineUsage.counterKey);
-  const syncEngineUsageVisibility = () => { engineUsage.hidden = !document.getElementById("ruleFieldExternal").checked; };
-  syncEngineUsageVisibility();
-  document.getElementById("ruleFieldExternal").onchange = syncEngineUsageVisibility;
   document.getElementById("ruleFieldError").hidden = true;
   document.getElementById("ruleSampleTitle").innerHTML = check ? "Sample JSON response" : "Sample JSON response <b>*</b>";
   populateRuleFieldCategories(check?.category || "");
@@ -2500,10 +2486,6 @@ function initRuleFieldForm(payload = {}) {
     const surfaces = [];
     if (document.getElementById("ruleFieldVoucher").checked) surfaces.push("voucher");
     if (document.getElementById("ruleFieldExternal").checked) surfaces.push("ruleEngine");
-    const ruleEngineUses = {
-      filter: document.getElementById("ruleFieldUseFilter").checked,
-      counterKey: document.getElementById("ruleFieldUseCounter").checked
-    };
     const editId = form.dataset.editId;
     const current = ruleFieldCatalog.checks.find(item => item.id === editId);
     const error = document.getElementById("ruleFieldError");
@@ -2516,7 +2498,7 @@ function initRuleFieldForm(payload = {}) {
       return;
     }
     if (!await confirmRuleAction({ title: current ? "Save check changes?" : "Save this check?", message: current ? `Save the changes to “${name}”?` : `Add “${name}” to the selected category and rule menus?`, confirmLabel: current ? "Save changes" : "Save check" })) return;
-    const nextCheck = { id: current?.id || `field-${Date.now()}`, name, category, responseField, dataType, jsonStringRoots, values, surfaces, ruleEngineUses };
+    const nextCheck = { id: current?.id || `field-${Date.now()}`, name, category, responseField, dataType, jsonStringRoots, values, surfaces };
     if (current) Object.assign(current, nextCheck);
     else ruleFieldCatalog.checks.push(nextCheck);
     saveRuleFieldCatalog();
@@ -2530,9 +2512,8 @@ function ruleFieldTypeLabel(type) {
   return ({ string: "Text", number: "Number", boolean: "True / false", null: "Empty", object: "Object", array: "List", mixed: "Mixed values" })[type] || type;
 }
 
-// Only rule types marked as in use in Rule Usage appear here. Keep the familiar
-// CRM Advance Rule groups so this picker reads like the voucher rule picker.
-// Add each check type once. For multiple values, use that check's own multi-select or subrules.
+// Fields configured in Field Setup appear as regular checks in their selected
+// category. Dynamic Filter and Dynamic Counter are not condition types.
 const builtInRuleConditionOptions = [
   { group: "Check user profile", value: "profile-kyc", backendField: "109", subtype: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
   { group: "Check user profile", value: "profile-nfc", backendField: "109", subtype: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
@@ -2542,8 +2523,6 @@ const builtInRuleConditionOptions = [
   { group: "Account & Segment", value: "104", label: "Check MMF account status", operators: ["Is"], values: ["Has account", "Has no account"] },
   { group: "Account & Segment", value: "81", label: "Segment check" },
   { group: "Account & Segment", value: "95", label: "Risk check" },
-  { group: "Dynamic rules", value: "100", backendField: "100", label: "Dynamic filter" },
-  { group: "Dynamic rules", value: "103", backendField: "103", label: "Dynamic counter" },
   { group: "Usage counters", value: "10", label: "User counter", legacy: true },
   { group: "Usage counters", value: "86", label: "User counter per period", legacy: true }
 ];
@@ -2551,7 +2530,7 @@ let ruleConditionOptions = [];
 function refreshRuleConditionOptions() {
   ruleConditionOptions = [
     ...builtInRuleConditionOptions,
-    ...getCustomRuleFieldOptions("ruleEngine").map(option => ({ ...option, backendField: option.id }))
+    ...customRuleEngineFields()
   ];
 }
 refreshRuleConditionOptions();
@@ -2581,14 +2560,25 @@ const ruleSegments = [
 ];
 const ruleJmesKeys = [{ value: "requestInfo.embeddedData.columninfo.merchantInfo.providedList", label: "Merchant list", dataType: "ARRAY" }];
 
-function customRuleEngineFields(usage = "") {
-  return ruleFieldCatalog.checks.filter(check => {
-    if (!check.surfaces.includes("ruleEngine") || !check.responseField) return false;
-    if (!usage) return true;
-    const configured = check.ruleEngineUses;
-    return configured ? Boolean(configured[usage]) : true;
-  }).map(check => ({
-    value: check.responseField, label: check.name, fieldId: check.id, category: check.category || "Other fields", dataType: check.dataType || "string", values: check.values || []
+function customRuleEngineFields() {
+  return ruleFieldCatalog.checks.filter(check => check.surfaces.includes("ruleEngine") && check.responseField).map(check => ({
+    id: check.id,
+    value: check.id,
+    backendField: check.id,
+    fieldId: check.id,
+    responseField: check.responseField,
+    custom: true,
+    group: check.category || "Other fields",
+    category: check.category || "Other fields",
+    label: check.name,
+    dataType: check.dataType || "string",
+    operators: check.dataType === "number"
+      ? ["Equals", "Not Equals", "Greater Than", "Greater Than Or Equals", "Less Than", "Less Than Or Equals"]
+      : ["Equals", "Not Equals"],
+    values: check.values?.length ? check.values : check.dataType === "boolean" ? ["true", "false"] : [],
+    multiple: Boolean(check.values?.length),
+    valueInput: check.values?.length || check.dataType === "boolean" ? "" : check.dataType === "number" ? "Enter a number" : "Enter a value",
+    valueInputType: check.dataType === "number" ? "number" : "text"
   }));
 }
 
@@ -2608,16 +2598,14 @@ function resolveConfiguredFieldPath(fieldId, fallbackPath) {
 
 function ruleUsesConfiguredField(rule, check) {
   const matchesPath = value => value === check.responseField;
-  const filterGroupUsesField = group => (group?.items || []).some(item => {
-    if (item.kind === "group") return filterGroupUsesField(item.group);
+  const conditionsUseField = conditions => (conditions || []).some(item => {
+    if (item.kind === "group") return conditionsUseField(item.conditions || item.group?.items);
     if (item.kind === "condition") return item.fieldId === check.id || matchesPath(item.key);
-    return false;
+    if (item.field === check.id || item.fieldId === check.id || matchesPath(item.responseField)) return true;
+    if (item.filter && conditionsUseField(item.filter.items)) return true;
+    return (item.counters || []).some(counter => (counter.keyRefs || []).includes(check.id) || (counter.keys || []).some(matchesPath));
   });
-  return (rule.conditions || []).some(condition => {
-    if (condition.field === check.id) return true;
-    if (condition.filter && filterGroupUsesField(condition.filter)) return true;
-    return (condition.counters || []).some(counter => (counter.keyRefs || []).includes(check.id) || (counter.keys || []).some(matchesPath));
-  });
+  return conditionsUseField(rule.conditions);
 }
 
 function dynamicFieldOptionsMarkup(options, selected = "") {
@@ -2730,7 +2718,7 @@ function renderRuleConditionMenu(menu, search = "", selectedType = "", currentRo
     const items = ruleConditionOptions.filter(option => !option.legacy && option.group === group && (!query || `${group} ${option.label}`.toLowerCase().includes(query)));
     if (!items.length) return "";
     return `<div class="voucher-condition-group"><span aria-hidden="true"></span>${escapeHtml(group)}</div>${items.map(option => {
-      const alreadyAdded = [...(currentRow?.parentElement?.querySelectorAll(":scope > .rule-condition-row") || [])].some(row => row !== currentRow && row.dataset.ruleType === option.value);
+      const alreadyAdded = [...document.querySelectorAll("#ruleConditionRows .rule-condition-row")].some(row => row !== currentRow && row.dataset.ruleType === option.value);
       return `<button type="button" class="voucher-condition-option${alreadyAdded ? " is-already-added" : ""}" role="option" aria-selected="${option.value === selectedType}" ${alreadyAdded ? 'disabled aria-disabled="true" title="Already added"' : ""} data-rule-type="${option.value}">${escapeHtml(option.label)}${alreadyAdded ? '<span class="rule-option-note">Already added</span>' : ""}</button>`;
     }).join("")}`;
   }).join("") || `<div class="voucher-condition-empty">No matching rules</div>`;
@@ -2823,8 +2811,6 @@ function dynamicCounterMarkup(counters = [], readonly = false, title = "Dynamic 
 }
 
 function renderRuleTypeFields(field, config = {}, readonly = false, typeLabel = "") {
-  if (field === "100") return dynamicFilterMarkup(config.filter || {}, readonly, typeLabel || "Dynamic filter");
-  if (field === "103") return dynamicCounterMarkup(config.counters || [], readonly, typeLabel || "Dynamic counter");
   if (field === "95") return ruleCompactUserTypePickerMarkup(config, readonly);
   if (field === "81") return `<label class="rule-config-field rule-compact-config"><span>Segment</span>${ruleSegmentPickerMarkup("config-field", config.segmentId || "", readonly)}</label>`;
   if (field === "10") return `<div class="rule-builder"><div class="rule-builder-heading"><div><strong>User limit</strong><p>Set a user's count for this rule.</p></div><span class="rule-type-badge">Rule 10</span></div><div class="rule-counter-grid"><label><span>Code</span><input data-config-field="code" value="${escapeHtml(config.code || "")}" placeholder="Enter code" ${readonly ? "disabled" : ""}></label><label><span>Maximum count</span><input type="number" min="1" data-config-field="counter" value="${escapeHtml(config.counter || "")}" placeholder="Enter maximum" ${readonly ? "disabled" : ""}></label></div></div>`;
@@ -2837,18 +2823,20 @@ function renderRuleTypeFields(field, config = {}, readonly = false, typeLabel = 
 function ruleConditionRow(condition = {}, readonly = false) {
   const row = document.createElement("div");
   row.className = "voucher-condition-row rule-condition-row";
-  row.innerHTML = `<div class="voucher-condition-picker rule-type-picker"><input type="text" class="voucher-condition-search rule-condition-search" placeholder="Select rule condition" autocomplete="off" aria-label="Select rule condition" aria-expanded="false" ${readonly ? "disabled" : ""}><div class="voucher-condition-menu rule-condition-menu" hidden role="listbox"></div></div>
+  row.innerHTML = `<div class="voucher-condition-picker rule-type-picker"><input type="text" class="voucher-condition-search rule-condition-search" placeholder="Select a check" autocomplete="off" aria-label="Select a check" aria-expanded="false" ${readonly ? "disabled" : ""}><div class="voucher-condition-menu rule-condition-menu" hidden role="listbox"></div></div>
     <div class="voucher-condition-operator">${voucherSingleSelectMarkup("Operator", [], "", true)}</div>
     <div class="voucher-condition-value">${voucherSingleSelectMarkup("Select value", [], "", true)}</div>
     <button type="button" class="voucher-condition-remove" aria-label="Remove rule" title="Remove rule" ${readonly || !condition.field ? "hidden" : ""}><img src="assets/action-delete.svg" alt="" aria-hidden="true"></button>
     <div class="rule-configuration"></div>`;
   const selectedOption = condition.field
-    ? ruleConditionOptions.find(item => item.backendField === condition.field && item.subtype === condition.subRule)
+    ? ruleConditionOptions.find(item => item.value === (condition.conditionType || condition.ruleType))
+      || ruleConditionOptions.find(item => item.backendField === condition.field && item.subtype === condition.subRule)
       || ruleConditionOptions.find(item => item.value === condition.field)
       || ruleConditionOptions.find(item => item.legacy && item.backendField === condition.field)
     : undefined;
   const picker = row.querySelector(".rule-condition-search");
   picker.value = selectedOption?.label || "";
+  if (selectedOption?.label) picker.setAttribute("value", selectedOption.label);
   row.dataset.ruleType = selectedOption?.value || condition.field || "";
   row.dataset.ruleField = selectedOption?.backendField || condition.field || "";
   row.dataset.ruleSubtype = selectedOption?.subtype || condition.subRule || "";
@@ -2862,6 +2850,26 @@ function ruleConditionRow(condition = {}, readonly = false) {
   }
   row.querySelectorAll("[data-multi-field]").forEach(syncRuleMultiSelect);
   return row;
+}
+
+function normalizeRuleConditionNodes(nodes = []) {
+  return (Array.isArray(nodes) ? nodes : []).map(node => node?.kind === "group"
+    ? { kind: "group", connective: node.connective || "all", conditions: normalizeRuleConditionNodes(node.conditions || node.items || node.group?.items || []) }
+    : { ...(node?.condition || node || {}), kind: "condition" });
+}
+
+function ruleConditionGroupMarkup(nodes = [], readonly = false, depth = 0) {
+  const items = normalizeRuleConditionNodes(nodes);
+  if (!items.length && depth === 0) items.push({ kind: "condition" });
+  const content = items.map((item, index) => {
+    const connector = index ? `<div class="rule-condition-connector"><span class="rule-condition-connector-line" aria-hidden="true"></span><select data-condition-connective aria-label="Join condition ${index + 1}" ${readonly ? "disabled" : ""}><option value="all" ${(item.connective || "all") === "all" ? "selected" : ""}>AND</option><option value="any" ${(item.connective || "all") === "any" ? "selected" : ""}>OR</option></select></div>` : "";
+    const body = item.kind === "group"
+      ? `<section class="rule-condition-group-card"><div class="rule-condition-group-heading"><div><strong>Condition group</strong><small>Set up separate AND/OR logic for these checks.</small></div>${readonly ? "" : '<button type="button" class="rule-condition-delete" data-remove-condition-group aria-label="Remove condition group" title="Remove group"><img src="assets/action-delete.svg" alt=""></button>'}</div>${ruleConditionGroupMarkup(item.conditions, readonly, depth + 1)}</section>`
+      : ruleConditionRow(item, readonly).outerHTML;
+    return `<div class="rule-condition-node" data-condition-node>${connector}<div class="rule-condition-node-body">${body}</div></div>`;
+  }).join("");
+  const actions = readonly || depth === 0 ? "" : `<div class="rule-condition-group-actions"><button type="button" class="asset-btn secondary" data-add-condition-node="condition">+ Add condition</button><button type="button" class="asset-btn secondary" data-add-condition-node="group">+ Add condition group</button></div>`;
+  return `<div class="rule-condition-tree${depth ? " is-nested" : ""}" data-rule-group data-group-depth="${depth}"><div class="rule-condition-nodes">${content}</div>${actions}</div>`;
 }
 
 function configureRuleSimpleCondition(row, option, condition = {}, readonly = false) {
@@ -2879,7 +2887,7 @@ function configureRuleSimpleCondition(row, option, condition = {}, readonly = fa
     control.querySelector(".voucher-multi-select-placeholder").textContent = "Select value";
     renderRuleSimpleMultiValue(row, option);
   } else if (option.valueInput) {
-    valueHost.innerHTML = `<input class="rule-simple-value-input" aria-label="Select value" placeholder="${escapeHtml(option.valueInput)}" value="${escapeHtml(configuredValue)}" ${readonly ? "disabled" : ""}>`;
+    valueHost.innerHTML = `<input class="rule-simple-value-input" type="${escapeHtml(option.valueInputType || "text")}" aria-label="Select value" placeholder="${escapeHtml(option.valueInput)}" value="${escapeHtml(configuredValue)}" ${readonly ? "disabled" : ""}>`;
   } else {
     valueHost.innerHTML = voucherSingleSelectMarkup("Select value", option.values, configuredValue, readonly);
   }
@@ -3019,6 +3027,74 @@ function ruleFilterIsComplete(group) {
   });
 }
 
+function collectRuleCondition(row) {
+  const field = row.dataset.ruleField || row.dataset.ruleType || "";
+  const option = ruleConditionOptions.find(item => item.value === row.dataset.ruleType);
+  if (option?.operators) {
+    const operator = row.querySelector(".voucher-condition-operator .voucher-single-select-control > span")?.textContent || "";
+    const selectedValue = row.querySelector(".voucher-condition-value .voucher-single-select-control > span")?.textContent || "";
+    const value = selectedValue === "Select value" ? "" : selectedValue || row.querySelector(".rule-simple-value-input")?.value.trim() || "";
+    const values = option.multiple ? JSON.parse(row.dataset.selectedValues || "[]") : undefined;
+    return {
+      field,
+      conditionType: option.value,
+      ...(row.dataset.ruleSubtype ? { subRule: row.dataset.ruleSubtype } : {}),
+      ...(option.custom ? { fieldId: option.fieldId, responseField: option.responseField, category: option.category } : {}),
+      operator,
+      ...(option.multiple ? { values } : { value })
+    };
+  }
+  if (["95", "81", "10", "86", "109"].includes(field)) return { field, config: collectSimpleRuleConfig(row) };
+  return { field };
+}
+
+function collectRuleConditionGroup(group) {
+  if (!group) return [];
+  return [...group.querySelectorAll(":scope > .rule-condition-nodes > .rule-condition-node")].map((node, index) => {
+    const body = node.querySelector(":scope > .rule-condition-node-body");
+    const nestedGroup = body.querySelector(":scope > .rule-condition-group-card > .rule-condition-tree");
+    const row = body.querySelector(":scope > .rule-condition-row");
+    const collected = nestedGroup
+      ? { kind: "group", conditions: collectRuleConditionGroup(nestedGroup) }
+      : collectRuleCondition(row);
+    const connective = index ? node.querySelector(":scope > .rule-condition-connector > [data-condition-connective]")?.value : "";
+    return { ...collected, ...(connective ? { connective } : {}) };
+  });
+}
+
+function appendRuleConditionNode(group, kind, readonly = false) {
+  if (!group || readonly) return null;
+  let conditions = collectRuleConditionGroup(group);
+  if (kind === "group" && conditions.length === 1 && conditions[0].kind === "condition" && !conditions[0].field) conditions = [];
+  const connective = conditions.at(-1)?.connective || "all";
+  const node = kind === "group" ? { kind: "group", conditions: [] } : { kind: "condition" };
+  if (conditions.length) node.connective = connective;
+  conditions.push(node);
+  const parent = group.parentElement;
+  const groupIndex = [...parent.querySelectorAll(":scope > .rule-condition-tree")].indexOf(group);
+  const depth = Number(group.dataset.groupDepth || 0);
+  group.outerHTML = ruleConditionGroupMarkup(conditions, readonly, depth);
+  const updatedGroup = parent.querySelectorAll(":scope > .rule-condition-tree")[groupIndex];
+  const lastNode = updatedGroup?.querySelector(":scope > .rule-condition-nodes > .rule-condition-node:last-child");
+  return lastNode?.querySelector(":scope > .rule-condition-node-body > .rule-condition-row .rule-condition-search") || null;
+}
+
+function ruleConditionTreeIsComplete(conditions) {
+  if (!conditions.length) return false;
+  return conditions.every(condition => {
+    if (condition.kind === "group") return ruleConditionTreeIsComplete(condition.conditions || []);
+    if (!condition.field) return false;
+    const option = ruleConditionOptions.find(item => item.backendField === condition.field && item.subtype === condition.subRule)
+      || ruleConditionOptions.find(item => item.value === condition.field);
+    if (option?.operators) return Boolean(condition.operator && (option.multiple ? condition.values?.length : condition.value));
+    if (condition.field === "95") return Boolean(condition.config?.riskControl && condition.config.userTypes?.length);
+    if (condition.field === "81") return Boolean(condition.config?.segmentId);
+    if (["10", "86"].includes(condition.field)) return Boolean(condition.config?.code && condition.config.counter);
+    if (condition.field === "109") return Boolean(condition.config?.fieldId && condition.config.operator && condition.config.value);
+    return false;
+  });
+}
+
 function initRuleForm(payload = {}) {
   const form = document.getElementById("ruleConfigForm");
   const rule = ruleEngineRules.find(item => item.id === payload.id);
@@ -3029,19 +3105,24 @@ function initRuleForm(payload = {}) {
   document.getElementById("ruleName").readOnly = readonly;
   document.getElementById("ruleDescription").readOnly = readonly;
   const rows = document.getElementById("ruleConditionRows");
-  (rule?.conditions?.length ? rule.conditions : [{}]).forEach(condition => rows.append(ruleConditionRow(condition, readonly)));
+  rows.innerHTML = ruleConditionGroupMarkup(rule?.conditions?.length ? rule.conditions : [{}], readonly);
   document.getElementById("ruleAddCondition").hidden = readonly;
+  document.getElementById("ruleAddConditionGroup").hidden = readonly;
   form.querySelector('[type="submit"]').hidden = readonly;
   document.getElementById("ruleAddCondition").onclick = () => {
-    const emptyRow = [...rows.querySelectorAll(":scope > .rule-condition-row")].find(row => !row.dataset.ruleType);
+    const emptyRow = [...rows.querySelectorAll(".rule-condition-row")].find(row => !row.dataset.ruleType);
     if (emptyRow) {
       const picker = emptyRow.querySelector(".rule-condition-search");
       picker?.focus();
       if (picker) openRulePicker(picker);
       return;
     }
-    rows.append(ruleConditionRow());
+    appendRuleConditionNode(rows.querySelector(":scope > .rule-condition-tree"), "condition", readonly);
+    const picker = [...rows.querySelectorAll(".rule-condition-search")].at(-1);
+    picker?.focus();
+    if (picker) openRulePicker(picker);
   };
+  document.getElementById("ruleAddConditionGroup").onclick = () => appendRuleConditionNode(rows.querySelector(":scope > .rule-condition-tree"), "group", readonly);
   const openRulePicker = picker => {
     const row = picker.closest(".rule-condition-row");
     const menu = row.querySelector(".rule-condition-menu");
@@ -3077,6 +3158,7 @@ function initRuleForm(payload = {}) {
       row.dataset.ruleType = "";
       row.dataset.ruleField = "";
       row.dataset.ruleSubtype = "";
+      event.target.removeAttribute("value");
       row.classList.remove("is-dynamic");
       row.querySelector(".voucher-condition-operator").hidden = false;
       row.querySelector(".voucher-condition-value").hidden = false;
@@ -3154,6 +3236,29 @@ function initRuleForm(payload = {}) {
     }
   };
   rows.onclick = event => {
+    const addConditionNode = event.target.closest("[data-add-condition-node]");
+    if (addConditionNode) {
+      const group = addConditionNode.closest(".rule-condition-tree");
+      const kind = addConditionNode.dataset.addConditionNode;
+      const picker = appendRuleConditionNode(group, kind, readonly);
+      if (picker) {
+        picker.focus();
+        openRulePicker(picker);
+      }
+      return;
+    }
+    const removeGroup = event.target.closest("[data-remove-condition-group]");
+    const removeCondition = event.target.closest(".voucher-condition-remove, .rule-condition-remove");
+    if (removeGroup || removeCondition) {
+      const node = (removeGroup || removeCondition).closest(".rule-condition-node");
+      const group = node?.closest(".rule-condition-tree");
+      if (node && group) {
+        node.remove();
+        const updated = collectRuleConditionGroup(group);
+        group.outerHTML = ruleConditionGroupMarkup(updated, readonly, Number(group.dataset.groupDepth || 0));
+      }
+      return;
+    }
     const segmentTab = event.target.closest("[data-segment-tab]");
     if (segmentTab) {
       const picker = segmentTab.closest("[data-rule-segment-picker]");
@@ -3171,7 +3276,7 @@ function initRuleForm(payload = {}) {
       const picker = segmentOption.closest("[data-rule-segment-picker]");
       const row = segmentOption.closest(".rule-condition-row");
       const segmentId = segmentOption.dataset.segmentOption;
-      const duplicateSegment = [...(row?.parentElement?.querySelectorAll(":scope > .rule-condition-row") || [])].some(other => other !== row && other.dataset.ruleType === "81");
+      const duplicateSegment = [...rows.querySelectorAll(".rule-condition-row")].some(other => other !== row && other.dataset.ruleType === "81");
       if (duplicateSegment) {
         toast("Use one Segment check and select the segment in it.", "error");
         return;
@@ -3226,6 +3331,7 @@ function initRuleForm(payload = {}) {
       row.dataset.ruleField = option.backendField || type;
       row.dataset.ruleSubtype = option.subtype || "";
       row.querySelector(".rule-condition-search").value = option.label;
+      row.querySelector(".rule-condition-search").setAttribute("value", option.label);
       row.querySelector(".rule-condition-search").setAttribute("aria-expanded", "false");
       row.querySelector(".rule-type-picker").classList.add("has-selection");
       row.querySelector(".voucher-condition-remove").hidden = readonly;
@@ -3357,41 +3463,15 @@ function initRuleForm(payload = {}) {
     event.preventDefault();
     const seenConditions = new Set();
     let duplicateCondition = false;
-    for (const row of rows.querySelectorAll(":scope > .rule-condition-row")) {
+    for (const row of rows.querySelectorAll(".rule-condition-row")) {
       const type = row.dataset.ruleType;
       if (!type) continue;
       if (seenConditions.has(type)) duplicateCondition = true;
       seenConditions.add(type);
     }
     if (duplicateCondition) { toast("Remove repeated checks before saving.", "error"); return; }
-    const conditions = [...rows.querySelectorAll(":scope > .rule-condition-row")].map(row => {
-      const field = row.dataset.ruleField || row.dataset.ruleType || "";
-      const option = ruleConditionOptions.find(item => item.value === row.dataset.ruleType);
-      if (option?.operators) {
-        const operator = row.querySelector(".voucher-condition-operator .voucher-single-select-control > span")?.textContent || "";
-        const selectedValue = row.querySelector(".voucher-condition-value .voucher-single-select-control > span")?.textContent || "";
-        const value = selectedValue === "Select value" ? "" : selectedValue || row.querySelector(".rule-simple-value-input")?.value.trim() || "";
-        const values = option.multiple ? JSON.parse(row.dataset.selectedValues || "[]") : undefined;
-        return { field, ...(row.dataset.ruleSubtype ? { subRule: row.dataset.ruleSubtype } : {}), operator, ...(option.multiple ? { values } : { value }) };
-      }
-      if (field === "100") return { field, ...(row.dataset.ruleSubtype ? { subRule: row.dataset.ruleSubtype } : {}), filter: { ...collectRuleFilterGroup(row.querySelector(".rule-filter-group")), errorMessage: row.querySelector("[data-filter-error]").value.trim() } };
-      if (field === "103") return { field, ...(row.dataset.ruleSubtype ? { subRule: row.dataset.ruleSubtype } : {}), counters: [...row.querySelectorAll("[data-counter-row]")].map(collectDynamicCounter) };
-      if (["95", "81", "10", "86", "109"].includes(field)) return { field, config: collectSimpleRuleConfig(row) };
-      return { field };
-    });
-    const valid = conditions.length && conditions.every(condition => {
-      if (!condition.field) return false;
-      const row = [...rows.querySelectorAll(":scope > .rule-condition-row")].find(item => item.dataset.ruleField === condition.field && item.dataset.ruleSubtype === (condition.subRule || ""));
-      const option = ruleConditionOptions.find(item => item.value === row?.dataset.ruleType);
-      if (option?.operators) return Boolean(condition.operator && (option.multiple ? condition.values?.length : condition.value));
-      if (condition.field === "100") return ruleFilterIsComplete(condition.filter);
-      if (condition.field === "103") return condition.counters.length && condition.counters.every(counter => counter.type && counter.limit && (!/PERIOD/.test(counter.type) || (counter.periodLength && counter.periodUnit)) && (!(counter.type.includes("_BY_KEY") || counter.type.includes("_BY_MULTIPLE_KEY")) || counter.keys?.length));
-      if (condition.field === "95") return Boolean(condition.config.riskControl && condition.config.userTypes?.length && condition.config.userType);
-      if (condition.field === "81") return Boolean(condition.config.segmentId);
-      if (["10", "86"].includes(condition.field)) return Boolean(condition.config.code && condition.config.counter);
-      if (condition.field === "109") return Boolean(condition.config.fieldId && condition.config.operator && condition.config.value);
-      return false;
-    });
+    const conditions = collectRuleConditionGroup(rows.querySelector(":scope > .rule-condition-tree"));
+    const valid = ruleConditionTreeIsComplete(conditions);
     if (!valid) { toast("Complete the rule settings.", "error"); return; }
     const name = document.getElementById("ruleName").value.trim();
     if (!name) return;

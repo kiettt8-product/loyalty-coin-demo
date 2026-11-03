@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-      <link rel="stylesheet" href="styles.css?v=rule-field-catalog-24">
+      <link rel="stylesheet" href="styles.css?v=rule-field-catalog-25">
 </head>
 <body>
   <header class="topbar">
@@ -803,7 +803,7 @@
           <div class="rule-config-content rule-field-details-grid">
             <label class="rule-config-field"><span>Rule name <b>*</b></span><input id="ruleFieldName" required maxlength="80" placeholder="For example: User status"><small>This name appears in the rule condition menu.</small></label>
             <div class="rule-config-field"><span>Category <b>*</b></span><div class="rule-field-category-input"><select id="ruleFieldCategory" required></select><button type="button" class="text-action" id="ruleFieldAddCategory">+ Add category</button></div><small>Groups this check with related checks in the menu.</small></div>
-            <fieldset class="rule-field-surfaces"><legend>Available in <b>*</b></legend><small>Choose where people can use this check.</small><div class="rule-field-surface-options"><label><input id="ruleFieldVoucher" type="checkbox"> Voucher &gt; Advance Rule</label><label><input id="ruleFieldExternal" type="checkbox"> Rule Engine</label></div><div class="rule-field-engine-usage" id="ruleFieldEngineUsage"><span>In Dynamic rules</span><div><label><input id="ruleFieldUseFilter" type="checkbox" checked> Filter conditions</label><label><input id="ruleFieldUseCounter" type="checkbox"> Count by field</label></div><small>Choose where this field can be used inside Dynamic Filter and Dynamic Counter.</small></div></fieldset>
+            <fieldset class="rule-field-surfaces"><legend>Available in <b>*</b></legend><small>Choose where people can use this check.</small><div class="rule-field-surface-options"><label><input id="ruleFieldVoucher" type="checkbox"> Voucher &gt; Advance Rule</label><label><input id="ruleFieldExternal" type="checkbox"> Rule Engine</label></div></fieldset>
           </div>
         </section>
         <section class="other-section rule-config-card">
@@ -844,9 +844,9 @@
         <section class="other-section rule-config-card">
           <h1>Rule conditions</h1>
           <div class="rule-config-content">
-            <p class="rule-condition-heading">Add conditions or checks, then connect them with AND or OR. Use a condition group when checks need separate logic.</p>
+            <p class="rule-condition-heading">Add checks and choose AND (all must pass) or OR (any can pass). Use a group to set up separate logic.</p>
             <div id="ruleConditionRows" class="rule-condition-rows"></div>
-            <button type="button" class="asset-btn secondary" id="ruleAddCondition">Add rule condition</button>
+            <div class="rule-condition-actions"><button type="button" class="asset-btn secondary" id="ruleAddCondition">+ Add condition</button><button type="button" class="asset-btn secondary" id="ruleAddConditionGroup">+ Add condition group</button></div>
           </div>
         </section>
         <div class="rule-form-actions"><button type="button" class="asset-btn secondary" id="ruleCancel">Cancel</button><button type="submit" class="asset-btn primary">Save rule</button></div>
@@ -854,6 +854,6 @@
     </div>
   </template>
 
-      <script src="app.js?v=rule-field-catalog-24"></script>
+      <script src="app.js?v=rule-field-catalog-29"></script>
 </body>
 </html>

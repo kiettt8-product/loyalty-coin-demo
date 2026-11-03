@@ -1550,14 +1550,14 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 /* Keep simple Rule Engine checks on one line at normal CRM widths. */
 @media (min-width: 601px) {
   .rule-condition-row:not(.is-dynamic):not(.is-segment-check):not(.is-risk-check) {
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, .8fr) minmax(0, 1.35fr) 32px;
+    grid-template-columns: minmax(150px, 1.05fr) minmax(96px, .8fr) minmax(130px, 1.35fr) 32px;
     align-items: end;
   }
   .rule-condition-row:not(.is-dynamic):not(.is-segment-check):not(.is-risk-check) .rule-type-picker { grid-column: 1; grid-row: 1; }
   .rule-condition-row:not(.is-dynamic):not(.is-segment-check):not(.is-risk-check) .voucher-condition-operator { grid-column: 2; grid-row: 1; }
   .rule-condition-row:not(.is-dynamic):not(.is-segment-check):not(.is-risk-check) .voucher-condition-value { grid-column: 3; grid-row: 1; }
   .rule-condition-row:not(.is-dynamic):not(.is-segment-check):not(.is-risk-check) > .rule-condition-remove { grid-column: 4; grid-row: 1; }
-  .rule-condition-row.is-risk-check { grid-template-columns: minmax(0, 1.05fr) minmax(0, .8fr) minmax(0, 1.35fr) 32px; align-items: end; }
+  .rule-condition-row.is-risk-check { grid-template-columns: minmax(150px, 1.05fr) minmax(96px, .8fr) minmax(130px, 1.35fr) 32px; align-items: end; }
   .rule-condition-row.is-risk-check .rule-type-picker { grid-column: 1; grid-row: 1; }
   .rule-condition-row.is-risk-check .voucher-condition-operator { grid-column: 2; grid-row: 1; }
   .rule-condition-row.is-risk-check .voucher-condition-value { grid-column: 3; grid-row: 1; }
@@ -1565,6 +1565,21 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 }
 
 @media (min-width: 601px) and (max-width: 900px) {
+  .rule-condition-row:not(.is-dynamic):not(.is-segment-check):not(.is-risk-check) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px;
+    align-items: end;
+  }
+  .rule-condition-row:not(.is-dynamic):not(.is-segment-check):not(.is-risk-check) .rule-type-picker { grid-column: 1 / 3; grid-row: 1; }
+  .rule-condition-row:not(.is-dynamic):not(.is-segment-check):not(.is-risk-check) .voucher-condition-operator { grid-column: 1; grid-row: 2; }
+  .rule-condition-row:not(.is-dynamic):not(.is-segment-check):not(.is-risk-check) .voucher-condition-value { grid-column: 2; grid-row: 2; }
+  .rule-condition-row:not(.is-dynamic):not(.is-segment-check):not(.is-risk-check) > .rule-condition-remove { grid-column: 3; grid-row: 1; }
+  .rule-condition-row.is-risk-check {
+    grid-template-columns: minmax(0, 1fr) 32px;
+    align-items: start;
+  }
+  .rule-condition-row.is-risk-check .rule-type-picker { grid-column: 1; grid-row: 1; }
+  .rule-condition-row.is-risk-check .rule-configuration { grid-column: 1; grid-row: 2; }
+  .rule-condition-row.is-risk-check > .rule-condition-remove { grid-column: 2; grid-row: 1; }
   .rule-condition-row.is-segment-check:has(.rule-compact-config) {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px;
     align-items: end;
@@ -1583,4 +1598,27 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
   .rule-condition-row.is-risk-check .voucher-condition-operator,
   .rule-condition-row.is-risk-check .voucher-condition-value { grid-column: 1 / -1; grid-row: auto; }
   .rule-condition-row.is-risk-check .voucher-condition-remove { grid-column: 2; grid-row: 1; }
+}
+
+/* Rule Engine checks use the same between-condition logic as Segment. */
+.rule-condition-rows { display: block; }
+.rule-condition-tree { display: grid; gap: 12px; min-width: 0; }
+.rule-condition-nodes { display: grid; gap: 0; min-width: 0; }
+.rule-condition-node { display: grid; gap: 8px; min-width: 0; }
+.rule-condition-node + .rule-condition-node { margin-top: 8px; }
+.rule-condition-node-body { min-width: 0; }
+.rule-condition-connector { display: flex; min-height: 34px; align-items: center; gap: 9px; padding-left: 16px; }
+.rule-condition-connector-line { width: 2px; height: 16px; border-radius: 2px; background: #d9e0e7; }
+.rule-condition-connector select { width: 92px; height: 32px; padding: 0 10px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; color: #17365d; font-size: 13px; }
+.rule-condition-connector select:focus { border-color: #1677ff; outline: 0; box-shadow: 0 0 0 2px rgba(22,119,255,.12); }
+.rule-condition-group-card { display: grid; gap: 12px; min-width: 0; padding: 14px; border: 1px solid #d9e0e7; border-left: 3px solid #8eb3ff; border-radius: 4px; background: #fafbfc; }
+.rule-condition-group-heading { display: flex; align-items: center; justify-content: space-between; color: #17365d; font-size: 14px; }
+.rule-condition-group-heading > div { display: grid; gap: 3px; }
+.rule-condition-group-heading small { color: #66798b; font-size: 12px; font-weight: 400; }
+.rule-condition-delete { width: 28px; height: 28px; display: inline-grid; place-items: center; border: 0; background: transparent; cursor: pointer; }
+.rule-condition-delete img { width: 16px; height: 16px; }
+.rule-condition-group-actions, .rule-condition-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 600px) {
+  .rule-condition-group-actions, .rule-condition-actions { align-items: stretch; flex-direction: column; }
+  .rule-condition-group-actions .asset-btn, .rule-condition-actions .asset-btn { justify-content: center; }
 }
