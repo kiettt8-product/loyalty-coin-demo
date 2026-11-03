@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-      <link rel="stylesheet" href="styles.css?v=rule-field-catalog-27">
+      <link rel="stylesheet" href="styles.css?v=rule-field-catalog-30">
 </head>
 <body>
   <header class="topbar">
@@ -834,11 +834,12 @@
   <template id="ruleFormTemplate">
     <div class="screen asset-screen rule-engine-screen rule-config-screen">
       <form id="ruleConfigForm" class="rule-segment-form">
-          <label class="rule-config-field"><span>Rule name <b>*</b></span><input id="ruleName" required maxlength="120" placeholder="Enter rule name"></label>
-          <label class="rule-config-field"><span>Description</span><textarea id="ruleDescription" rows="3" placeholder="Add a short description"></textarea></label>
+          <div class="rule-metadata-grid">
+            <label class="rule-config-field"><span>Rule name <b>*</b></span><input id="ruleName" required maxlength="120" placeholder="Enter rule name"></label>
+            <label class="rule-config-field"><span>Description <small>(optional)</small></span><input id="ruleDescription" maxlength="255" placeholder="Add a short description"></label>
+          </div>
           <section class="rule-condition-section">
             <div class="rule-segment-section-label"><b>*</b> Condition</div>
-            <div class="rule-condition-info"><span class="rule-condition-info-icon" aria-hidden="true">i</span><span>Add checks and connect them with AND (all must pass) or OR (any can pass). Use a group to set up separate logic.</span></div>
             <div id="ruleConditionRows" class="rule-condition-rows"></div>
           </section>
           <div class="rule-segment-footer">
