@@ -2519,8 +2519,8 @@ const builtInRuleConditionOptions = [
   { group: "Account & Segment", value: "104", label: "Check MMF account status", operators: ["Is"], values: ["Has account", "Has no account"] },
   { group: "Account & Segment", value: "81", label: "Segment check" },
   { group: "Account & Segment", value: "95", label: "Risk check" },
-  { group: "Dynamic rules", value: "100", backendField: "100", label: "Dynamic filter", legacy: true },
-  { group: "Dynamic rules", value: "103", backendField: "103", label: "Dynamic counter", legacy: true },
+  { group: "Dynamic rules", value: "100", backendField: "100", label: "Dynamic filter" },
+  { group: "Dynamic rules", value: "103", backendField: "103", label: "Dynamic counter" },
   { group: "Usage counters", value: "10", label: "User counter", legacy: true },
   { group: "Usage counters", value: "86", label: "User counter per period", legacy: true }
 ];
@@ -2706,8 +2706,10 @@ function ruleFilterGroupMarkup(group = {}, readonly = false, depth = 0) {
     ? `<div class="rule-filter-nested-group">${ruleFilterGroupMarkup(item.group || {}, readonly, depth + 1)}${readonly ? "" : '<button type="button" class="rule-item-remove" aria-label="Remove group">Remove group</button>'}</div>`
     : item.kind === "method" ? ruleFilterMethodMarkup(item, readonly) : ruleFilterConditionMarkup(item, readonly);
   return `<section class="rule-filter-group" data-filter-group>
-    <input type="hidden" class="rule-filter-match" value="${escapeHtml(group.match || "all")}">
-    ${depth ? `<div class="rule-filter-group-head"><span class="rule-depth-label">Extra conditions</span></div>` : ""}
+    <div class="rule-filter-group-head">
+      <strong>${depth ? "Condition group" : "Conditions"}</strong>
+      <label class="rule-filter-match-control"><span>Match</span><select class="rule-filter-match" aria-label="Match conditions" ${readonly ? "disabled" : ""}><option value="all" ${!group.match || group.match === "all" ? "selected" : ""}>AND · all conditions</option><option value="any" ${group.match === "any" ? "selected" : ""}>OR · any condition</option></select></label>
+    </div>
     <div class="rule-filter-items">${items.map(itemMarkup).join("")}</div>
     ${readonly ? "" : `<div class="rule-filter-actions"><button type="button" class="asset-btn secondary" data-add-filter="condition">+ Add field condition</button>${depth === 0 ? '<button type="button" class="asset-btn secondary" data-add-filter="method">+ Add method</button>' : ""}<button type="button" class="asset-btn secondary" data-add-filter="group">+ Add group</button></div>`}
   </section>`;

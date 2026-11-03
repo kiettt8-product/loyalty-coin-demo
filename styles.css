@@ -1358,9 +1358,11 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-type-badge { padding: 3px 8px; border-radius: 3px; background: #eef3f8; color: #52677c; font-size: 12px; white-space: nowrap; }
 .rule-filter-group { display: grid; gap: 12px; padding: 14px; border: 1px solid #d9e0e7; border-radius: 4px; background: #fff; }
 .rule-filter-group > .rule-filter-actions { grid-column: 1; }
-.rule-filter-group-head { display: flex; align-items: end; gap: 12px; }
+.rule-filter-group-head { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
 .rule-filter-group-head label, .rule-filter-item label, .rule-counter-grid > label { display: grid; min-width: 0; gap: 6px; color: #52677c; font-size: 12px; }
-.rule-filter-group-head label { width: min(100%, 320px); }
+.rule-filter-group-head > strong { padding-bottom: 8px; color: #17365d; font-size: 14px; font-weight: 600; }
+.rule-filter-group-head .rule-filter-match-control { width: min(100%, 280px); }
+.rule-filter-match-control select { border-color: #d9d9d9; border-radius: 4px; background: #fff; color: #17365d; font-size: 13px; }
 .rule-filter-items { display: grid; gap: 10px; }
 .rule-counter-rules { grid-column: 1 / -1; display: grid; gap: 12px; padding: 12px; border: 1px solid #d9e0e7; border-radius: 4px; background: #fff; }
 .rule-counter-rules-heading { display: grid; gap: 3px; color: #17365d; font-size: 14px; }
@@ -1442,6 +1444,8 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
   .rule-counter-keys { grid-column: auto; }
   .rule-filter-actions { align-items: stretch; flex-direction: column; }
   .rule-filter-actions .asset-btn { justify-content: center; }
+  .rule-filter-group-head { align-items: flex-start; flex-direction: column; }
+  .rule-filter-group-head .rule-filter-match-control { width: 100%; }
 }
 
 @media (max-width: 900px) {
