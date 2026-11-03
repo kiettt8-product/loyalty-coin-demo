@@ -2168,7 +2168,14 @@ function initRuleList() {
 function ruleFieldSurfaceLabel(check) {
   const labels = [];
   if (check.surfaces.includes("voucher")) labels.push("Voucher Advance Rule");
-  if (check.surfaces.includes("ruleEngine")) labels.push("Rule Engine");
+  if (check.surfaces.includes("ruleEngine")) {
+    labels.push("Rule Engine");
+    if (!check.builtin) {
+      const uses = check.ruleEngineUses || { filter: true, counterKey: true };
+      if (uses.filter) labels.push("Filter field");
+      if (uses.counterKey) labels.push("Counter key");
+    }
+  }
   return labels.length ? `<span class="rule-field-surface-list">${labels.map(label => `<span class="rule-field-surface-tag">${label}</span>`).join("")}</span>` : '<span class="rule-field-surface-empty">Not available</span>';
 }
 
@@ -2389,6 +2396,13 @@ function initRuleFieldForm(payload = {}) {
   valuesInput.addEventListener("input", syncValuesHelp);
   document.getElementById("ruleFieldVoucher").checked = check?.surfaces.includes("voucher") || false;
   document.getElementById("ruleFieldExternal").checked = check?.surfaces.includes("ruleEngine") || false;
+  const engineUsage = document.getElementById("ruleFieldEngineUsage");
+  const savedEngineUsage = check?.ruleEngineUses || (check ? { filter: true, counterKey: true } : { filter: true, counterKey: false });
+  document.getElementById("ruleFieldUseFilter").checked = Boolean(savedEngineUsage.filter);
+  document.getElementById("ruleFieldUseCounter").checked = Boolean(savedEngineUsage.counterKey);
+  const syncEngineUsageVisibility = () => { engineUsage.hidden = !document.getElementById("ruleFieldExternal").checked; };
+  syncEngineUsageVisibility();
+  document.getElementById("ruleFieldExternal").onchange = syncEngineUsageVisibility;
   document.getElementById("ruleFieldError").hidden = true;
   document.getElementById("ruleSampleTitle").innerHTML = check ? "Sample JSON response" : "Sample JSON response <b>*</b>";
   populateRuleFieldCategories(check?.category || "");
@@ -2486,6 +2500,10 @@ function initRuleFieldForm(payload = {}) {
     const surfaces = [];
     if (document.getElementById("ruleFieldVoucher").checked) surfaces.push("voucher");
     if (document.getElementById("ruleFieldExternal").checked) surfaces.push("ruleEngine");
+    const ruleEngineUses = {
+      filter: document.getElementById("ruleFieldUseFilter").checked,
+      counterKey: document.getElementById("ruleFieldUseCounter").checked
+    };
     const editId = form.dataset.editId;
     const current = ruleFieldCatalog.checks.find(item => item.id === editId);
     const error = document.getElementById("ruleFieldError");
@@ -2498,7 +2516,7 @@ function initRuleFieldForm(payload = {}) {
       return;
     }
     if (!await confirmRuleAction({ title: current ? "Save check changes?" : "Save this check?", message: current ? `Save the changes to “${name}”?` : `Add “${name}” to the selected category and rule menus?`, confirmLabel: current ? "Save changes" : "Save check" })) return;
-    const nextCheck = { id: current?.id || `field-${Date.now()}`, name, category, responseField, dataType, jsonStringRoots, values, surfaces };
+    const nextCheck = { id: current?.id || `field-${Date.now()}`, name, category, responseField, dataType, jsonStringRoots, values, surfaces, ruleEngineUses };
     if (current) Object.assign(current, nextCheck);
     else ruleFieldCatalog.checks.push(nextCheck);
     saveRuleFieldCatalog();
@@ -2563,19 +2581,24 @@ const ruleSegments = [
 ];
 const ruleJmesKeys = [{ value: "requestInfo.embeddedData.columninfo.merchantInfo.providedList", label: "Merchant list", dataType: "ARRAY" }];
 
-function customRuleEngineFields() {
-  return ruleFieldCatalog.checks.filter(check => check.surfaces.includes("ruleEngine") && check.responseField).map(check => ({
+function customRuleEngineFields(usage = "") {
+  return ruleFieldCatalog.checks.filter(check => {
+    if (!check.surfaces.includes("ruleEngine") || !check.responseField) return false;
+    if (!usage) return true;
+    const configured = check.ruleEngineUses;
+    return configured ? Boolean(configured[usage]) : true;
+  }).map(check => ({
     value: check.responseField, label: check.name, fieldId: check.id, category: check.category || "Other fields", dataType: check.dataType || "string", values: check.values || []
   }));
 }
 
 function dynamicFilterFieldOptions() {
-  const fields = [...ruleDynamicFilterConditionKeys.map(field => ({ ...field, category: "Request fields" })), ...customRuleEngineFields()];
+  const fields = [...ruleDynamicFilterConditionKeys.map(field => ({ ...field, category: "Request fields" })), ...customRuleEngineFields("filter")];
   return fields.filter((field, index) => fields.findIndex(item => item.value === field.value) === index);
 }
 
 function dynamicCounterFieldOptions() {
-  const fields = [...ruleFilterKeys.map(field => ({ ...field, category: "Request fields" })), ...customRuleEngineFields()];
+  const fields = [...ruleFilterKeys.map(field => ({ ...field, category: "Request fields" })), ...customRuleEngineFields("counterKey")];
   return fields.filter((field, index) => fields.findIndex(item => item.value === field.value) === index);
 }
 
@@ -2753,18 +2776,20 @@ function ruleFilterMethodMarkup(item = {}, readonly = false) {
   </div>`;
 }
 
+let ruleFilterGroupSequence = 0;
 function ruleFilterGroupMarkup(group = {}, readonly = false, depth = 0) {
+  const groupId = `rule-filter-match-${++ruleFilterGroupSequence}`;
   const items = group.items?.length ? group.items : depth === 0 ? [{ kind: "condition" }] : [];
   const itemMarkup = item => item.kind === "group"
     ? `<div class="rule-filter-nested-group">${ruleFilterGroupMarkup(item.group || {}, readonly, depth + 1)}${readonly ? "" : '<button type="button" class="rule-item-remove" aria-label="Remove group">Remove group</button>'}</div>`
     : item.kind === "method" ? ruleFilterMethodMarkup(item, readonly) : ruleFilterConditionMarkup(item, readonly);
   return `<section class="rule-filter-group" data-filter-group>
     <div class="rule-filter-group-head">
-      <strong>${depth ? "Condition group" : "Conditions"}</strong>
-      <label class="rule-filter-match-control"><span>Match</span><select class="rule-filter-match" aria-label="Match conditions" ${readonly ? "disabled" : ""}><option value="all" ${!group.match || group.match === "all" ? "selected" : ""}>AND · all conditions</option><option value="any" ${group.match === "any" ? "selected" : ""}>OR · any condition</option></select></label>
+      <div class="rule-filter-group-title"><strong>${depth ? "Condition group" : "Conditions"}</strong><small>Choose how these checks work together.</small></div>
+      <fieldset class="rule-filter-match-control" aria-label="How conditions are matched" ${readonly ? "disabled" : ""}><legend>Match</legend><div class="rule-filter-match-options"><label><input class="rule-filter-match" type="radio" name="${groupId}" value="all" ${!group.match || group.match === "all" ? "checked" : ""}><span>All conditions<small>Every check must pass</small></span></label><label><input class="rule-filter-match" type="radio" name="${groupId}" value="any" ${group.match === "any" ? "checked" : ""}><span>Any condition<small>At least one check must pass</small></span></label></div></fieldset>
     </div>
     <div class="rule-filter-items">${items.map(itemMarkup).join("")}</div>
-    ${readonly ? "" : `<div class="rule-filter-actions"><button type="button" class="asset-btn secondary" data-add-filter="condition">+ Add field condition</button>${depth === 0 ? '<button type="button" class="asset-btn secondary" data-add-filter="method">+ Add method</button>' : ""}<button type="button" class="asset-btn secondary" data-add-filter="group">+ Add group</button></div>`}
+    ${readonly ? "" : `<div class="rule-filter-actions"><button type="button" class="asset-btn secondary" data-add-filter="condition">+ Add condition</button>${depth === 0 ? '<button type="button" class="asset-btn secondary" data-add-filter="method">+ Add check</button>' : ""}<button type="button" class="asset-btn secondary" data-add-filter="group">+ Add condition group</button></div>`}
   </section>`;
 }
 
@@ -2776,7 +2801,7 @@ function ruleKeyMultiSelectMarkup(selected = [], readonly = false, ariaLabel = "
 }
 
 function dynamicFilterMarkup(filter = {}, readonly = false, title = "Dynamic filter") {
-  return `<div class="rule-builder rule-dynamic-filter-builder"><p class="rule-field-help">Add field checks, methods, or counters. Choose AND/OR for each group. Fields set up for Rule Engine appear in the field list.</p><label class="rule-config-field"><span>Message when checks fail</span><input data-filter-error value="${escapeHtml(filter.errorMessage || "")}" placeholder="Enter a message" ${readonly ? "disabled" : ""}></label>${ruleFilterGroupMarkup(filter, readonly)}</div>`;
+  return `<div class="rule-builder rule-dynamic-filter-builder"><p class="rule-field-help">Add conditions or checks. Group related items, then choose whether all or any must pass. Field options follow the categories and fields set up for Rule Engine.</p><label class="rule-config-field"><span>Message when checks fail</span><input data-filter-error value="${escapeHtml(filter.errorMessage || "")}" placeholder="Enter a message" ${readonly ? "disabled" : ""}></label>${ruleFilterGroupMarkup(filter, readonly)}</div>`;
 }
 
 function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
@@ -2797,7 +2822,7 @@ function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
 
 function dynamicCounterMarkup(counters = [], readonly = false, title = "Dynamic counter") {
   const rows = counters.length ? counters : [{}];
-  return `<div class="rule-builder rule-dynamic-counter-builder"><p class="rule-field-help">Choose how to count, the maximum count, and any time period. Fields set up for Rule Engine appear in “Fields to count”.</p><div class="rule-counter-list">${rows.map((counter, index) => dynamicCounterRowMarkup(counter, readonly, index)).join("")}</div>${readonly ? "" : '<button type="button" class="asset-btn secondary" data-add-counter>+ Add counter</button>'}</div>`;
+  return `<div class="rule-builder rule-dynamic-counter-builder"><p class="rule-field-help">Set a limit and when it resets. Fields marked “Count by field” in Field Setup are available here.</p><div class="rule-counter-list">${rows.map((counter, index) => dynamicCounterRowMarkup(counter, readonly, index)).join("")}</div>${readonly ? "" : '<button type="button" class="asset-btn secondary" data-add-counter>+ Add counter</button>'}</div>`;
 }
 
 function renderRuleTypeFields(field, config = {}, readonly = false, typeLabel = "") {
@@ -2906,7 +2931,7 @@ function renderRuleSimpleMultiValue(row, option) {
 
 function collectRuleFilterGroup(group) {
   return {
-    match: group.querySelector(".rule-filter-match").value,
+    match: group.querySelector(".rule-filter-match:checked")?.value || "all",
     items: [...group.querySelectorAll(":scope > .rule-filter-items > .rule-filter-item, :scope > .rule-filter-items > .rule-filter-nested-group")].map(item => {
       if (item.matches(".rule-filter-nested-group")) return { kind: "group", group: collectRuleFilterGroup(item.querySelector(":scope > .rule-filter-group")) };
       if (item.dataset.filterKind === "condition") {
@@ -2991,6 +3016,7 @@ function ruleFilterIsComplete(group) {
 }
 
 function initRuleForm(payload = {}) {
+  ruleFilterGroupSequence = 0;
   const form = document.getElementById("ruleConfigForm");
   const rule = ruleEngineRules.find(item => item.id === payload.id);
   const readonly = payload.mode === "view";

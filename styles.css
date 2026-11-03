@@ -1466,6 +1466,27 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-multi-category { display: grid; gap: 2px; }
 .rule-multi-category + .rule-multi-category { padding-top: 6px; border-top: 1px solid #eef1f4; }
 .rule-multi-category > strong { padding: 6px 8px 3px; color: #8594a3; font-size: 11px; font-weight: 500; }
+.rule-field-engine-usage { display: grid; gap: 8px; margin-top: 12px; padding: 12px; border-top: 1px solid #eef1f4; background: #fafbfc; }
+.rule-field-engine-usage[hidden] { display: none; }
+.rule-field-engine-usage > span { color: #52677c; font-size: 13px; font-weight: 600; }
+.rule-field-engine-usage > div { display: flex; flex-wrap: wrap; gap: 16px; }
+.rule-field-engine-usage label { display: inline-flex; align-items: center; gap: 7px; color: #17365d; font-size: 13px; }
+.rule-field-engine-usage input { accent-color: #1748d1; }
+.rule-field-engine-usage > small { color: #718096; font-size: 12px; }
+.rule-filter-group-head { align-items: flex-start; }
+.rule-filter-group-title { display: grid; gap: 3px; padding-top: 2px; }
+.rule-filter-group-title > strong { color: #17365d; font-size: 14px; font-weight: 600; }
+.rule-filter-group-title > small { color: #718096; font-size: 12px; }
+.rule-filter-group-head .rule-filter-match-control { width: min(100%, 520px); margin: 0; padding: 0; border: 0; }
+.rule-filter-match-control > legend { margin-bottom: 5px; padding: 0; color: #52677c; font-size: 12px; }
+.rule-filter-match-options { display: flex; gap: 8px; }
+.rule-filter-match-options > label { display: flex; flex: 1; align-items: flex-start; gap: 8px; min-width: 0; padding: 8px 10px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; color: #17365d; cursor: pointer; }
+.rule-filter-match-options > label:has(input:checked) { border-color: #1748d1; background: #f4f7ff; box-shadow: 0 0 0 1px #1748d1; }
+.rule-filter-match-options input { margin: 2px 0 0; accent-color: #1748d1; }
+.rule-filter-match-options span { display: grid; gap: 2px; font-size: 13px; font-weight: 600; }
+.rule-filter-match-options small { color: #718096; font-size: 11px; font-weight: 400; }
+.rule-filter-nested-group { padding: 12px; border: 1px solid #d9e0e7; border-left: 3px solid #8eb3ff; border-radius: 4px; background: #fafbfc; }
+.rule-filter-nested-group > .rule-filter-group { padding: 0; border: 0; background: transparent; }
 
 /* Keep compact rule pickers beside their rule type on wide screens. */
 .rule-condition-row.is-segment-check:has(.rule-compact-config) {
