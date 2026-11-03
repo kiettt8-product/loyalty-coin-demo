@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-  <link rel="stylesheet" href="styles.css?v=rule-field-catalog-5">
+  <link rel="stylesheet" href="styles.css?v=rule-field-catalog-7">
 </head>
 <body>
   <header class="topbar">
@@ -780,30 +780,46 @@
     <div class="screen asset-screen rule-engine-screen rule-field-setup-screen">
       <div class="rule-field-setup-toolbar"><button type="button" class="asset-btn secondary" id="ruleAddCategory"><span class="plus-mark" aria-hidden="true"></span>Add category</button><button type="button" class="asset-btn primary" id="ruleAddField"><span class="plus-mark" aria-hidden="true"></span>Add new</button></div>
       <div id="ruleFieldCategories" class="rule-field-categories"></div>
-      <dialog class="rule-field-dialog" id="ruleFieldDialog" aria-labelledby="ruleFieldDialogTitle">
-        <form id="ruleFieldForm" method="dialog">
-          <div class="rule-field-dialog-header"><h2 id="ruleFieldDialogTitle">Add check</h2><button type="button" id="ruleFieldClose" aria-label="Close">×</button></div>
-          <div class="rule-field-dialog-body">
-            <label class="rule-config-field"><span>Check name <b>*</b></span><input id="ruleFieldName" maxlength="80" placeholder="For example: Check user status"></label>
-            <label class="rule-config-field"><span>Category <b>*</b></span><select id="ruleFieldCategory"></select></label>
-            <section class="rule-sample-section" aria-labelledby="ruleSampleTitle">
-              <div class="rule-sample-heading"><div><strong id="ruleSampleTitle">Sample response <b>*</b></strong><small>Paste a sample JSON response. We will find the fields you can use in this check.</small></div><button type="button" class="asset-btn secondary" id="ruleFieldParse">Find fields</button></div>
-              <textarea id="ruleFieldSample" class="rule-sample-input" rows="6" placeholder="Paste JSON response here" spellcheck="false"></textarea>
-              <div class="rule-field-form-error" id="ruleFieldSampleError" hidden></div>
-              <label class="rule-config-field rule-sample-search" id="ruleFieldSearchWrap" hidden><span>Search fields</span><input id="ruleFieldSearch" placeholder="Search by field name or path"></label>
-              <div class="rule-sample-field-list" id="ruleFieldChoices" hidden></div>
-              <div class="rule-sample-selected"><span>Selected field</span><code id="ruleFieldSelectedPath">Choose a field above</code><small id="ruleFieldSelectedType"></small></div>
-              <input type="hidden" id="ruleFieldPath"><input type="hidden" id="ruleFieldType"><input type="hidden" id="ruleFieldJsonRoots">
-            </section>
-            <label class="rule-config-field"><span>Known values <small>(optional)</small></span><input id="ruleFieldValues" placeholder="For example: Active, Inactive"><small>Set values for a multi-select. Leave empty to let the rule creator enter a value.</small></label>
-            <fieldset class="rule-field-surfaces"><legend>Show this check in</legend><label><input id="ruleFieldVoucher" type="checkbox"> Voucher &gt; Advance Rule</label><label><input id="ruleFieldExternal" type="checkbox"> Rule Engine</label></fieldset>
-            <div class="rule-field-form-error" id="ruleFieldError" hidden></div>
-          </div>
-          <div class="rule-field-dialog-footer"><button type="button" class="asset-btn secondary" id="ruleFieldCancel">Cancel</button><button type="submit" class="asset-btn primary">Save check</button></div>
-        </form>
-      </dialog>
       <dialog class="rule-category-dialog" id="ruleCategoryDialog" aria-labelledby="ruleCategoryTitle">
         <form id="ruleCategoryForm" method="dialog"><div class="rule-field-dialog-header"><h2 id="ruleCategoryTitle">Add category</h2><button type="button" id="ruleCategoryClose" aria-label="Close">×</button></div><div class="rule-field-dialog-body"><label class="rule-config-field"><span>Category name <b>*</b></span><input id="ruleCategoryName" maxlength="60" placeholder="Enter category name"></label><div class="rule-field-form-error" id="ruleCategoryError" hidden></div></div><div class="rule-field-dialog-footer"><button type="button" class="asset-btn secondary" id="ruleCategoryCancel">Cancel</button><button type="submit" class="asset-btn primary" id="ruleCategorySave">Save category</button></div></form>
+      </dialog>
+    </div>
+  </template>
+
+  <template id="ruleFieldFormTemplate">
+    <div class="screen asset-screen rule-engine-screen rule-field-form-screen">
+      <button type="button" class="rule-form-back" id="ruleFieldBack">‹ <span>Field Setup</span></button>
+      <div class="rule-field-page-heading"><h1 id="ruleFieldPageTitle">Add check</h1><p>Set up a check that can be used in Voucher Advance Rule or Rule Engine.</p></div>
+      <form id="ruleFieldForm" class="rule-field-form">
+        <section class="other-section rule-config-card">
+          <h1>Check details</h1>
+          <div class="rule-config-content rule-field-details-grid">
+            <label class="rule-config-field"><span>Check name <b>*</b></span><input id="ruleFieldName" required maxlength="80" placeholder="For example: Check user status"><small>This name appears in the rule condition menu.</small></label>
+            <div class="rule-config-field"><span>Category <b>*</b></span><div class="rule-field-category-input"><select id="ruleFieldCategory" required></select><button type="button" class="text-action" id="ruleFieldAddCategory">+ Add category</button></div><small>Groups this check with related checks in the menu.</small></div>
+            <fieldset class="rule-field-surfaces"><legend>Available in <b>*</b></legend><small>Choose where people can use this check.</small><div class="rule-field-surface-options"><label><input id="ruleFieldVoucher" type="checkbox"> Voucher &gt; Advance Rule</label><label><input id="ruleFieldExternal" type="checkbox"> Rule Engine</label></div></fieldset>
+          </div>
+        </section>
+        <section class="other-section rule-config-card">
+          <h1>Response field</h1>
+          <div class="rule-config-content">
+            <section class="rule-sample-section" aria-labelledby="ruleSampleTitle">
+              <div class="rule-sample-heading"><div><strong id="ruleSampleTitle">Sample JSON response <b>*</b></strong><small id="ruleFieldSampleHelp">Paste a sample JSON response to find fields. Sample values are not saved.</small></div><button type="button" class="asset-btn secondary" id="ruleFieldParse">Find fields</button></div>
+              <textarea id="ruleFieldSample" class="rule-sample-input" rows="8" placeholder="Paste JSON response here" spellcheck="false"></textarea>
+              <div class="rule-field-form-error" id="ruleFieldSampleError" hidden></div>
+              <label class="rule-config-field rule-sample-search" id="ruleFieldSearchWrap" hidden><span>Search fields</span><input id="ruleFieldSearch" placeholder="Search by field name"></label>
+              <div class="rule-config-field rule-field-choice-label" id="ruleFieldChoiceWrap" hidden><span>Choose a field <b>*</b></span></div>
+              <div class="rule-sample-field-list" id="ruleFieldChoices" hidden></div>
+              <div class="rule-sample-selected"><span>Selected response field</span><code id="ruleFieldSelectedPath">Choose a field from the list</code><small id="ruleFieldSelectedType"></small></div>
+              <input type="hidden" id="ruleFieldPath"><input type="hidden" id="ruleFieldType"><input type="hidden" id="ruleFieldJsonRoots">
+            </section>
+            <label class="rule-config-field rule-known-values"><span>Selectable values <small>(optional)</small></span><input id="ruleFieldValues" placeholder="For example: Ready, Paused"><small id="ruleFieldValuesHelp">Leave blank to let rule creators enter a value.</small></label>
+          </div>
+        </section>
+        <div class="rule-field-form-error rule-field-page-error" id="ruleFieldError" hidden></div>
+        <div class="rule-form-actions"><button type="button" class="asset-btn secondary" id="ruleFieldCancel">Cancel</button><button type="submit" class="asset-btn primary" id="ruleFieldSave">Save check</button></div>
+      </form>
+      <dialog class="rule-category-dialog" id="ruleFieldCategoryDialog" aria-labelledby="ruleFieldCategoryDialogTitle">
+        <form id="ruleFieldCategoryForm" method="dialog"><div class="rule-field-dialog-header"><h2 id="ruleFieldCategoryDialogTitle">Add category</h2><button type="button" id="ruleFieldCategoryClose" aria-label="Close">×</button></div><div class="rule-field-dialog-body"><label class="rule-config-field"><span>Category name <b>*</b></span><input id="ruleFieldCategoryName" maxlength="60" placeholder="Enter category name"></label><div class="rule-field-form-error" id="ruleFieldCategoryError" hidden></div></div><div class="rule-field-dialog-footer"><button type="button" class="asset-btn secondary" id="ruleFieldCategoryCancel">Cancel</button><button type="submit" class="asset-btn primary" id="ruleFieldCategorySave">Save category</button></div></form>
       </dialog>
     </div>
   </template>
@@ -831,6 +847,6 @@
     </div>
   </template>
 
-  <script src="app.js?v=rule-field-catalog-5"></script>
+  <script src="app.js?v=rule-field-catalog-7"></script>
 </body>
 </html>
