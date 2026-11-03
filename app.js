@@ -2776,19 +2776,16 @@ function ruleFilterMethodMarkup(item = {}, readonly = false) {
   </div>`;
 }
 
-let ruleFilterGroupSequence = 0;
 function ruleFilterGroupMarkup(group = {}, readonly = false, depth = 0) {
-  const groupId = `rule-filter-match-${++ruleFilterGroupSequence}`;
   const items = group.items?.length ? group.items : depth === 0 ? [{ kind: "condition" }] : [];
   const itemMarkup = item => item.kind === "group"
     ? `<div class="rule-filter-nested-group">${ruleFilterGroupMarkup(item.group || {}, readonly, depth + 1)}${readonly ? "" : '<button type="button" class="rule-item-remove" aria-label="Remove group">Remove group</button>'}</div>`
     : item.kind === "method" ? ruleFilterMethodMarkup(item, readonly) : ruleFilterConditionMarkup(item, readonly);
   return `<section class="rule-filter-group" data-filter-group>
     <div class="rule-filter-group-head">
-      <div class="rule-filter-group-title"><strong>${depth ? "Condition group" : "Conditions"}</strong><small>Choose how these checks work together.</small></div>
-      <fieldset class="rule-filter-match-control" aria-label="How conditions are matched" ${readonly ? "disabled" : ""}><legend>Match</legend><div class="rule-filter-match-options"><label><input class="rule-filter-match" type="radio" name="${groupId}" value="all" ${!group.match || group.match === "all" ? "checked" : ""}><span>All conditions<small>Every check must pass</small></span></label><label><input class="rule-filter-match" type="radio" name="${groupId}" value="any" ${group.match === "any" ? "checked" : ""}><span>Any condition<small>At least one check must pass</small></span></label></div></fieldset>
+      <div class="rule-filter-group-title"><strong>${depth ? "Condition group" : "Conditions"}</strong><small>AND requires both checks to pass. OR requires either check to pass.</small></div>
     </div>
-    <div class="rule-filter-items">${items.map(itemMarkup).join("")}</div>
+    <div class="rule-filter-items" data-default-match="${group.match === "any" ? "any" : "all"}" data-filter-depth="${depth}">${items.map((item, index) => `<div class="rule-filter-node" data-filter-node>${index ? `<div class="rule-filter-connector"><span class="rule-filter-connector-line" aria-hidden="true"></span><select data-filter-connective aria-label="Join condition ${index + 1}" ${readonly ? "disabled" : ""}><option value="all" ${(item.connective || group.match || "all") === "all" ? "selected" : ""}>AND</option><option value="any" ${(item.connective || group.match || "all") === "any" ? "selected" : ""}>OR</option></select></div>` : ""}<div class="rule-filter-node-content">${itemMarkup(item)}</div></div>`).join("")}</div>
     ${readonly ? "" : `<div class="rule-filter-actions"><button type="button" class="asset-btn secondary" data-add-filter="condition">+ Add condition</button>${depth === 0 ? '<button type="button" class="asset-btn secondary" data-add-filter="method">+ Add check</button>' : ""}<button type="button" class="asset-btn secondary" data-add-filter="group">+ Add condition group</button></div>`}
   </section>`;
 }
@@ -2801,7 +2798,7 @@ function ruleKeyMultiSelectMarkup(selected = [], readonly = false, ariaLabel = "
 }
 
 function dynamicFilterMarkup(filter = {}, readonly = false, title = "Dynamic filter") {
-  return `<div class="rule-builder rule-dynamic-filter-builder"><p class="rule-field-help">Add conditions or checks. Group related items, then choose whether all or any must pass. Field options follow the categories and fields set up for Rule Engine.</p><label class="rule-config-field"><span>Message when checks fail</span><input data-filter-error value="${escapeHtml(filter.errorMessage || "")}" placeholder="Enter a message" ${readonly ? "disabled" : ""}></label>${ruleFilterGroupMarkup(filter, readonly)}</div>`;
+  return `<div class="rule-builder rule-dynamic-filter-builder"><p class="rule-field-help">Choose fields from the categories and response fields set up in Field Setup.</p><label class="rule-config-field"><span>Message when checks fail</span><input data-filter-error value="${escapeHtml(filter.errorMessage || "")}" placeholder="Enter a message" ${readonly ? "disabled" : ""}></label>${ruleFilterGroupMarkup(filter, readonly)}</div>`;
 }
 
 function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
@@ -2930,20 +2927,21 @@ function renderRuleSimpleMultiValue(row, option) {
 }
 
 function collectRuleFilterGroup(group) {
-  return {
-    match: group.querySelector(".rule-filter-match:checked")?.value || "all",
-    items: [...group.querySelectorAll(":scope > .rule-filter-items > .rule-filter-item, :scope > .rule-filter-items > .rule-filter-nested-group")].map(item => {
-      if (item.matches(".rule-filter-nested-group")) return { kind: "group", group: collectRuleFilterGroup(item.querySelector(":scope > .rule-filter-group")) };
-      if (item.dataset.filterKind === "condition") {
-        const field = item.querySelector(".rule-filter-key").selectedOptions[0];
-        return {
-          kind: "condition",
-          key: field.value,
-          ...(field.dataset.fieldId ? { fieldId: field.dataset.fieldId } : {}),
-          operator: item.querySelector(".rule-filter-operator").value,
-          value: item.querySelector(".rule-filter-value").value.trim()
-        };
-      }
+  const items = [...group.querySelectorAll(":scope > .rule-filter-items > .rule-filter-node")].map((node, index) => {
+    const item = node.querySelector(":scope > .rule-filter-node-content > .rule-filter-item, :scope > .rule-filter-node-content > .rule-filter-nested-group");
+    if (!item) return null;
+    let collected;
+    if (item.matches(".rule-filter-nested-group")) collected = { kind: "group", group: collectRuleFilterGroup(item.querySelector(":scope > .rule-filter-group")) };
+    else if (item.dataset.filterKind === "condition") {
+      const field = item.querySelector(".rule-filter-key").selectedOptions[0];
+      collected = {
+        kind: "condition",
+        key: field.value,
+        ...(field.dataset.fieldId ? { fieldId: field.dataset.fieldId } : {}),
+        operator: item.querySelector(".rule-filter-operator").value,
+        value: item.querySelector(".rule-filter-value").value.trim()
+      };
+    } else {
       const method = item.querySelector(".rule-filter-method-select").value;
       const fields = {};
       item.querySelectorAll("[data-method-field]").forEach(control => {
@@ -2952,8 +2950,14 @@ function collectRuleFilterGroup(group) {
       if (method === "counter") fields.counterRules = collectCounterRules(item);
       const subConditions = item.querySelector(".rule-method-subconditions .rule-filter-group");
       if (subConditions) fields.subConditions = collectRuleFilterGroup(subConditions);
-      return { kind: "method", method, ...fields };
-    })
+      collected = { kind: "method", method, ...fields };
+    }
+    const connective = index ? node.querySelector(":scope > .rule-filter-connector > [data-filter-connective]")?.value : "";
+    return { ...collected, ...(connective ? { connective } : {}) };
+  }).filter(Boolean);
+  return {
+    match: group.querySelector(":scope > .rule-filter-items")?.dataset.defaultMatch || "all",
+    items
   };
 }
 
@@ -3016,7 +3020,6 @@ function ruleFilterIsComplete(group) {
 }
 
 function initRuleForm(payload = {}) {
-  ruleFilterGroupSequence = 0;
   const form = document.getElementById("ruleConfigForm");
   const rule = ruleEngineRules.find(item => item.id === payload.id);
   const readonly = payload.mode === "view";
@@ -3293,9 +3296,12 @@ function initRuleForm(payload = {}) {
       const group = add.closest(".rule-filter-group");
       const kind = add.dataset.addFilter;
       const items = group.querySelector(":scope > .rule-filter-items");
-      if (kind === "condition") items.insertAdjacentHTML("beforeend", ruleFilterConditionMarkup());
-      if (kind === "method") items.insertAdjacentHTML("beforeend", ruleFilterMethodMarkup());
-      if (kind === "group") items.insertAdjacentHTML("beforeend", `<div class="rule-filter-nested-group">${ruleFilterGroupMarkup({}, false, 1)}<button type="button" class="rule-item-remove" aria-label="Remove group">Remove group</button></div>`);
+      const model = collectRuleFilterGroup(group);
+      const connective = model.items.at(-1)?.connective || items.dataset.defaultMatch || "all";
+      const newItem = kind === "condition" ? { kind: "condition" } : kind === "method" ? { kind: "method" } : { kind: "group", group: { items: [] } };
+      if (model.items.length) newItem.connective = connective;
+      model.items.push(newItem);
+      group.outerHTML = ruleFilterGroupMarkup(model, false, Number(items.dataset.filterDepth || 0));
     }
     if (event.target.closest("[data-add-counter]")) event.target.closest(".rule-dynamic-counter-builder").querySelector(".rule-counter-list").insertAdjacentHTML("beforeend", dynamicCounterRowMarkup({}, false, rows.querySelectorAll("[data-counter-row]").length));
     if (event.target.closest("[data-add-counter-rule]")) {
@@ -3312,7 +3318,16 @@ function initRuleForm(payload = {}) {
     }
     if (event.target.closest("[data-remove-counter]")) event.target.closest("[data-counter-row]").remove();
     if (event.target.closest("[data-remove-counter-rule]")) event.target.closest("[data-counter-rule-row]").remove();
-    if (event.target.closest(".rule-item-remove")) event.target.closest(".rule-filter-item, .rule-filter-nested-group")?.remove();
+    if (event.target.closest(".rule-item-remove")) {
+      const filterNode = event.target.closest(".rule-filter-node");
+      if (filterNode) {
+        const group = filterNode.closest(".rule-filter-group");
+        filterNode.remove();
+        const items = group.querySelector(":scope > .rule-filter-items");
+        group.outerHTML = ruleFilterGroupMarkup(collectRuleFilterGroup(group), false, Number(items.dataset.filterDepth || 0));
+      }
+      else event.target.closest(".rule-filter-item, .rule-filter-nested-group")?.remove();
+    }
     if (event.target.closest(".rule-condition-remove, .voucher-condition-remove")) event.target.closest(".rule-condition-row")?.remove();
   };
   if (form.ruleMenuCloseHandler) document.removeEventListener("click", form.ruleMenuCloseHandler);
