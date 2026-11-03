@@ -2572,7 +2572,9 @@ function customRuleEngineFields() {
     category: check.category || "Other fields",
     label: check.name,
     dataType: check.dataType || "string",
-    operators: check.dataType === "number"
+    operators: check.values?.length
+      ? ["In", "Not In"]
+      : check.dataType === "number"
       ? ["Equals", "Not Equals", "Greater Than", "Greater Than Or Equals", "Less Than", "Less Than Or Equals"]
       : ["Equals", "Not Equals"],
     values: check.values?.length ? check.values : check.dataType === "boolean" ? ["true", "false"] : [],
