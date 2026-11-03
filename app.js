@@ -2163,7 +2163,7 @@ function renderRuleFieldSetup() {
     const categoryActions = ruleFieldSystemCategories.includes(category)
       ? '<span class="rule-category-system-note">System category</span>'
       : `<div class="rule-category-actions"><button type="button" class="asset-icon-button" data-edit-category="${escapeHtml(category)}" aria-label="Edit category ${escapeHtml(category)}" title="Edit category"><img src="assets/action-edit.svg" alt=""></button><button type="button" class="asset-icon-button" data-delete-category="${escapeHtml(category)}" aria-label="Delete category ${escapeHtml(category)}" title="Delete category"><img src="assets/action-delete.svg" alt=""></button></div>`;
-    return `<section class="rule-field-category"><h2><span class="rule-field-category-chevron">⌄</span><span class="rule-field-category-name">${escapeHtml(category)}</span><small>${categoryChecks.length} checks</small>${categoryActions}</h2>
+    return `<section class="rule-field-category"><h2><span class="rule-field-category-chevron" aria-hidden="true"></span><span class="rule-field-category-name">${escapeHtml(category)}</span><small>${categoryChecks.length} checks</small>${categoryActions}</h2>
       <div class="rule-field-table-wrap"><table class="asset-table rule-field-table"><thead><tr><th>Check name</th><th>Response field</th><th>Shown in</th><th>Action</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="rule-field-empty">No checks in this category yet.</td></tr>'}</tbody></table></div>
     </section>`;
   }).join("");
