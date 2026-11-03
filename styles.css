@@ -1049,24 +1049,28 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-config-content #ruleAddCondition { justify-self: start; }
 .rule-field-setup-screen { display: grid; gap: 16px; }
 .rule-field-setup-toolbar { display: flex; justify-content: flex-end; gap: 8px; }
-.rule-field-form-screen { display: grid; gap: 12px; }
-.rule-form-back { width: fit-content; display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: transparent; color: var(--primary-link); font-size: 14px; }
+.rule-field-form-screen { display: grid; gap: 10px; }
+.rule-form-back { width: fit-content; display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: transparent; color: var(--primary-link); font-size: 13px; }
 .rule-form-back:hover { text-decoration: underline; }
-.rule-field-page-heading { display: grid; gap: 4px; margin-bottom: 4px; }
-.rule-field-page-heading h1 { margin: 0; color: #001f3e; font-size: 20px; line-height: 28px; font-weight: 600; }
-.rule-field-page-heading p { margin: 0; color: #66798b; font-size: 13px; line-height: 20px; }
+.rule-field-page-heading { display: grid; gap: 2px; margin-bottom: 2px; padding: 4px 0 8px; }
+.rule-field-page-heading h1 { margin: 0; color: #001f3e; font-size: 16px; line-height: 24px; font-weight: 600; }
+.rule-field-page-heading p { margin: 0; color: #66798b; font-size: 12px; line-height: 18px; }
 .rule-field-form { display: grid; gap: 16px; }
 .rule-field-form .rule-config-card { margin: 0; }
-.rule-field-form .rule-config-content { gap: 20px; }
+.rule-field-form .rule-config-card > h1 { min-height: 54px; padding: 0 16px; background: #f6f7fc; color: #44494d; font-size: 16px; font-weight: 400; }
+.rule-field-form .rule-config-content { gap: 16px; padding: 16px; }
+.rule-field-form .rule-config-field { gap: 6px; font-size: 13px; line-height: 18px; }
 .rule-field-details-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .rule-field-category-input { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.rule-field-category-input select { width: 100%; min-width: 0; }
 .rule-field-category-input .text-action { padding: 0 8px; font-size: 13px; white-space: nowrap; }
 .rule-field-surfaces { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: 8px; }
-.rule-field-surfaces legend { color: #001f3e; font-size: 14px; }
+.rule-field-surfaces legend { color: #001f3e; font-size: 13px; }
 .rule-field-surfaces legend b { color: var(--danger); }
 .rule-field-surfaces > small { margin-top: -4px; color: var(--muted); font-size: 12px; }
 .rule-field-surface-options { display: flex; flex-wrap: wrap; gap: 12px 24px; }
 .rule-field-page-error { justify-self: end; }
+.rule-field-form .rule-form-actions { position: sticky; bottom: 0; z-index: 30; justify-content: center; margin: 0 -24px -24px; padding: 12px 24px; border-top: 1px solid #e5e7eb; background: #fff; box-shadow: 0 -2px 6px rgba(0, 0, 0, .06); }
 .rule-field-categories { display: grid; gap: 16px; }
 .rule-field-category { overflow: hidden; border-radius: 4px; background: #fff; }
 .rule-field-category h2 { min-height: 48px; display: flex; align-items: center; gap: 10px; margin: 0; padding: 6px 16px; border-bottom: 1px solid #f0f0f0; background: #f9fafb; color: #001f3e; font-size: 15px; font-weight: 600; }
@@ -1101,7 +1105,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-field-dialog-body { display: grid; gap: 16px; max-height: calc(100vh - 170px); overflow: auto; padding: 20px 24px; }
 .rule-field-dialog-body .rule-config-field { max-width: none; gap: 6px; }
 .rule-field-dialog-body .rule-config-field small { color: #717182; font-size: 12px; line-height: 17px; }
-.rule-sample-section { display: grid; gap: 10px; padding: 14px; border: 1px solid #e5e7eb; border-radius: 4px; background: #fff; }
+.rule-sample-section { display: grid; gap: 10px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 4px; background: #fff; }
 .rule-sample-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .rule-sample-heading > div { display: grid; gap: 4px; }
 .rule-sample-heading strong { color: #001f3e; font-size: 14px; font-weight: 500; }
@@ -1109,7 +1113,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-sample-heading small, .rule-sample-selected > span, .rule-sample-selected small { color: #717182; font-size: 12px; line-height: 17px; }
 .rule-sample-input { width: 100%; min-height: 120px; resize: vertical; padding: 10px 12px; border: 1px solid #d1d5dc; border-radius: 4px; color: #364153; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 18px; }
 .rule-sample-field-list { display: grid; max-height: 320px; overflow: auto; border: 1px solid #e5e7eb; border-radius: 4px; }
-.rule-sample-field-choice { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 44px; padding: 6px 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+.rule-sample-field-choice { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 38px; padding: 5px 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
 .rule-sample-field-choice:last-child { border-bottom: 0; }
 .rule-sample-field-choice:hover { background: #f5f8ff; }
 .rule-sample-field-choice input { width: 14px; height: 14px; accent-color: #0033c9; }
@@ -1130,12 +1134,15 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-field-dialog-body input, .rule-field-dialog-body select { max-width: none; height: 32px; }
 .rule-field-dialog-body textarea { max-width: none; }
 .rule-field-setup-screen [hidden] { display: none !important; }
-@media (max-width: 680px) {
+@media (max-width: 1000px) {
   .rule-field-setup-toolbar { flex-wrap: wrap; }
   .rule-field-form-screen { padding: 12px; }
   .rule-field-details-grid { grid-template-columns: minmax(0, 1fr); }
   .rule-field-surfaces { grid-column: auto; }
+}
+@media (max-width: 680px) {
   .rule-sample-heading { align-items: flex-start; flex-direction: column; }
+  .rule-field-form .rule-form-actions { margin: 0 -12px -12px; padding: 10px 12px; }
   .rule-field-category h2 { gap: 7px; padding: 6px 10px; }
   .rule-field-category h2 small { margin-left: auto; }
   .rule-category-actions, .rule-category-system-note { margin-left: 0; }
