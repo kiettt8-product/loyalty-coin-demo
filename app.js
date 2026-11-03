@@ -2871,7 +2871,7 @@ function ruleConditionGroupMarkup(nodes = [], readonly = false, depth = 0) {
       : ruleConditionRow(item, readonly).outerHTML;
     return `<div class="rule-condition-node" data-condition-node>${connector}<div class="rule-condition-node-body">${body}</div></div>`;
   }).join("");
-  const actions = readonly || depth === 0 ? "" : `<div class="rule-condition-group-actions"><button type="button" class="asset-btn secondary" data-add-condition-node="condition">+ Add condition</button><button type="button" class="asset-btn secondary" data-add-condition-node="group">+ Add condition group</button></div>`;
+  const actions = readonly || depth === 0 ? "" : `<div class="rule-condition-group-actions"><button type="button" class="asset-btn secondary" data-add-condition-node="condition">+ Add condition</button></div>`;
   return `<div class="rule-condition-tree${depth ? " is-nested" : ""}" data-rule-group data-group-depth="${depth}"><div class="rule-condition-nodes">${content}</div>${actions}</div>`;
 }
 
@@ -3070,7 +3070,7 @@ function appendRuleConditionNode(group, kind, readonly = false) {
   let conditions = collectRuleConditionGroup(group);
   if (kind === "group" && conditions.length === 1 && conditions[0].kind === "condition" && !conditions[0].field) conditions = [];
   const connective = conditions.at(-1)?.connective || "all";
-  const node = kind === "group" ? { kind: "group", conditions: [] } : { kind: "condition" };
+  const node = kind === "group" ? { kind: "group", conditions: [{ kind: "condition" }] } : { kind: "condition" };
   if (conditions.length) node.connective = connective;
   conditions.push(node);
   const parent = group.parentElement;
@@ -3079,7 +3079,7 @@ function appendRuleConditionNode(group, kind, readonly = false) {
   group.outerHTML = ruleConditionGroupMarkup(conditions, readonly, depth);
   const updatedGroup = parent.querySelectorAll(":scope > .rule-condition-tree")[groupIndex];
   const lastNode = updatedGroup?.querySelector(":scope > .rule-condition-nodes > .rule-condition-node:last-child");
-  return lastNode?.querySelector(":scope > .rule-condition-node-body > .rule-condition-row .rule-condition-search") || null;
+  return lastNode?.querySelector(".rule-condition-search") || null;
 }
 
 function ruleConditionTreeIsComplete(conditions) {
@@ -3125,7 +3125,11 @@ function initRuleForm(payload = {}) {
     picker?.focus();
     if (picker) openRulePicker(picker);
   };
-  document.getElementById("ruleAddConditionGroup").onclick = () => appendRuleConditionNode(rows.querySelector(":scope > .rule-condition-tree"), "group", readonly);
+  document.getElementById("ruleAddConditionGroup").onclick = () => {
+    const picker = appendRuleConditionNode(rows.querySelector(":scope > .rule-condition-tree"), "group", readonly);
+    picker?.focus();
+    if (picker) openRulePicker(picker);
+  };
   const closeRulePickers = (exceptPicker = null) => {
     rows.querySelectorAll(".rule-condition-menu").forEach(menu => {
       const picker = menu.closest(".rule-type-picker");
