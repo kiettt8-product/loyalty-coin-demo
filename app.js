@@ -48,10 +48,10 @@ const state = {
 };
 
 let ruleEngineRules = [
-  { id: "RE-10001", name: "Monthly user limit", owner: "kiettt8", description: "Limits repeated use for each user in a month.", conditions: [{ field: "103", counters: [{ type: "LIMIT_COUNTER_BY_MULTIPLE_KEY_PERIOD", limit: "2", periodLength: "1", periodUnit: "MONTH", condition: "LESS_THAN_OR_EQUALS", code: "", errorCode: "0", keys: ["requestInfo.userId"] }] }] },
-  { id: "RE-10002", name: "System risk check", owner: "nghiatn", description: "Checks a user with the selected CRM risk control.", conditions: [{ field: "95", config: { riskControl: "Đánh giá rủi ro toàn hệ thống", userType: "Malicious" } }] },
-  { id: "RE-10003", name: "Segment membership check", owner: "linhnt22", description: "Checks whether the user matches a selected segment.", conditions: [{ field: "100", filter: { match: "all", items: [{ kind: "method", method: "checkSegment", segmentId: "508" }] } }] },
-  { id: "RE-10004", name: "Daily usage limit", owner: "kiettt8", description: "Limits repeated use for each user per day.", conditions: [{ field: "100", filter: { match: "all", items: [{ kind: "method", method: "counter", condition: "<= 1", counterType: "COUNTER_RATE_LIMIT", maximum: "1", periodLength: "1", periodUnit: "DAY", key: "requestInfo.userId", deltaValue: "1", countByConstant: true, code: "DAILY_USAGE_LIMIT" }] } }] }
+  { id: "RE-10001", name: "KYC eligibility check", owner: "kiettt8", description: "Checks whether the user has an eligible KYC level.", conditions: [{ field: "109", subRule: "kyc", operator: "IN", values: ["K1", "K2", "K3"] }] },
+  { id: "RE-10002", name: "System risk check", owner: "nghiatn", description: "Checks the user's risk type.", conditions: [{ field: "95", config: { riskControl: "Đánh giá rủi ro toàn hệ thống", userTypes: ["Normal User", "Malicious"] } }] },
+  { id: "RE-10003", name: "Segment membership check", owner: "linhnt22", description: "Checks whether the user belongs to a selected segment.", conditions: [{ field: "81", config: { segmentId: "508" } }] },
+  { id: "RE-10004", name: "MMF account eligibility", owner: "kiettt8", description: "Checks whether the user has an MMF account.", conditions: [{ field: "104", operator: "Is", value: "Has no account" }] }
 ];
 let nextRuleNumber = 10005;
 let activeRuleForm = { mode: "create", id: null };
@@ -2516,7 +2516,7 @@ const builtInRuleConditionOptions = [
   { group: "Check user profile", value: "profile-ekyc", backendField: "109", subtype: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
   { group: "Check user profile", value: "profile-account-level", backendField: "109", subtype: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"] },
   { group: "Check user profile", value: "109", backendField: "109", label: "User profile check", legacy: true },
-  { group: "Account & Segment", value: "104", label: "MMF account status" },
+  { group: "Account & Segment", value: "104", label: "Check MMF account status", operators: ["Is"], values: ["Has account", "Has no account"] },
   { group: "Account & Segment", value: "81", label: "Segment check" },
   { group: "Account & Segment", value: "95", label: "Risk check" },
   { group: "Dynamic rules", value: "100", backendField: "100", label: "Dynamic filter", legacy: true },
@@ -2774,6 +2774,7 @@ function ruleConditionRow(condition = {}, readonly = false) {
   row.dataset.ruleField = selectedOption?.backendField || condition.field || "";
   row.dataset.ruleSubtype = selectedOption?.subtype || condition.subRule || "";
   if (selectedOption && selectedOption.operators) configureRuleSimpleCondition(row, selectedOption, condition, readonly);
+  else if (selectedOption && ["81", "95"].includes(selectedOption.value)) configureRuleSpecialCondition(row, selectedOption, condition, readonly);
   else if (condition.field) {
     row.classList.add("is-dynamic");
     row.querySelector(".voucher-condition-operator").hidden = true;
@@ -2804,6 +2805,35 @@ function configureRuleSimpleCondition(row, option, condition = {}, readonly = fa
     valueHost.innerHTML = voucherSingleSelectMarkup("Select value", option.values, configuredValue, readonly);
   }
   row.querySelector(".rule-configuration").innerHTML = "";
+  row.querySelector(".rule-configuration").hidden = false;
+}
+
+function configureRuleSpecialCondition(row, option, condition = {}, readonly = false) {
+  const config = condition.config || condition;
+  const operator = row.querySelector(".voucher-condition-operator");
+  const value = row.querySelector(".voucher-condition-value");
+  const extra = row.querySelector(".rule-configuration");
+  row.classList.remove("is-dynamic", "is-segment-check", "is-risk-check");
+  extra.hidden = false;
+  operator.hidden = false;
+  value.hidden = false;
+  operator.innerHTML = voucherSingleSelectMarkup("Operator", [], "", true);
+  value.innerHTML = voucherSingleSelectMarkup("Select value", [], "", true);
+  extra.innerHTML = "";
+
+  if (option.value === "81") {
+    row.classList.add("is-segment-check");
+    operator.hidden = true;
+    value.hidden = true;
+    extra.innerHTML = `<label class="rule-config-field rule-inline-condition-field"><span>Segment</span>${ruleSegmentPickerMarkup("config-field", config.segmentId || "", readonly)}</label>`;
+    return;
+  }
+  if (option.value === "95") {
+    row.classList.add("is-risk-check");
+    extra.hidden = true;
+    operator.innerHTML = `<label class="rule-config-field rule-inline-condition-field"><span>Risk control</span><input class="rule-risk-control-value" aria-label="Risk control" value="System-wide risk check" disabled></label>`;
+    value.innerHTML = `<div class="rule-inline-user-type-field"><span>User type</span>${ruleCompactUserTypePickerMarkup(config, readonly)}</div>`;
+  }
 }
 
 function renderRuleSimpleMultiValue(row, option) {
@@ -3090,9 +3120,11 @@ function initRuleForm(payload = {}) {
       row.querySelector(".rule-condition-menu").hidden = true;
       if (previousType !== type) {
         row.classList.remove("is-dynamic");
+        row.querySelector(".rule-configuration").hidden = false;
         row.querySelector(".voucher-condition-operator").hidden = false;
         row.querySelector(".voucher-condition-value").hidden = false;
         if (option.operators) configureRuleSimpleCondition(row, option, {}, readonly);
+        else if (["81", "95"].includes(option.value)) configureRuleSpecialCondition(row, option, {}, readonly);
         else {
           row.classList.add("is-dynamic");
           row.querySelector(".voucher-condition-operator").hidden = true;
@@ -3230,11 +3262,11 @@ function initRuleForm(payload = {}) {
       if (option?.operators) return Boolean(condition.operator && (option.multiple ? condition.values?.length : condition.value));
       if (condition.field === "100") return ruleFilterIsComplete(condition.filter);
       if (condition.field === "103") return condition.counters.length && condition.counters.every(counter => counter.type && counter.limit && (!/PERIOD/.test(counter.type) || (counter.periodLength && counter.periodUnit)) && (!(counter.type.includes("_BY_KEY") || counter.type.includes("_BY_MULTIPLE_KEY")) || counter.keys?.length));
-      if (condition.field === "95") return Boolean(condition.config.riskControl && condition.config.userType);
+      if (condition.field === "95") return Boolean(condition.config.riskControl && condition.config.userTypes?.length && condition.config.userType);
       if (condition.field === "81") return Boolean(condition.config.segmentId);
       if (["10", "86"].includes(condition.field)) return Boolean(condition.config.code && condition.config.counter);
       if (condition.field === "109") return Boolean(condition.config.fieldId && condition.config.operator && condition.config.value);
-      return condition.field === "104";
+      return false;
     });
     if (!valid) { toast("Complete the rule settings.", "error"); return; }
     const name = document.getElementById("ruleName").value.trim();
