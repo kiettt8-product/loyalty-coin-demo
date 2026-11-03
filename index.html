@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-  <link rel="stylesheet" href="styles.css?v=rule-field-catalog-1">
+  <link rel="stylesheet" href="styles.css?v=rule-field-catalog-2">
 </head>
 <body>
   <header class="topbar">
@@ -778,9 +778,8 @@
 
   <template id="ruleFieldSetupTemplate">
     <div class="screen asset-screen rule-engine-screen rule-field-setup-screen">
-      <div class="rule-field-setup-heading"><div><h1>Field Setup</h1><p>Manage the checks available in Voucher Advance Rule and Rule Engine.</p></div><div><button type="button" class="asset-btn secondary" id="ruleAddCategory"><span class="plus-mark" aria-hidden="true"></span>Add category</button><button type="button" class="asset-btn primary" id="ruleAddField"><span class="plus-mark" aria-hidden="true"></span>Add new</button></div></div>
+      <div class="rule-field-setup-toolbar"><button type="button" class="asset-btn secondary" id="ruleAddCategory"><span class="plus-mark" aria-hidden="true"></span>Add category</button><button type="button" class="asset-btn primary" id="ruleAddField"><span class="plus-mark" aria-hidden="true"></span>Add new</button></div>
       <div id="ruleFieldCategories" class="rule-field-categories"></div>
-      <div class="rule-field-setup-note">A check appears in each menu selected in its setup. Both menus use the same category and check name.</div>
       <dialog class="rule-field-dialog" id="ruleFieldDialog" aria-labelledby="ruleFieldDialogTitle">
         <form id="ruleFieldForm" method="dialog">
           <div class="rule-field-dialog-header"><h2 id="ruleFieldDialogTitle">Add check</h2><button type="button" id="ruleFieldClose" aria-label="Close">×</button></div>
@@ -796,7 +795,7 @@
         </form>
       </dialog>
       <dialog class="rule-category-dialog" id="ruleCategoryDialog" aria-labelledby="ruleCategoryTitle">
-        <form id="ruleCategoryForm" method="dialog"><div class="rule-field-dialog-header"><h2 id="ruleCategoryTitle">Add category</h2><button type="button" id="ruleCategoryClose" aria-label="Close">×</button></div><div class="rule-field-dialog-body"><label class="rule-config-field"><span>Category name <b>*</b></span><input id="ruleCategoryName" maxlength="60" placeholder="Enter category name"></label><div class="rule-field-form-error" id="ruleCategoryError" hidden></div></div><div class="rule-field-dialog-footer"><button type="button" class="asset-btn secondary" id="ruleCategoryCancel">Cancel</button><button type="submit" class="asset-btn primary">Save category</button></div></form>
+        <form id="ruleCategoryForm" method="dialog"><div class="rule-field-dialog-header"><h2 id="ruleCategoryTitle">Add category</h2><button type="button" id="ruleCategoryClose" aria-label="Close">×</button></div><div class="rule-field-dialog-body"><label class="rule-config-field"><span>Category name <b>*</b></span><input id="ruleCategoryName" maxlength="60" placeholder="Enter category name"></label><div class="rule-field-form-error" id="ruleCategoryError" hidden></div></div><div class="rule-field-dialog-footer"><button type="button" class="asset-btn secondary" id="ruleCategoryCancel">Cancel</button><button type="submit" class="asset-btn primary" id="ruleCategorySave">Save category</button></div></form>
       </dialog>
     </div>
   </template>
@@ -824,6 +823,6 @@
     </div>
   </template>
 
-  <script src="app.js?v=rule-field-catalog-1"></script>
+  <script src="app.js?v=rule-field-catalog-2"></script>
 </body>
 </html>

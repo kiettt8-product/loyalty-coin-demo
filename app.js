@@ -733,7 +733,7 @@ function route(name, payload = {}) {
     || (name === "voucher-create" && button.dataset.route === "voucher-assets")
     || (name.startsWith("promotion-") && button.dataset.route === "promotion-list")
     || (name === "roles-list" && button.dataset.route === "roles-list")
-    || (name.startsWith("rule-") && button.dataset.route === "rule-list")
+    || (name === "rule-form" && button.dataset.route === "rule-list")
   ));
   document.querySelector(".rule-engine-nav")?.classList.toggle("active", name.startsWith("rule-"));
   if (name === "list") initList();
@@ -2140,6 +2140,8 @@ function ruleFieldSurfaceLabel(check) {
   return labels.length ? labels.join(" · ") : "Not shown";
 }
 
+const ruleFieldSystemCategories = ["Check user profile", "Account & Segment"];
+
 function renderRuleFieldSetup() {
   const holder = document.getElementById("ruleFieldCategories");
   if (!holder) return;
@@ -2158,7 +2160,10 @@ function renderRuleFieldSetup() {
       <td>${escapeHtml(ruleFieldSurfaceLabel(check))}</td>
       <td class="rule-field-actions">${check.builtin ? '<span class="rule-field-system-note">System check</span>' : `<button type="button" class="asset-icon-button" data-edit-field="${escapeHtml(check.id)}" aria-label="Edit ${escapeHtml(check.name)}" title="Edit"><img src="assets/action-edit.svg" alt=""></button><button type="button" class="asset-icon-button" data-delete-field="${escapeHtml(check.id)}" aria-label="Delete ${escapeHtml(check.name)}" title="Delete"><img src="assets/action-delete.svg" alt=""></button>`}</td>
     </tr>`).join("");
-    return `<section class="rule-field-category"><h2><span class="rule-field-category-chevron">⌄</span>${escapeHtml(category)}<small>${categoryChecks.length} checks</small></h2>
+    const categoryActions = ruleFieldSystemCategories.includes(category)
+      ? '<span class="rule-category-system-note">System category</span>'
+      : `<div class="rule-category-actions"><button type="button" class="asset-icon-button" data-edit-category="${escapeHtml(category)}" aria-label="Edit category ${escapeHtml(category)}" title="Edit category"><img src="assets/action-edit.svg" alt=""></button><button type="button" class="asset-icon-button" data-delete-category="${escapeHtml(category)}" aria-label="Delete category ${escapeHtml(category)}" title="Delete category"><img src="assets/action-delete.svg" alt=""></button></div>`;
+    return `<section class="rule-field-category"><h2><span class="rule-field-category-chevron">⌄</span><span class="rule-field-category-name">${escapeHtml(category)}</span><small>${categoryChecks.length} checks</small>${categoryActions}</h2>
       <div class="rule-field-table-wrap"><table class="asset-table rule-field-table"><thead><tr><th>Check name</th><th>Response field</th><th>Shown in</th><th>Action</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="rule-field-empty">No checks in this category yet.</td></tr>'}</tbody></table></div>
     </section>`;
   }).join("");
@@ -2192,24 +2197,38 @@ function initRuleFieldSetup() {
   const categoryDialog = document.getElementById("ruleCategoryDialog");
   const categoryForm = document.getElementById("ruleCategoryForm");
   const closeCategoryDialog = () => categoryDialog.close();
-  document.getElementById("ruleAddCategory").onclick = () => {
-    document.getElementById("ruleCategoryName").value = "";
+  const openCategoryDialog = (category = "") => {
+    const editing = Boolean(category);
+    categoryForm.dataset.editCategory = category;
+    document.getElementById("ruleCategoryTitle").textContent = editing ? "Edit category" : "Add category";
+    document.getElementById("ruleCategorySave").textContent = editing ? "Save changes" : "Save category";
+    document.getElementById("ruleCategoryName").value = category;
     document.getElementById("ruleCategoryError").hidden = true;
     categoryDialog.showModal();
+  };
+  document.getElementById("ruleAddCategory").onclick = () => {
+    openCategoryDialog();
   };
   document.getElementById("ruleCategoryClose").onclick = closeCategoryDialog;
   document.getElementById("ruleCategoryCancel").onclick = closeCategoryDialog;
   categoryForm.onsubmit = event => {
     event.preventDefault();
     const name = document.getElementById("ruleCategoryName").value.trim();
+    const oldName = categoryForm.dataset.editCategory || "";
     const error = document.getElementById("ruleCategoryError");
     if (!name) { error.textContent = "Enter a category name."; error.hidden = false; return; }
-    if (ruleFieldCatalog.categories.some(category => category.toLocaleLowerCase() === name.toLocaleLowerCase())) { error.textContent = "This category already exists."; error.hidden = false; return; }
-    ruleFieldCatalog.categories.push(name);
+    if (ruleFieldCatalog.categories.some(category => category !== oldName && category.toLocaleLowerCase() === name.toLocaleLowerCase())) { error.textContent = "This category already exists."; error.hidden = false; return; }
+    if (oldName) {
+      ruleFieldCatalog.categories = ruleFieldCatalog.categories.map(category => category === oldName ? name : category);
+      ruleFieldCatalog.checks.forEach(check => { if (check.category === oldName) check.category = name; });
+    } else {
+      ruleFieldCatalog.categories.push(name);
+    }
     saveRuleFieldCatalog();
+    refreshRuleConditionOptions();
     renderRuleFieldSetup();
     categoryDialog.close();
-    toast(`Category “${name}” added.`);
+    toast(oldName ? `Category renamed to “${name}”.` : `Category “${name}” added.`);
   };
 
   const fieldDialog = document.getElementById("ruleFieldDialog");
@@ -2244,6 +2263,24 @@ function initRuleFieldSetup() {
   };
 
   document.getElementById("ruleFieldCategories").onclick = event => {
+    const editCategory = event.target.closest("[data-edit-category]");
+    if (editCategory) {
+      openCategoryDialog(editCategory.dataset.editCategory);
+      return;
+    }
+    const deleteCategory = event.target.closest("[data-delete-category]");
+    if (deleteCategory) {
+      const category = deleteCategory.dataset.deleteCategory;
+      const checksInCategory = ruleFieldCatalog.checks.filter(check => check.category === category);
+      if (checksInCategory.length) { toast("Move or delete the checks in this category before deleting it.", "error"); return; }
+      if (!window.confirm(`Delete category “${category}”?`)) return;
+      ruleFieldCatalog.categories = ruleFieldCatalog.categories.filter(item => item !== category);
+      saveRuleFieldCatalog();
+      refreshRuleConditionOptions();
+      renderRuleFieldSetup();
+      toast(`Category “${category}” deleted.`);
+      return;
+    }
     const edit = event.target.closest("[data-edit-field]");
     if (edit) {
       const check = ruleFieldCatalog.checks.find(item => item.id === edit.dataset.editField);
