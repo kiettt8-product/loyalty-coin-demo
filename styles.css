@@ -1025,7 +1025,6 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .budget-approval-table { width: 100%; min-width: 1200px; table-layout: fixed; border-collapse: collapse; color: rgba(0,31,62,.88); font-size: 14px; }
 
 /* Rule Engine reuses the CRM asset list and form components. */
-.rule-engine-nav { grid-template-columns: 14px 1fr; }
 .rule-engine-nav.active { color: #1677ff; }
 .rule-filter-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .rule-filter-grid #ruleSearch { grid-column: 1 / 3; }
