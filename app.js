@@ -863,16 +863,22 @@ const ruleFieldBuiltinChecks = [
   { id: "81", category: "Account & Segment", label: "Segment check", field: "segmentId", surfaces: ["ruleEngine"], builtin: true },
   { id: "95", category: "Account & Segment", label: "Risk check", field: "risk.userType", surfaces: ["ruleEngine"], builtin: true }
 ];
+const RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES = ["Check user profile", "Account & Segment"];
 function loadRuleFieldCatalog() {
-  const defaults = { categories: ["Check user profile", "Account & Segment"], checks: [] };
+  const defaults = { categories: [...RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES], systemCategories: [...RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES], checks: [] };
   try {
     const saved = JSON.parse(localStorage.getItem(RULE_FIELD_CATALOG_KEY) || "null");
     if (!saved || !Array.isArray(saved.categories) || !Array.isArray(saved.checks)) return defaults;
-    defaults.categories.forEach(name => { if (!saved.categories.includes(name)) saved.categories.unshift(name); });
+    if (!Array.isArray(saved.systemCategories)) saved.systemCategories = [...RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES];
+    saved.systemCategories.forEach(name => { if (!saved.categories.includes(name)) saved.categories.unshift(name); });
     return saved;
   } catch { return defaults; }
 }
 let ruleFieldCatalog = loadRuleFieldCatalog();
+ruleFieldBuiltinChecks.forEach(check => {
+  const systemCategoryIndex = RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES.indexOf(check.category);
+  if (systemCategoryIndex >= 0 && ruleFieldCatalog.systemCategories[systemCategoryIndex]) check.category = ruleFieldCatalog.systemCategories[systemCategoryIndex];
+});
 function saveRuleFieldCatalog() {
   localStorage.setItem(RULE_FIELD_CATALOG_KEY, JSON.stringify(ruleFieldCatalog));
 }
@@ -2166,7 +2172,7 @@ function ruleFieldSurfaceLabel(check) {
   return labels.length ? `<span class="rule-field-surface-list">${labels.map(label => `<span class="rule-field-surface-tag">${label}</span>`).join("")}</span>` : '<span class="rule-field-surface-empty">Not available</span>';
 }
 
-const ruleFieldSystemCategories = ["Check user profile", "Account & Segment"];
+const ruleFieldSystemCategories = () => ruleFieldCatalog.systemCategories || [];
 
 function parseRuleSampleFields(sample) {
   const root = JSON.parse(sample);
@@ -2233,8 +2239,9 @@ function renderRuleFieldSetup() {
       <td>${ruleFieldSurfaceLabel(check)}</td>
       <td class="rule-field-actions">${check.builtin ? '<span class="rule-field-system-note">System check</span>' : `<button type="button" class="asset-icon-button" data-edit-field="${escapeHtml(check.id)}" aria-label="Edit ${escapeHtml(check.name)}" title="Edit"><img src="assets/action-edit.svg" alt=""></button><button type="button" class="asset-icon-button" data-delete-field="${escapeHtml(check.id)}" aria-label="Delete ${escapeHtml(check.name)}" title="Delete"><img src="assets/action-delete.svg" alt=""></button>`}</td>
     </tr>`).join("");
-    const categoryActions = ruleFieldSystemCategories.includes(category)
-      ? '<span class="rule-category-system-note">System category</span>'
+    const isSystemCategory = ruleFieldSystemCategories().includes(category);
+    const categoryActions = isSystemCategory
+      ? `<div class="rule-category-actions"><button type="button" class="asset-icon-button" data-edit-category="${escapeHtml(category)}" aria-label="Edit category ${escapeHtml(category)}" title="Edit category"><img src="assets/action-edit.svg" alt=""></button><span class="rule-category-system-note">System category</span></div>`
       : `<div class="rule-category-actions"><button type="button" class="asset-icon-button" data-edit-category="${escapeHtml(category)}" aria-label="Edit category ${escapeHtml(category)}" title="Edit category"><img src="assets/action-edit.svg" alt=""></button><button type="button" class="asset-icon-button" data-delete-category="${escapeHtml(category)}" aria-label="Delete category ${escapeHtml(category)}" title="Delete category"><img src="assets/action-delete.svg" alt=""></button></div>`;
     return `<section class="rule-field-category"><h2><span class="rule-field-category-chevron" aria-hidden="true"></span><span class="rule-field-category-name">${escapeHtml(category)}</span><small>${categoryChecks.length} checks</small>${categoryActions}</h2>
       <div class="rule-field-table-wrap"><table class="asset-table rule-field-table"><thead><tr><th>Rule name</th><th>Response field</th><th>Available in</th><th>Action</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="rule-field-empty">No checks in this category yet.</td></tr>'}</tbody></table></div>
@@ -2290,6 +2297,8 @@ function initRuleFieldSetup() {
     if (oldName) {
       ruleFieldCatalog.categories = ruleFieldCatalog.categories.map(category => category === oldName ? name : category);
       ruleFieldCatalog.checks.forEach(check => { if (check.category === oldName) check.category = name; });
+      ruleFieldBuiltinChecks.forEach(check => { if (check.category === oldName) check.category = name; });
+      ruleFieldCatalog.systemCategories = ruleFieldCatalog.systemCategories.map(category => category === oldName ? name : category);
     } else {
       ruleFieldCatalog.categories.push(name);
     }
