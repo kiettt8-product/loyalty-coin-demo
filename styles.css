@@ -1097,6 +1097,14 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-field-dialog, .rule-category-dialog { width: min(560px, calc(100vw - 32px)); max-width: none; max-height: calc(100vh - 40px); padding: 0; border: 0; border-radius: 4px; background: #fff; color: #001f3e; box-shadow: 0 8px 28px rgba(0,31,62,.2); }
 .rule-field-dialog::backdrop, .rule-category-dialog::backdrop { background: rgba(0,0,0,.35); }
 .rule-field-dialog form, .rule-category-dialog form { display: grid; }
+.rule-action-confirm { width: min(440px, calc(100vw - 32px)); max-width: none; padding: 0; border: 0; border-radius: 4px; background: #fff; color: #001f3e; box-shadow: 0 8px 28px rgba(0,31,62,.2); }
+.rule-action-confirm::backdrop { background: rgba(0,0,0,.35); }
+.rule-action-confirm form { display: grid; }
+.rule-action-confirm-body { padding: 20px 24px; }
+.rule-action-confirm-body p { margin: 0; color: #364153; font-size: 14px; line-height: 21px; }
+.rule-action-confirm .rule-field-dialog-footer { padding: 12px 20px; }
+.rule-action-confirm-submit.danger { border-color: #ff4d4f; background: #ff4d4f; color: #fff; }
+.rule-action-confirm-submit.danger:hover { border-color: #e33d40; background: #e33d40; }
 .rule-field-dialog-header { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid #f0f0f0; background: #f9fafb; }
 .rule-field-dialog-header h2 { margin: 0; color: #001f3e; font-size: 16px; font-weight: 600; }
 .rule-field-dialog-header > button { width: 28px; height: 28px; border: 0; background: transparent; color: #717182; font-size: 22px; }

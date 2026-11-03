@@ -686,6 +686,21 @@ function toast(message, type = "") {
   setTimeout(() => node.remove(), 3200);
 }
 
+function confirmRuleAction({ title, message, confirmLabel = "Confirm", cancelLabel = "Cancel", danger = false }) {
+  const dialog = document.getElementById("ruleActionConfirm");
+  const confirmButton = document.getElementById("ruleActionConfirmSubmit");
+  document.getElementById("ruleActionConfirmTitle").textContent = title;
+  document.getElementById("ruleActionConfirmMessage").textContent = message;
+  document.getElementById("ruleActionConfirmCancel").textContent = cancelLabel;
+  confirmButton.textContent = confirmLabel;
+  confirmButton.classList.toggle("danger", danger);
+  dialog.returnValue = "";
+  return new Promise(resolve => {
+    dialog.addEventListener("close", () => resolve(dialog.returnValue === "confirm"), { once: true });
+    dialog.showModal();
+  });
+}
+
 function getEditingCampaign() {
   return state.campaigns.find(item => item.id === state.editingCampaignId);
 }
@@ -2127,13 +2142,13 @@ function initRuleList() {
     controls.forEach(control => { control.hidden = hide; });
     event.currentTarget.innerHTML = `${hide ? "Expand" : "Collapse"} <span>${hide ? "⌄" : "⌃"}</span>`;
   };
-  document.getElementById("ruleRows").onclick = event => {
+  document.getElementById("ruleRows").onclick = async event => {
     const button = event.target.closest("[data-rule-action]");
     if (!button) return;
     const rule = ruleEngineRules.find(item => item.id === button.dataset.ruleId);
     if (!rule) return;
     if (button.dataset.ruleAction === "delete") {
-      if (!window.confirm(`Delete rule ${rule.id}?`)) return;
+      if (!await confirmRuleAction({ title: "Delete rule?", message: `Delete “${rule.name}” (${rule.id})? This cannot be undone.`, confirmLabel: "Delete rule", danger: true })) return;
       ruleEngineRules = ruleEngineRules.filter(item => item.id !== rule.id);
       search();
       toast(`Rule ${rule.id} deleted.`);
@@ -2243,10 +2258,15 @@ function initRuleFieldSetup() {
   renderRuleFieldSetup();
   const categoryDialog = document.getElementById("ruleCategoryDialog");
   const categoryForm = document.getElementById("ruleCategoryForm");
-  const closeCategoryDialog = () => categoryDialog.close();
+  const closeCategoryDialog = async () => {
+    const name = document.getElementById("ruleCategoryName").value.trim();
+    if (name !== (categoryForm.dataset.initialName || "") && !await confirmRuleAction({ title: "Discard changes?", message: "Your category changes will be lost.", confirmLabel: "Discard changes", cancelLabel: "Keep editing", danger: true })) return;
+    categoryDialog.close();
+  };
   const openCategoryDialog = (category = "") => {
     const editing = Boolean(category);
     categoryForm.dataset.editCategory = category;
+    categoryForm.dataset.initialName = category;
     document.getElementById("ruleCategoryTitle").textContent = editing ? "Edit category" : "Add category";
     document.getElementById("ruleCategorySave").textContent = editing ? "Save changes" : "Save category";
     document.getElementById("ruleCategoryName").value = category;
@@ -2258,13 +2278,15 @@ function initRuleFieldSetup() {
   };
   document.getElementById("ruleCategoryClose").onclick = closeCategoryDialog;
   document.getElementById("ruleCategoryCancel").onclick = closeCategoryDialog;
-  categoryForm.onsubmit = event => {
+  categoryDialog.addEventListener("cancel", event => { event.preventDefault(); closeCategoryDialog(); });
+  categoryForm.onsubmit = async event => {
     event.preventDefault();
     const name = document.getElementById("ruleCategoryName").value.trim();
     const oldName = categoryForm.dataset.editCategory || "";
     const error = document.getElementById("ruleCategoryError");
     if (!name) { error.textContent = "Enter a category name."; error.hidden = false; return; }
     if (ruleFieldCatalog.categories.some(category => category !== oldName && category.toLocaleLowerCase() === name.toLocaleLowerCase())) { error.textContent = "This category already exists."; error.hidden = false; return; }
+    if (!await confirmRuleAction({ title: oldName ? "Save category changes?" : "Add this category?", message: oldName ? `Save the new name “${name}”?` : `Add “${name}” to the Rule Engine categories?`, confirmLabel: oldName ? "Save changes" : "Add category" })) return;
     if (oldName) {
       ruleFieldCatalog.categories = ruleFieldCatalog.categories.map(category => category === oldName ? name : category);
       ruleFieldCatalog.checks.forEach(check => { if (check.category === oldName) check.category = name; });
@@ -2280,7 +2302,7 @@ function initRuleFieldSetup() {
 
   document.getElementById("ruleAddField").onclick = () => openRuleFieldForm();
 
-  document.getElementById("ruleFieldCategories").onclick = event => {
+  document.getElementById("ruleFieldCategories").onclick = async event => {
     const editCategory = event.target.closest("[data-edit-category]");
     if (editCategory) {
       openCategoryDialog(editCategory.dataset.editCategory);
@@ -2291,7 +2313,7 @@ function initRuleFieldSetup() {
       const category = deleteCategory.dataset.deleteCategory;
       const checksInCategory = ruleFieldCatalog.checks.filter(check => check.category === category);
       if (checksInCategory.length) { toast("Move or delete the checks in this category before deleting it.", "error"); return; }
-      if (!window.confirm(`Delete category “${category}”?`)) return;
+      if (!await confirmRuleAction({ title: "Delete category?", message: `Delete “${category}”? This cannot be undone.`, confirmLabel: "Delete category", danger: true })) return;
       ruleFieldCatalog.categories = ruleFieldCatalog.categories.filter(item => item !== category);
       saveRuleFieldCatalog();
       refreshRuleConditionOptions();
@@ -2310,7 +2332,7 @@ function initRuleFieldSetup() {
       const check = ruleFieldCatalog.checks.find(item => item.id === remove.dataset.deleteField);
       if (!check) return;
       if (ruleEngineRules.some(rule => rule.conditions.some(condition => condition.field === check.id))) { toast("This check is used by a Rule ID. Remove it from that rule before deleting.", "error"); return; }
-      if (!window.confirm(`Delete check “${check.name}”?`)) return;
+      if (!await confirmRuleAction({ title: "Delete check?", message: `Delete “${check.name}”? It will no longer be available in new rules.`, confirmLabel: "Delete check", danger: true })) return;
       ruleFieldCatalog.checks = ruleFieldCatalog.checks.filter(item => item.id !== check.id);
       saveRuleFieldCatalog();
       refreshRuleConditionOptions();
@@ -2364,7 +2386,11 @@ function initRuleFieldForm(payload = {}) {
 
   const categoryDialog = document.getElementById("ruleFieldCategoryDialog");
   const categoryForm = document.getElementById("ruleFieldCategoryForm");
-  const closeCategoryDialog = () => categoryDialog.close();
+  const closeCategoryDialog = async () => {
+    const name = document.getElementById("ruleFieldCategoryName").value.trim();
+    if (name && !await confirmRuleAction({ title: "Discard category?", message: "This category will not be added to the check.", confirmLabel: "Discard category", cancelLabel: "Keep editing", danger: true })) return;
+    categoryDialog.close();
+  };
   document.getElementById("ruleFieldAddCategory").onclick = () => {
     document.getElementById("ruleFieldCategoryName").value = "";
     document.getElementById("ruleFieldCategoryError").hidden = true;
@@ -2372,12 +2398,14 @@ function initRuleFieldForm(payload = {}) {
   };
   document.getElementById("ruleFieldCategoryClose").onclick = closeCategoryDialog;
   document.getElementById("ruleFieldCategoryCancel").onclick = closeCategoryDialog;
-  categoryForm.onsubmit = event => {
+  categoryDialog.addEventListener("cancel", event => { event.preventDefault(); closeCategoryDialog(); });
+  categoryForm.onsubmit = async event => {
     event.preventDefault();
     const name = document.getElementById("ruleFieldCategoryName").value.trim();
     const error = document.getElementById("ruleFieldCategoryError");
     if (!name) { error.textContent = "Enter a category name."; error.hidden = false; return; }
     if (ruleFieldCatalog.categories.some(category => category.toLocaleLowerCase() === name.toLocaleLowerCase())) { error.textContent = "This category already exists."; error.hidden = false; return; }
+    if (!await confirmRuleAction({ title: "Add this category?", message: `Add “${name}” to the Rule Engine categories?`, confirmLabel: "Add category" })) return;
     ruleFieldCatalog.categories.push(name);
     saveRuleFieldCatalog();
     refreshRuleConditionOptions();
@@ -2386,7 +2414,10 @@ function initRuleFieldForm(payload = {}) {
     toast(`Category “${name}” added.`);
   };
 
-  document.getElementById("ruleFieldCancel").onclick = () => route("rule-field-setup");
+  document.getElementById("ruleFieldCancel").onclick = async () => {
+    if (!await confirmRuleAction({ title: "Discard check changes?", message: "Your unsaved check changes will be lost.", confirmLabel: "Discard changes", cancelLabel: "Keep editing", danger: true })) return;
+    route("rule-field-setup");
+  };
   const sampleInput = document.getElementById("ruleFieldSample");
   const sampleError = document.getElementById("ruleFieldSampleError");
   const sampleChoices = document.getElementById("ruleFieldChoices");
@@ -2435,7 +2466,7 @@ function initRuleFieldForm(payload = {}) {
     document.getElementById("ruleFieldSelectedType").textContent = `Field type: ${ruleFieldTypeLabel(selected.dataset.fieldType)}`;
     syncValuesHelp();
   });
-  form.onsubmit = event => {
+  form.onsubmit = async event => {
     event.preventDefault();
     const name = document.getElementById("ruleFieldName").value.trim();
     const category = document.getElementById("ruleFieldCategory").value;
@@ -2452,6 +2483,7 @@ function initRuleFieldForm(payload = {}) {
     const duplicateName = ruleFieldCatalog.checks.some(item => item.id !== editId && item.category === category && item.name.toLocaleLowerCase() === name.toLocaleLowerCase());
     const message = !name ? "Enter a check name." : !category ? "Choose a category." : !responseField ? "Paste a sample response, find fields, and choose one." : !surfaces.length ? "Choose where this check can be used." : duplicateName ? "This check name already exists in the selected category." : "";
     if (message) { error.textContent = message; error.hidden = false; return; }
+    if (!await confirmRuleAction({ title: current ? "Save check changes?" : "Save this check?", message: current ? `Save the changes to “${name}”?` : `Add “${name}” to the selected category and rule menus?`, confirmLabel: current ? "Save changes" : "Save check" })) return;
     const nextCheck = { id: current?.id || `field-${Date.now()}`, name, category, responseField, dataType, jsonStringRoots, values, surfaces };
     if (current) Object.assign(current, nextCheck);
     else ruleFieldCatalog.checks.push(nextCheck);
@@ -3152,8 +3184,11 @@ function initRuleForm(payload = {}) {
   };
   document.addEventListener("click", form.ruleMenuCloseHandler);
   document.getElementById("ruleCancel").textContent = readonly ? "Back" : "Cancel";
-  document.getElementById("ruleCancel").onclick = () => route("rule-list");
-  form.onsubmit = event => {
+  document.getElementById("ruleCancel").onclick = async () => {
+    if (!readonly && !await confirmRuleAction({ title: "Discard rule changes?", message: "Your unsaved rule changes will be lost.", confirmLabel: "Discard changes", cancelLabel: "Keep editing", danger: true })) return;
+    route("rule-list");
+  };
+  form.onsubmit = async event => {
     event.preventDefault();
     const seenConditions = new Set();
     let duplicateCondition = false;
@@ -3195,6 +3230,7 @@ function initRuleForm(payload = {}) {
     if (!valid) { toast("Complete the rule settings.", "error"); return; }
     const name = document.getElementById("ruleName").value.trim();
     if (!name) return;
+    if (!await confirmRuleAction({ title: activeRuleForm.mode === "edit" ? "Save rule changes?" : "Save this rule?", message: activeRuleForm.mode === "edit" ? `Save the changes to “${name}”?` : `Create “${name}” with the selected checks?`, confirmLabel: activeRuleForm.mode === "edit" ? "Save changes" : "Save rule" })) return;
     const data = { name, description: document.getElementById("ruleDescription").value.trim(), conditions };
     if (activeRuleForm.mode === "edit" && rule) { Object.assign(rule, data); toast(`Rule ${rule.id} updated.`); }
     else { const id = `RE-${nextRuleNumber++}`; ruleEngineRules.unshift({ id, ...data, owner: "kiettt8" }); toast(`Rule created. Rule ID: ${id}`); }

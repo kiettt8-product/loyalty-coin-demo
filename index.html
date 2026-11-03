@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-  <link rel="stylesheet" href="styles.css?v=rule-field-catalog-12">
+  <link rel="stylesheet" href="styles.css?v=rule-field-catalog-14">
 </head>
 <body>
   <header class="topbar">
@@ -64,6 +64,13 @@
   </aside>
 
   <main id="mainContent" tabindex="-1"></main>
+  <dialog class="rule-action-confirm" id="ruleActionConfirm" aria-labelledby="ruleActionConfirmTitle" aria-describedby="ruleActionConfirmMessage">
+    <form method="dialog">
+      <div class="rule-field-dialog-header"><h2 id="ruleActionConfirmTitle">Confirm action</h2><button type="submit" value="cancel" aria-label="Close">×</button></div>
+      <div class="rule-action-confirm-body"><p id="ruleActionConfirmMessage"></p></div>
+      <div class="rule-field-dialog-footer"><button type="submit" class="asset-btn secondary" id="ruleActionConfirmCancel" value="cancel">Cancel</button><button type="submit" class="asset-btn primary rule-action-confirm-submit" id="ruleActionConfirmSubmit" value="confirm">Confirm</button></div>
+    </form>
+  </dialog>
   <aside class="crm-assistant" id="crmAssistant" aria-label="CRM Assistant" aria-hidden="true" hidden>
     <div class="crm-assistant-header">
       <span class="assistant-avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 18.5 3.8 21l3.7-1.5c1.3.7 2.8 1.1 4.5 1.1 5.2 0 9.4-3.8 9.4-8.6S17.2 3.3 12 3.3 2.6 7.2 2.6 12c0 2.5.9 4.8 2.4 6.5Z"/><circle cx="9" cy="12" r=".9"/><circle cx="12" cy="12" r=".9"/><circle cx="15" cy="12" r=".9"/></svg></span>
@@ -847,6 +854,6 @@
     </div>
   </template>
 
-  <script src="app.js?v=rule-field-catalog-12"></script>
+  <script src="app.js?v=rule-field-catalog-14"></script>
 </body>
 </html>
