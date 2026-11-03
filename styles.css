@@ -1079,9 +1079,9 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-category-system-note { margin-left: auto; color: #99a1af; font-size: 12px; font-weight: 400; }
 .rule-field-table-wrap { overflow-x: auto; }
 .asset-table.rule-field-table { width: 100%; min-width: 740px; table-layout: fixed; border-collapse: collapse; }
-.asset-table.rule-field-table th:nth-child(1) { width: 29%; }
-.asset-table.rule-field-table th:nth-child(2) { width: 30%; }
-.asset-table.rule-field-table th:nth-child(3) { width: 25%; }
+.asset-table.rule-field-table th:nth-child(1) { width: 27%; }
+.asset-table.rule-field-table th:nth-child(2) { width: 28%; }
+.asset-table.rule-field-table th:nth-child(3) { width: 29%; }
 .asset-table.rule-field-table th:nth-child(4), .asset-table.rule-field-table td:nth-child(4) { width: 16%; }
 .asset-table.rule-field-table th:last-child, .asset-table.rule-field-table td:last-child { position: static; text-align: center; box-shadow: none; }
 .asset-table.rule-field-table tbody tr:first-child td, .asset-table.rule-field-table tbody tr:nth-child(2) td { height: 57px; }
@@ -1089,6 +1089,9 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .asset-table.rule-field-table td:nth-child(1) { color: #17365d; }
 .asset-table.rule-field-table td:nth-child(2) { color: #717182; }
 .asset-table.rule-field-table code { font-size: 12px; }
+.rule-field-surface-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rule-field-surface-tag { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 9px; border: 1px solid #d6e4ff; border-radius: 12px; background: #f0f5ff; color: #2457a7; font-size: 12px; line-height: 18px; white-space: nowrap; }
+.rule-field-surface-empty { color: #99a1af; font-size: 12px; }
 .rule-field-actions { white-space: nowrap !important; }
 .rule-field-actions .asset-icon-button { display: inline-grid; vertical-align: middle; }
 .rule-field-system-badge { margin-left: 8px; padding: 2px 6px; border-radius: 3px; background: #f3f4f6; color: #717182; font-size: 11px; }

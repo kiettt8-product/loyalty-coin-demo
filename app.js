@@ -2161,9 +2161,9 @@ function initRuleList() {
 
 function ruleFieldSurfaceLabel(check) {
   const labels = [];
-  if (check.surfaces.includes("voucher")) labels.push("Voucher");
+  if (check.surfaces.includes("voucher")) labels.push("Voucher Advance Rule");
   if (check.surfaces.includes("ruleEngine")) labels.push("Rule Engine");
-  return labels.length ? labels.join(" · ") : "Not shown";
+  return labels.length ? `<span class="rule-field-surface-list">${labels.map(label => `<span class="rule-field-surface-tag">${label}</span>`).join("")}</span>` : '<span class="rule-field-surface-empty">Not available</span>';
 }
 
 const ruleFieldSystemCategories = ["Check user profile", "Account & Segment"];
@@ -2230,14 +2230,14 @@ function renderRuleFieldSetup() {
     const rows = categoryChecks.map(check => `<tr>
       <td>${escapeHtml(check.label || check.name)}${check.builtin ? '<span class="rule-field-system-badge">Built in</span>' : ""}</td>
       <td><code>${escapeHtml(check.field || check.responseField)}</code></td>
-      <td>${escapeHtml(ruleFieldSurfaceLabel(check))}</td>
+      <td>${ruleFieldSurfaceLabel(check)}</td>
       <td class="rule-field-actions">${check.builtin ? '<span class="rule-field-system-note">System check</span>' : `<button type="button" class="asset-icon-button" data-edit-field="${escapeHtml(check.id)}" aria-label="Edit ${escapeHtml(check.name)}" title="Edit"><img src="assets/action-edit.svg" alt=""></button><button type="button" class="asset-icon-button" data-delete-field="${escapeHtml(check.id)}" aria-label="Delete ${escapeHtml(check.name)}" title="Delete"><img src="assets/action-delete.svg" alt=""></button>`}</td>
     </tr>`).join("");
     const categoryActions = ruleFieldSystemCategories.includes(category)
       ? '<span class="rule-category-system-note">System category</span>'
       : `<div class="rule-category-actions"><button type="button" class="asset-icon-button" data-edit-category="${escapeHtml(category)}" aria-label="Edit category ${escapeHtml(category)}" title="Edit category"><img src="assets/action-edit.svg" alt=""></button><button type="button" class="asset-icon-button" data-delete-category="${escapeHtml(category)}" aria-label="Delete category ${escapeHtml(category)}" title="Delete category"><img src="assets/action-delete.svg" alt=""></button></div>`;
     return `<section class="rule-field-category"><h2><span class="rule-field-category-chevron" aria-hidden="true"></span><span class="rule-field-category-name">${escapeHtml(category)}</span><small>${categoryChecks.length} checks</small>${categoryActions}</h2>
-      <div class="rule-field-table-wrap"><table class="asset-table rule-field-table"><thead><tr><th>Check name</th><th>Response field</th><th>Shown in</th><th>Action</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="rule-field-empty">No checks in this category yet.</td></tr>'}</tbody></table></div>
+      <div class="rule-field-table-wrap"><table class="asset-table rule-field-table"><thead><tr><th>Rule name</th><th>Response field</th><th>Available in</th><th>Action</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="rule-field-empty">No checks in this category yet.</td></tr>'}</tbody></table></div>
     </section>`;
   }).join("");
 }
@@ -2481,7 +2481,7 @@ function initRuleFieldForm(payload = {}) {
     const current = ruleFieldCatalog.checks.find(item => item.id === editId);
     const error = document.getElementById("ruleFieldError");
     const duplicateName = ruleFieldCatalog.checks.some(item => item.id !== editId && item.category === category && item.name.toLocaleLowerCase() === name.toLocaleLowerCase());
-    const message = !name ? "Enter a check name." : !category ? "Choose a category." : !responseField ? "Paste a sample response, find fields, and choose one." : !surfaces.length ? "Choose where this check can be used." : duplicateName ? "This check name already exists in the selected category." : "";
+    const message = !name ? "Enter a rule name." : !category ? "Choose a category." : !responseField ? "Paste a sample response, find fields, and choose one." : !surfaces.length ? "Choose where this rule can be used." : duplicateName ? "This rule name already exists in the selected category." : "";
     if (message) { error.textContent = message; error.hidden = false; return; }
     if (!await confirmRuleAction({ title: current ? "Save check changes?" : "Save this check?", message: current ? `Save the changes to “${name}”?` : `Add “${name}” to the selected category and rule menus?`, confirmLabel: current ? "Save changes" : "Save check" })) return;
     const nextCheck = { id: current?.id || `field-${Date.now()}`, name, category, responseField, dataType, jsonStringRoots, values, surfaces };
