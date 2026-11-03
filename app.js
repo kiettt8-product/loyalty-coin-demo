@@ -870,6 +870,10 @@ function loadRuleFieldCatalog() {
     const saved = JSON.parse(localStorage.getItem(RULE_FIELD_CATALOG_KEY) || "null");
     if (!saved || !Array.isArray(saved.categories) || !Array.isArray(saved.checks)) return defaults;
     if (!Array.isArray(saved.systemCategories)) saved.systemCategories = [...RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES];
+    const oldDynamicCategories = new Set(["dynamic filter", "dynamic counter", "dynamic rules"]);
+    const renameOldCategory = category => oldDynamicCategories.has(String(category || "").trim().toLocaleLowerCase()) ? "Custom checks" : category;
+    saved.categories = [...new Set(saved.categories.map(renameOldCategory))];
+    saved.checks.forEach(check => { check.category = renameOldCategory(check.category); });
     saved.systemCategories.forEach(name => { if (!saved.categories.includes(name)) saved.categories.unshift(name); });
     return saved;
   } catch { return defaults; }
