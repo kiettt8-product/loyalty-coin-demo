@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-  <link rel="stylesheet" href="styles.css?v=rule-field-catalog-4">
+  <link rel="stylesheet" href="styles.css?v=rule-field-catalog-5">
 </head>
 <body>
   <header class="topbar">
@@ -786,8 +786,16 @@
           <div class="rule-field-dialog-body">
             <label class="rule-config-field"><span>Check name <b>*</b></span><input id="ruleFieldName" maxlength="80" placeholder="For example: Check user status"></label>
             <label class="rule-config-field"><span>Category <b>*</b></span><select id="ruleFieldCategory"></select></label>
-            <label class="rule-config-field"><span>Response field <b>*</b></span><input id="ruleFieldPath" placeholder="For example: userInfo.status"></label>
-            <label class="rule-config-field"><span>Possible values <b>*</b></span><input id="ruleFieldValues" placeholder="For example: Active, Inactive"><small>Separate values with commas. These become selectable values in both rule menus.</small></label>
+            <section class="rule-sample-section" aria-labelledby="ruleSampleTitle">
+              <div class="rule-sample-heading"><div><strong id="ruleSampleTitle">Sample response <b>*</b></strong><small>Paste a sample JSON response. We will find the fields you can use in this check.</small></div><button type="button" class="asset-btn secondary" id="ruleFieldParse">Find fields</button></div>
+              <textarea id="ruleFieldSample" class="rule-sample-input" rows="6" placeholder="Paste JSON response here" spellcheck="false"></textarea>
+              <div class="rule-field-form-error" id="ruleFieldSampleError" hidden></div>
+              <label class="rule-config-field rule-sample-search" id="ruleFieldSearchWrap" hidden><span>Search fields</span><input id="ruleFieldSearch" placeholder="Search by field name or path"></label>
+              <div class="rule-sample-field-list" id="ruleFieldChoices" hidden></div>
+              <div class="rule-sample-selected"><span>Selected field</span><code id="ruleFieldSelectedPath">Choose a field above</code><small id="ruleFieldSelectedType"></small></div>
+              <input type="hidden" id="ruleFieldPath"><input type="hidden" id="ruleFieldType"><input type="hidden" id="ruleFieldJsonRoots">
+            </section>
+            <label class="rule-config-field"><span>Known values <small>(optional)</small></span><input id="ruleFieldValues" placeholder="For example: Active, Inactive"><small>Set values for a multi-select. Leave empty to let the rule creator enter a value.</small></label>
             <fieldset class="rule-field-surfaces"><legend>Show this check in</legend><label><input id="ruleFieldVoucher" type="checkbox"> Voucher &gt; Advance Rule</label><label><input id="ruleFieldExternal" type="checkbox"> Rule Engine</label></fieldset>
             <div class="rule-field-form-error" id="ruleFieldError" hidden></div>
           </div>
@@ -823,6 +831,6 @@
     </div>
   </template>
 
-  <script src="app.js?v=rule-field-catalog-4"></script>
+  <script src="app.js?v=rule-field-catalog-5"></script>
 </body>
 </html>

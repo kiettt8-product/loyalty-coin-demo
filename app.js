@@ -859,10 +859,15 @@ function saveRuleFieldCatalog() {
   localStorage.setItem(RULE_FIELD_CATALOG_KEY, JSON.stringify(ruleFieldCatalog));
 }
 function getCustomRuleFieldOptions(surface) {
-  return ruleFieldCatalog.checks.filter(check => check.category && check.surfaces.includes(surface)).map(check => ({
-    id: check.id, value: check.id, backendField: check.id, subtype: "custom", group: check.category,
-    label: check.name, operators: ["IN", "NOT IN"], values: check.values, multiple: true, defaults: []
-  }));
+  return ruleFieldCatalog.checks.filter(check => check.category && check.surfaces.includes(surface)).map(check => {
+    const values = check.values?.length ? check.values : check.dataType === "boolean" ? ["true", "false"] : [];
+    return {
+      id: check.id, value: check.id, backendField: check.id, subtype: "custom", group: check.category,
+      label: check.name, operators: ["IN", "NOT IN"], values, multiple: values.length > 0,
+      valueInput: values.length ? "" : check.dataType === "number" ? "Enter a number" : "Enter a value",
+      defaults: []
+    };
+  });
 }
 const voucherAdvancedRuleOptions = [
   { group: "Check user profile", id: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
@@ -937,6 +942,9 @@ function configureVoucherCondition(row, option) {
     valueHost.innerHTML = voucherValueControlMarkup();
     row.dataset.selectedValues = JSON.stringify(option.defaults || []);
     renderVoucherMultiSelect(row, option);
+  } else if (option.valueInput) {
+    delete row.dataset.selectedValues;
+    valueHost.innerHTML = `<input class="voucher-custom-value-input" aria-label="Select value" placeholder="${escapeHtml(option.valueInput)}">`;
   } else {
     delete row.dataset.selectedValues;
     valueHost.innerHTML = voucherSingleSelectMarkup("Select value", option.values, option.defaultValue || "");
@@ -2142,6 +2150,55 @@ function ruleFieldSurfaceLabel(check) {
 
 const ruleFieldSystemCategories = ["Check user profile", "Account & Segment"];
 
+function parseRuleSampleFields(sample) {
+  const root = JSON.parse(sample);
+  if (!root || typeof root !== "object") throw new Error("The response must be a JSON object or array.");
+  const fields = new Map();
+  const typeOf = value => value === null ? "null" : Array.isArray(value) ? "array" : typeof value;
+  const walk = (value, path = "", jsonStringRoots = [], depth = 0) => {
+    if (depth > 12) return;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (parsed && typeof parsed === "object") {
+            walk(parsed, path, path ? [...jsonStringRoots, path] : jsonStringRoots, depth + 1);
+            return;
+          }
+        } catch { /* Keep non-JSON text as a normal string field. */ }
+      }
+    }
+    if (Array.isArray(value)) {
+      const arrayPath = path ? `${path}[]` : "[]";
+      if (!value.length) fields.set(arrayPath, { path: arrayPath, dataType: "array", jsonStringRoots });
+      else value.forEach(item => walk(item, arrayPath, jsonStringRoots, depth + 1));
+      return;
+    }
+    if (value && typeof value === "object") {
+      const entries = Object.entries(value);
+      if (!entries.length && path) fields.set(path, { path, dataType: "object", jsonStringRoots });
+      entries.forEach(([key, child]) => walk(child, path ? `${path}.${key}` : key, jsonStringRoots, depth + 1));
+      return;
+    }
+    if (path && fields.size < 1000) {
+      const field = { path, dataType: typeOf(value), jsonStringRoots };
+      const previous = fields.get(path);
+      fields.set(path, previous && previous.dataType !== field.dataType ? { ...previous, dataType: "mixed" } : field);
+    }
+  };
+  walk(root);
+  return [...fields.values()].slice(0, 1000).sort((a, b) => a.path.localeCompare(b.path));
+}
+
+function renderRuleSampleFields(fields, query = "", selectedPath = "") {
+  const holder = document.getElementById("ruleFieldChoices");
+  if (!holder) return;
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const matches = fields.filter(field => !normalizedQuery || `${field.path} ${field.dataType}`.toLocaleLowerCase().includes(normalizedQuery));
+  holder.innerHTML = matches.length ? matches.map(field => `<label class="rule-sample-field-choice"><input type="radio" name="ruleSampleField" value="${escapeHtml(field.path)}" data-field-type="${escapeHtml(field.dataType)}" data-json-roots="${escapeHtml(JSON.stringify(field.jsonStringRoots))}" ${field.path === selectedPath ? "checked" : ""}><span><code>${escapeHtml(field.path)}</code><small>${escapeHtml(field.dataType)}${field.jsonStringRoots.length ? ` · JSON text in ${escapeHtml(field.jsonStringRoots.join(", "))}` : ""}</small></span></label>`).join("") : '<div class="rule-sample-empty">No matching fields.</div>';
+}
+
 function renderRuleFieldSetup() {
   const holder = document.getElementById("ruleFieldCategories");
   if (!holder) return;
@@ -2183,6 +2240,17 @@ function openRuleFieldDialog(check = null) {
   document.getElementById("ruleFieldDialogTitle").textContent = check ? "Edit check" : "Add new check";
   document.getElementById("ruleFieldName").value = check?.name || "";
   document.getElementById("ruleFieldPath").value = check?.responseField || "";
+  document.getElementById("ruleFieldType").value = check?.dataType || "";
+  document.getElementById("ruleFieldJsonRoots").value = JSON.stringify(check?.jsonStringRoots || []);
+  document.getElementById("ruleFieldSample").value = "";
+  document.getElementById("ruleFieldSample").dataset.parsedFields = "";
+  document.getElementById("ruleFieldSampleError").hidden = true;
+  document.getElementById("ruleFieldSearch").value = "";
+  document.getElementById("ruleFieldSearchWrap").hidden = true;
+  document.getElementById("ruleFieldChoices").hidden = true;
+  document.getElementById("ruleFieldChoices").replaceChildren();
+  document.getElementById("ruleFieldSelectedPath").textContent = check?.responseField || "Choose a field above";
+  document.getElementById("ruleFieldSelectedType").textContent = check?.dataType || "";
   document.getElementById("ruleFieldValues").value = (check?.values || []).join(", ");
   document.getElementById("ruleFieldVoucher").checked = check?.surfaces.includes("voucher") || false;
   document.getElementById("ruleFieldExternal").checked = check?.surfaces.includes("ruleEngine") || false;
@@ -2237,11 +2305,57 @@ function initRuleFieldSetup() {
   document.getElementById("ruleAddField").onclick = () => openRuleFieldDialog();
   document.getElementById("ruleFieldClose").onclick = closeFieldDialog;
   document.getElementById("ruleFieldCancel").onclick = closeFieldDialog;
+  const sampleInput = document.getElementById("ruleFieldSample");
+  const sampleError = document.getElementById("ruleFieldSampleError");
+  const sampleChoices = document.getElementById("ruleFieldChoices");
+  document.getElementById("ruleFieldParse").onclick = () => {
+    sampleError.hidden = true;
+    try {
+      const fields = parseRuleSampleFields(sampleInput.value.trim());
+      if (!fields.length) throw new Error("No fields were found in this response.");
+      sampleInput.dataset.parsedFields = JSON.stringify(fields);
+      document.getElementById("ruleFieldSearchWrap").hidden = false;
+      sampleChoices.hidden = false;
+      renderRuleSampleFields(fields, document.getElementById("ruleFieldSearch").value, document.getElementById("ruleFieldPath").value);
+    } catch (error) {
+      sampleInput.dataset.parsedFields = "";
+      document.getElementById("ruleFieldSearchWrap").hidden = true;
+      sampleChoices.hidden = true;
+      sampleError.textContent = error instanceof SyntaxError ? "Enter a valid JSON response." : error.message;
+      sampleError.hidden = false;
+    }
+  };
+  sampleInput.addEventListener("input", () => {
+    sampleInput.dataset.parsedFields = "";
+    document.getElementById("ruleFieldPath").value = "";
+    document.getElementById("ruleFieldType").value = "";
+    document.getElementById("ruleFieldJsonRoots").value = "[]";
+    document.getElementById("ruleFieldSelectedPath").textContent = "Choose a field above";
+    document.getElementById("ruleFieldSelectedType").textContent = "";
+    document.getElementById("ruleFieldSearchWrap").hidden = true;
+    sampleChoices.hidden = true;
+    sampleError.hidden = true;
+  });
+  document.getElementById("ruleFieldSearch").addEventListener("input", event => {
+    const fields = JSON.parse(sampleInput.dataset.parsedFields || "[]");
+    renderRuleSampleFields(fields, event.target.value, document.getElementById("ruleFieldPath").value);
+  });
+  sampleChoices.addEventListener("change", event => {
+    const selected = event.target.closest('input[name="ruleSampleField"]');
+    if (!selected) return;
+    document.getElementById("ruleFieldPath").value = selected.value;
+    document.getElementById("ruleFieldType").value = selected.dataset.fieldType;
+    document.getElementById("ruleFieldJsonRoots").value = selected.dataset.jsonRoots || "[]";
+    document.getElementById("ruleFieldSelectedPath").textContent = selected.value;
+    document.getElementById("ruleFieldSelectedType").textContent = selected.dataset.fieldType;
+  });
   fieldForm.onsubmit = event => {
     event.preventDefault();
     const name = document.getElementById("ruleFieldName").value.trim();
     const category = document.getElementById("ruleFieldCategory").value;
     const responseField = document.getElementById("ruleFieldPath").value.trim();
+    const dataType = document.getElementById("ruleFieldType").value;
+    const jsonStringRoots = JSON.parse(document.getElementById("ruleFieldJsonRoots").value || "[]");
     const values = [...new Set(document.getElementById("ruleFieldValues").value.split(",").map(value => value.trim()).filter(Boolean))];
     const surfaces = [];
     if (document.getElementById("ruleFieldVoucher").checked) surfaces.push("voucher");
@@ -2250,9 +2364,9 @@ function initRuleFieldSetup() {
     const current = ruleFieldCatalog.checks.find(check => check.id === editId);
     const error = document.getElementById("ruleFieldError");
     const duplicateName = ruleFieldCatalog.checks.some(check => check.id !== editId && check.category === category && check.name.toLocaleLowerCase() === name.toLocaleLowerCase());
-    const message = !name ? "Enter a check name." : !responseField ? "Enter the response field path." : !values.length ? "Enter at least one possible value." : !surfaces.length && category ? "Choose where this check should appear, or remove its category." : duplicateName ? "This check name already exists in the selected category." : "";
+    const message = !name ? "Enter a check name." : !responseField ? "Paste a sample response, find fields, and select one." : !surfaces.length && category ? "Choose where this check should appear, or remove its category." : duplicateName ? "This check name already exists in the selected category." : "";
     if (message) { error.textContent = message; error.hidden = false; return; }
-    const check = { id: current?.id || `field-${Date.now()}`, name, category, responseField, values, surfaces: category ? surfaces : [] };
+    const check = { id: current?.id || `field-${Date.now()}`, name, category, responseField, dataType, jsonStringRoots, values, surfaces: category ? surfaces : [] };
     if (current) Object.assign(current, check);
     else ruleFieldCatalog.checks.push(check);
     saveRuleFieldCatalog();

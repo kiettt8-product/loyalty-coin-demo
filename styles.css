@@ -1083,6 +1083,25 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-field-dialog-body { display: grid; gap: 16px; max-height: calc(100vh - 170px); overflow: auto; padding: 20px 24px; }
 .rule-field-dialog-body .rule-config-field { max-width: none; gap: 6px; }
 .rule-field-dialog-body .rule-config-field small { color: #717182; font-size: 12px; line-height: 17px; }
+.rule-sample-section { display: grid; gap: 10px; padding: 14px; border: 1px solid #e5e7eb; border-radius: 4px; background: #fff; }
+.rule-sample-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rule-sample-heading > div { display: grid; gap: 4px; }
+.rule-sample-heading strong { color: #001f3e; font-size: 14px; font-weight: 500; }
+.rule-sample-heading strong b { color: #fb2c36; }
+.rule-sample-heading small, .rule-sample-selected > span, .rule-sample-selected small { color: #717182; font-size: 12px; line-height: 17px; }
+.rule-sample-input { width: 100%; min-height: 120px; resize: vertical; padding: 10px 12px; border: 1px solid #d1d5dc; border-radius: 4px; color: #364153; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 18px; }
+.rule-sample-field-list { display: grid; max-height: 220px; overflow: auto; border: 1px solid #e5e7eb; border-radius: 4px; }
+.rule-sample-field-choice { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 44px; padding: 6px 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+.rule-sample-field-choice:last-child { border-bottom: 0; }
+.rule-sample-field-choice:hover { background: #f5f8ff; }
+.rule-sample-field-choice input { width: 14px; height: 14px; accent-color: #0033c9; }
+.rule-sample-field-choice > span { display: grid; gap: 2px; min-width: 0; }
+.rule-sample-field-choice code { overflow-wrap: anywhere; color: #17365d; font-size: 12px; }
+.rule-sample-field-choice small { color: #717182; font-size: 11px; }
+.rule-sample-empty { padding: 12px; color: #717182; font-size: 13px; }
+.rule-sample-selected { display: grid; gap: 4px; padding: 10px; border-radius: 4px; background: #f9fafb; }
+.rule-sample-selected code { overflow-wrap: anywhere; color: #17365d; font-size: 12px; }
+.voucher-custom-value-input { width: 100%; height: 32px; padding: 0 10px; border: 1px solid #d1d5dc; border-radius: 4px; }
 .rule-field-surfaces { display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 0; padding: 12px; border: 1px solid #e5e7eb; border-radius: 4px; }
 .rule-field-surfaces legend { padding: 0 4px; color: #001f3e; font-size: 13px; }
 .rule-field-surfaces label { display: inline-flex; align-items: center; gap: 7px; color: #364153; font-size: 13px; }
@@ -1091,6 +1110,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-field-form-error[hidden] { display: none; }
 .rule-field-dialog-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 24px; border-top: 1px solid #f0f0f0; }
 .rule-field-dialog-body input, .rule-field-dialog-body select { max-width: none; height: 32px; }
+.rule-field-dialog-body textarea { max-width: none; }
 .rule-field-setup-screen [hidden] { display: none !important; }
 @media (max-width: 680px) {
   .rule-field-setup-toolbar { flex-wrap: wrap; }
