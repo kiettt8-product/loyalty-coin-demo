@@ -2340,7 +2340,7 @@ function initRuleFieldSetup() {
     if (remove) {
       const check = ruleFieldCatalog.checks.find(item => item.id === remove.dataset.deleteField);
       if (!check) return;
-      if (ruleEngineRules.some(rule => rule.conditions.some(condition => condition.field === check.id))) { toast("This check is used by a Rule ID. Remove it from that rule before deleting.", "error"); return; }
+      if (ruleEngineRules.some(rule => ruleUsesConfiguredField(rule, check))) { toast("This check is used by a rule. Remove it from that rule before deleting.", "error"); return; }
       if (!await confirmRuleAction({ title: "Delete check?", message: `Delete “${check.name}”? It will no longer be available in new rules.`, confirmLabel: "Delete check", danger: true })) return;
       ruleFieldCatalog.checks = ruleFieldCatalog.checks.filter(item => item.id !== check.id);
       saveRuleFieldCatalog();
@@ -2492,6 +2492,11 @@ function initRuleFieldForm(payload = {}) {
     const duplicateName = ruleFieldCatalog.checks.some(item => item.id !== editId && item.category === category && item.name.toLocaleLowerCase() === name.toLocaleLowerCase());
     const message = !name ? "Enter a rule name." : !category ? "Choose a category." : !responseField ? "Paste a sample response, find fields, and choose one." : !surfaces.length ? "Choose where this rule can be used." : duplicateName ? "This rule name already exists in the selected category." : "";
     if (message) { error.textContent = message; error.hidden = false; return; }
+    if (current?.surfaces.includes("ruleEngine") && !surfaces.includes("ruleEngine") && ruleEngineRules.some(rule => ruleUsesConfiguredField(rule, current))) {
+      error.textContent = "This field is used by a rule. Remove it from that rule before hiding it from Rule Engine.";
+      error.hidden = false;
+      return;
+    }
     if (!await confirmRuleAction({ title: current ? "Save check changes?" : "Save this check?", message: current ? `Save the changes to “${name}”?` : `Add “${name}” to the selected category and rule menus?`, confirmLabel: current ? "Save changes" : "Save check" })) return;
     const nextCheck = { id: current?.id || `field-${Date.now()}`, name, category, responseField, dataType, jsonStringRoots, values, surfaces };
     if (current) Object.assign(current, nextCheck);
@@ -2557,6 +2562,53 @@ const ruleSegments = [
   { id: "512", name: "kiettt8_R", owner: "kiettt8" }
 ];
 const ruleJmesKeys = [{ value: "requestInfo.embeddedData.columninfo.merchantInfo.providedList", label: "Merchant list", dataType: "ARRAY" }];
+
+function customRuleEngineFields() {
+  return ruleFieldCatalog.checks.filter(check => check.surfaces.includes("ruleEngine") && check.responseField).map(check => ({
+    value: check.responseField, label: check.name, fieldId: check.id, category: check.category || "Other fields", dataType: check.dataType || "string", values: check.values || []
+  }));
+}
+
+function dynamicFilterFieldOptions() {
+  const fields = [...ruleDynamicFilterConditionKeys.map(field => ({ ...field, category: "Request fields" })), ...customRuleEngineFields()];
+  return fields.filter((field, index) => fields.findIndex(item => item.value === field.value) === index);
+}
+
+function dynamicCounterFieldOptions() {
+  const fields = [...ruleFilterKeys.map(field => ({ ...field, category: "Request fields" })), ...customRuleEngineFields()];
+  return fields.filter((field, index) => fields.findIndex(item => item.value === field.value) === index);
+}
+
+function resolveConfiguredFieldPath(fieldId, fallbackPath) {
+  return customRuleEngineFields().find(field => field.fieldId === fieldId)?.value || fallbackPath;
+}
+
+function ruleUsesConfiguredField(rule, check) {
+  const matchesPath = value => value === check.responseField;
+  const filterGroupUsesField = group => (group?.items || []).some(item => {
+    if (item.kind === "group") return filterGroupUsesField(item.group);
+    if (item.kind === "condition") return item.fieldId === check.id || matchesPath(item.key);
+    return false;
+  });
+  return (rule.conditions || []).some(condition => {
+    if (condition.field === check.id) return true;
+    if (condition.filter && filterGroupUsesField(condition.filter)) return true;
+    return (condition.counters || []).some(counter => (counter.keyRefs || []).includes(check.id) || (counter.keys || []).some(matchesPath));
+  });
+}
+
+function dynamicFieldOptionsMarkup(options, selected = "") {
+  const groups = [...new Set(options.map(field => field.category || "Other fields"))];
+  return `<option value="">${escapeHtml(options.length ? "Choose a field" : "No fields available")}</option>${groups.map(category => `<optgroup label="${escapeHtml(category)}">${options.filter(field => (field.category || "Other fields") === category).map(field => `<option value="${escapeHtml(field.value)}" data-field-id="${escapeHtml(field.fieldId || "")}" ${field.value === selected ? "selected" : ""}>${escapeHtml(field.label)}</option>`).join("")}</optgroup>`).join("")}`;
+}
+
+function ruleFilterValueMarkup(fieldPath, value = "", readonly = false) {
+  const configuredField = customRuleEngineFields().find(field => field.value === fieldPath);
+  if (configuredField?.values.length) {
+    return `<select class="rule-filter-value" aria-label="Value" ${readonly ? "disabled" : ""}><option value="">Choose a value</option>${configuredField.values.map(option => `<option value="${escapeHtml(option)}" ${option === value ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select>`;
+  }
+  return `<input class="rule-filter-value" aria-label="Value" value="${escapeHtml(value)}" placeholder="Enter a value" ${readonly ? "disabled" : ""}>`;
+}
 
 const ruleFilterOperators = ["Equals", "Not Equals", "Greater Than", "Greater Than Or Equals", "Less Than", "Less Than Or Equals", "In", "Not In"];
 const ruleTimeUnits = [{ value: "MINUTE", label: "Minute" }, { value: "HOUR", label: "Hour" }, { value: "DAY", label: "Day" }, { value: "WEEK", label: "Week" }, { value: "MONTH", label: "Month" }];
@@ -2663,10 +2715,11 @@ function renderRuleConditionMenu(menu, search = "", selectedType = "", currentRo
 }
 
 function ruleFilterConditionMarkup(condition = {}, readonly = false) {
+  const fieldPath = resolveConfiguredFieldPath(condition.fieldId, condition.key || "");
   return `<div class="rule-filter-item rule-filter-condition" data-filter-kind="condition">
-    <label><span>Check field</span><select class="rule-filter-key" aria-label="Check field" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleDynamicFilterConditionKeys.map(item => ({ value: item.value, label: item.label })), condition.key || "", "Choose a field")}</select></label>
+    <label><span>Check field</span><select class="rule-filter-key" aria-label="Check field" ${readonly ? "disabled" : ""}>${dynamicFieldOptionsMarkup(dynamicFilterFieldOptions(), fieldPath)}</select></label>
     <label><span>Condition</span><select class="rule-filter-operator" aria-label="Filter condition" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleFilterOperators, condition.operator || "", "Select a condition")}</select></label>
-    <label><span>Value</span><input class="rule-filter-value" aria-label="Filter value" value="${escapeHtml(condition.value || "")}" placeholder="Enter a value" ${readonly ? "disabled" : ""}></label>
+    <label><span>Value</span>${ruleFilterValueMarkup(fieldPath, condition.value || "", readonly)}</label>
     ${readonly ? "" : '<button type="button" class="rule-item-remove" aria-label="Remove condition">×</button>'}
   </div>`;
 }
@@ -2716,12 +2769,14 @@ function ruleFilterGroupMarkup(group = {}, readonly = false, depth = 0) {
 }
 
 function ruleKeyMultiSelectMarkup(selected = [], readonly = false, ariaLabel = "Fields to count", fieldName = "keys") {
-  const options = ruleFilterKeys.map(key => `<label><input type="checkbox" data-multi-option value="${escapeHtml(key.value)}" ${selected.includes(key.value) ? "checked" : ""} ${readonly ? "disabled" : ""}><span>${escapeHtml(key.label)}</span></label>`).join("");
+  const fields = dynamicCounterFieldOptions();
+  const categories = [...new Set(fields.map(field => field.category || "Other fields"))];
+  const options = categories.map(category => `<div class="rule-multi-category"><strong>${escapeHtml(category)}</strong>${fields.filter(field => (field.category || "Other fields") === category).map(key => `<label><input type="checkbox" data-multi-option value="${escapeHtml(key.value)}" data-field-id="${escapeHtml(key.fieldId || "")}" ${selected.includes(key.value) ? "checked" : ""} ${readonly ? "disabled" : ""}><span>${escapeHtml(key.label)}</span></label>`).join("")}</div>`).join("");
   return `<details class="rule-multi-select" data-multi-field="${escapeHtml(fieldName)}"><summary aria-label="${escapeHtml(ariaLabel)}"><span class="rule-multi-selected"></span><span class="rule-multi-placeholder">Choose fields</span><span class="rule-multi-chevron" aria-hidden="true">⌄</span></summary><div class="rule-multi-options">${options}</div></details>`;
 }
 
 function dynamicFilterMarkup(filter = {}, readonly = false, title = "Dynamic filter") {
-  return `<div class="rule-builder rule-dynamic-filter-builder"><div class="rule-builder-heading"><div><strong>${escapeHtml(title)}</strong><p>Combine field conditions, methods, and counter rules.</p></div></div><label class="rule-config-field"><span>Message when checks fail</span><input data-filter-error value="${escapeHtml(filter.errorMessage || "")}" placeholder="Enter a message" ${readonly ? "disabled" : ""}></label>${ruleFilterGroupMarkup(filter, readonly)}</div>`;
+  return `<div class="rule-builder rule-dynamic-filter-builder"><p class="rule-field-help">Add field checks, methods, or counters. Choose AND/OR for each group. Fields set up for Rule Engine appear in the field list.</p><label class="rule-config-field"><span>Message when checks fail</span><input data-filter-error value="${escapeHtml(filter.errorMessage || "")}" placeholder="Enter a message" ${readonly ? "disabled" : ""}></label>${ruleFilterGroupMarkup(filter, readonly)}</div>`;
 }
 
 function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
@@ -2734,7 +2789,7 @@ function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
       <label><span>Count type</span><select data-counter-field="type" aria-label="Count type" ${readonly ? "disabled" : ""}>${ruleSelectOptions(dynamicCounterTypes, type, "Choose how to count")}</select></label>
       <label><span>Maximum count</span><input type="number" min="1" data-counter-field="limit" value="${escapeHtml(counter.limit || "")}" placeholder="Enter maximum" ${readonly ? "disabled" : ""}></label>
       ${hasPeriod ? `<label><span>Reset every</span><span class="rule-period-control"><input type="number" min="1" data-counter-field="periodLength" value="${escapeHtml(counter.periodLength || "1")}" ${readonly ? "disabled" : ""}><select data-counter-field="periodUnit" aria-label="Period unit" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleTimeUnits, counter.periodUnit || "DAY", "Unit")}</select></span></label>` : ""}
-      ${hasKeys ? `<label class="rule-counter-keys"><span>Fields to count</span>${ruleKeyMultiSelectMarkup(counter.keys || [], readonly, `Limit ${index + 1} fields`, "keys")}</label>` : ""}
+      ${hasKeys ? `<label class="rule-counter-keys"><span>Fields to count</span>${ruleKeyMultiSelectMarkup((counter.keys || []).map((path, keyIndex) => resolveConfiguredFieldPath(counter.keyRefs?.[keyIndex], path)), readonly, `Limit ${index + 1} fields`, "keys")}</label>` : ""}
       <details class="rule-advanced-fields"><summary>More settings</summary><div><label><span>Condition</span><select data-counter-field="condition" ${readonly ? "disabled" : ""}>${ruleSelectOptions([{ value: "LESS_THAN_OR_EQUALS", label: "Less than or equals" }, { value: "EQUALS", label: "Equals" }, { value: "GREATER_THAN_OR_EQUALS", label: "Greater than or equals" }], counter.condition || "LESS_THAN_OR_EQUALS")}</select></label><label><span>Code</span><input data-counter-field="code" value="${escapeHtml(counter.code || "")}" placeholder="Enter code" ${readonly ? "disabled" : ""}></label><label><span>Error code</span><input type="number" data-counter-field="errorCode" value="${escapeHtml(counter.errorCode || "0")}" ${readonly ? "disabled" : ""}></label></div></details>
     </div>
   </section>`;
@@ -2742,7 +2797,7 @@ function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
 
 function dynamicCounterMarkup(counters = [], readonly = false, title = "Dynamic counter") {
   const rows = counters.length ? counters : [{}];
-  return `<div class="rule-builder rule-dynamic-counter-builder"><div class="rule-builder-heading"><div><strong>${escapeHtml(title)}</strong><p>Choose a count type, maximum count, and any fields or time period it uses.</p></div></div><div class="rule-counter-list">${rows.map((counter, index) => dynamicCounterRowMarkup(counter, readonly, index)).join("")}</div>${readonly ? "" : '<button type="button" class="asset-btn secondary" data-add-counter>+ Add counter</button>'}</div>`;
+  return `<div class="rule-builder rule-dynamic-counter-builder"><p class="rule-field-help">Choose how to count, the maximum count, and any time period. Fields set up for Rule Engine appear in “Fields to count”.</p><div class="rule-counter-list">${rows.map((counter, index) => dynamicCounterRowMarkup(counter, readonly, index)).join("")}</div>${readonly ? "" : '<button type="button" class="asset-btn secondary" data-add-counter>+ Add counter</button>'}</div>`;
 }
 
 function renderRuleTypeFields(field, config = {}, readonly = false, typeLabel = "") {
@@ -2854,12 +2909,16 @@ function collectRuleFilterGroup(group) {
     match: group.querySelector(".rule-filter-match").value,
     items: [...group.querySelectorAll(":scope > .rule-filter-items > .rule-filter-item, :scope > .rule-filter-items > .rule-filter-nested-group")].map(item => {
       if (item.matches(".rule-filter-nested-group")) return { kind: "group", group: collectRuleFilterGroup(item.querySelector(":scope > .rule-filter-group")) };
-      if (item.dataset.filterKind === "condition") return {
-        kind: "condition",
-        key: item.querySelector(".rule-filter-key").value,
-        operator: item.querySelector(".rule-filter-operator").value,
-        value: item.querySelector(".rule-filter-value").value.trim()
-      };
+      if (item.dataset.filterKind === "condition") {
+        const field = item.querySelector(".rule-filter-key").selectedOptions[0];
+        return {
+          kind: "condition",
+          key: field.value,
+          ...(field.dataset.fieldId ? { fieldId: field.dataset.fieldId } : {}),
+          operator: item.querySelector(".rule-filter-operator").value,
+          value: item.querySelector(".rule-filter-value").value.trim()
+        };
+      }
       const method = item.querySelector(".rule-filter-method-select").value;
       const fields = {};
       item.querySelectorAll("[data-method-field]").forEach(control => {
@@ -2889,7 +2948,9 @@ function collectDynamicCounter(counter) {
     result[control.dataset.counterField] = control.matches("select[multiple]") ? [...control.selectedOptions].map(option => option.value) : control.value.trim();
   });
   counter.querySelectorAll("[data-multi-field]").forEach(select => {
-    result[select.dataset.multiField] = [...select.querySelectorAll("[data-multi-option]:checked")].map(option => option.value);
+    const selected = [...select.querySelectorAll("[data-multi-option]:checked")];
+    result[select.dataset.multiField] = selected.map(option => option.value);
+    if (select.dataset.multiField === "keys") result.keyRefs = selected.map(option => option.dataset.fieldId || "");
   });
   return result;
 }
@@ -2942,7 +3003,16 @@ function initRuleForm(payload = {}) {
   (rule?.conditions?.length ? rule.conditions : [{}]).forEach(condition => rows.append(ruleConditionRow(condition, readonly)));
   document.getElementById("ruleAddCondition").hidden = readonly;
   form.querySelector('[type="submit"]').hidden = readonly;
-  document.getElementById("ruleAddCondition").onclick = () => rows.append(ruleConditionRow());
+  document.getElementById("ruleAddCondition").onclick = () => {
+    const emptyRow = [...rows.querySelectorAll(":scope > .rule-condition-row")].find(row => !row.dataset.ruleType);
+    if (emptyRow) {
+      const picker = emptyRow.querySelector(".rule-condition-search");
+      picker?.focus();
+      if (picker) openRulePicker(picker);
+      return;
+    }
+    rows.append(ruleConditionRow());
+  };
   const openRulePicker = picker => {
     const row = picker.closest(".rule-condition-row");
     const menu = row.querySelector(".rule-condition-menu");
@@ -3022,6 +3092,17 @@ function initRuleForm(payload = {}) {
   };
   rows.onchange = event => {
     const row = event.target.closest(".rule-condition-row");
+    if (event.target.matches(".rule-filter-key")) {
+      const item = event.target.closest(".rule-filter-condition");
+      const selectedField = event.target.selectedOptions[0];
+      const condition = {
+        key: selectedField.value,
+        ...(selectedField.dataset.fieldId ? { fieldId: selectedField.dataset.fieldId } : {}),
+        operator: item.querySelector(".rule-filter-operator").value,
+        value: item.querySelector(".rule-filter-value").value
+      };
+      item.outerHTML = ruleFilterConditionMarkup(condition, readonly);
+    }
     if (event.target.matches("[data-single-value]")) {
       const host = event.target.closest(".voucher-single-select");
       host.querySelector(".voucher-single-select-control > span").textContent = event.target.dataset.singleValue;

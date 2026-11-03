@@ -1452,6 +1452,21 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
   .rule-counter-rule { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+/* Keep Dynamic Filter and Counter aligned with the surrounding CRM form cards. */
+.rule-builder.rule-dynamic-filter-builder,
+.rule-builder.rule-dynamic-counter-builder {
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.rule-dynamic-filter-builder > .rule-field-help,
+.rule-dynamic-counter-builder > .rule-field-help { margin: 0; color: #66798b; font-size: 13px; }
+.rule-multi-category { display: grid; gap: 2px; }
+.rule-multi-category + .rule-multi-category { padding-top: 6px; border-top: 1px solid #eef1f4; }
+.rule-multi-category > strong { padding: 6px 8px 3px; color: #8594a3; font-size: 11px; font-weight: 500; }
+
 /* Keep compact rule pickers beside their rule type on wide screens. */
 .rule-condition-row.is-segment-check:has(.rule-compact-config) {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px;
