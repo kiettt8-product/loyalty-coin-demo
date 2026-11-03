@@ -2386,7 +2386,6 @@ function initRuleFieldForm(payload = {}) {
     toast(`Category “${name}” added.`);
   };
 
-  document.getElementById("ruleFieldBack").onclick = () => route("rule-field-setup");
   document.getElementById("ruleFieldCancel").onclick = () => route("rule-field-setup");
   const sampleInput = document.getElementById("ruleFieldSample");
   const sampleError = document.getElementById("ruleFieldSampleError");

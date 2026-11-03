@@ -1049,12 +1049,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-config-content #ruleAddCondition { justify-self: start; }
 .rule-field-setup-screen { display: grid; gap: 16px; }
 .rule-field-setup-toolbar { display: flex; justify-content: flex-end; gap: 8px; }
-.rule-field-form-screen { display: grid; gap: 10px; }
-.rule-form-back { width: fit-content; display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: transparent; color: var(--primary-link); font-size: 13px; }
-.rule-form-back:hover { text-decoration: underline; }
-.rule-field-page-heading { display: grid; gap: 2px; margin-bottom: 2px; padding: 4px 0 8px; }
-.rule-field-page-heading h1 { margin: 0; color: #001f3e; font-size: 16px; line-height: 24px; font-weight: 600; }
-.rule-field-page-heading p { margin: 0; color: #66798b; font-size: 12px; line-height: 18px; }
+.rule-field-form-screen { display: grid; gap: 0; }
 .rule-field-form { display: grid; gap: 16px; }
 .rule-field-form .rule-config-card { margin: 0; }
 .rule-field-form .rule-config-card > h1 { min-height: 54px; padding: 0 16px; background: #f6f7fc; color: #44494d; font-size: 16px; font-weight: 400; }

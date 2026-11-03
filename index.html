@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-  <link rel="stylesheet" href="styles.css?v=rule-field-catalog-8">
+  <link rel="stylesheet" href="styles.css?v=rule-field-catalog-9">
 </head>
 <body>
   <header class="topbar">
@@ -788,11 +788,9 @@
 
   <template id="ruleFieldFormTemplate">
     <div class="screen asset-screen rule-engine-screen rule-field-form-screen">
-      <button type="button" class="rule-form-back" id="ruleFieldBack">‹ <span>Field Setup</span></button>
-      <div class="rule-field-page-heading"><h1 id="ruleFieldPageTitle">Add check</h1><p>Set up a check that can be used in Voucher Advance Rule or Rule Engine.</p></div>
       <form id="ruleFieldForm" class="rule-field-form">
         <section class="other-section rule-config-card">
-          <h1>Check details</h1>
+          <h1 id="ruleFieldPageTitle">Add check</h1>
           <div class="rule-config-content rule-field-details-grid">
             <label class="rule-config-field"><span>Check name <b>*</b></span><input id="ruleFieldName" required maxlength="80" placeholder="For example: Check user status"><small>This name appears in the rule condition menu.</small></label>
             <div class="rule-config-field"><span>Category <b>*</b></span><div class="rule-field-category-input"><select id="ruleFieldCategory" required></select><button type="button" class="text-action" id="ruleFieldAddCategory">+ Add category</button></div><small>Groups this check with related checks in the menu.</small></div>
@@ -847,6 +845,6 @@
     </div>
   </template>
 
-  <script src="app.js?v=rule-field-catalog-8"></script>
+  <script src="app.js?v=rule-field-catalog-9"></script>
 </body>
 </html>
