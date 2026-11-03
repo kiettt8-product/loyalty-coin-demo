@@ -418,7 +418,7 @@ body.asset-mode .time-field { grid-column: auto; }
 .asset-btn.primary { border-color: #0033c9; background: #0033c9; color: #fff; box-shadow: 0 2px 0 rgba(5,105,255,.1); }
 .asset-btn.primary:hover { background: #002ba9; }
 .asset-btn.secondary { background: #fff; color: #001f3e; box-shadow: 0 2px 0 rgba(0,31,62,.02); }
-.plus-mark { width: 14px; height: 14px; display: inline-block; background: url("assets/icon-plus.svg") center / 14px 14px no-repeat; }
+.plus-mark { width: 14px; height: 14px; display: inline-block; flex: 0 0 14px; background-color: currentColor; -webkit-mask: url("assets/icon-plus.svg") center / 14px 14px no-repeat; mask: url("assets/icon-plus.svg") center / 14px 14px no-repeat; }
 .calendar-mark { width: 14px; height: 14px; display: inline-block; flex: 0 0 auto; background: url("assets/icon-calendar.svg") center / 14px 14px no-repeat; }
 
 .asset-filter-panel { min-height: 136px; padding: 24px; background: #fff; border-radius: 4px; }
