@@ -2717,16 +2717,13 @@ function ruleCompactUserTypePickerMarkup(config = {}, readonly = false) {
   return `<label class="rule-config-field rule-compact-config rule-risk-compact-config"><span class="sr-only">User Type</span><div class="promo-user-type-combobox rule-user-type-picker"><div class="asset-tag-select promo-user-type-select" role="combobox" aria-label="User Type" aria-haspopup="listbox" aria-expanded="false" aria-disabled="${readonly}"><span class="promo-user-type-tags" data-rule-user-tags>${tags}</span><input type="text" data-rule-user-search aria-label="Search User Type" autocomplete="off" ${readonly ? "disabled" : ""}><span class="promo-user-type-search-icon" aria-hidden="true"></span></div><div class="promo-user-type-menu" data-rule-user-menu role="listbox" aria-label="User Type options" aria-multiselectable="true" hidden>${options}</div></div><input type="hidden" data-config-field="userTypes" value="${escapeHtml(JSON.stringify(selected))}"><input type="hidden" data-config-field="riskControl" value="${escapeHtml(config.riskControl || promotionCatalog.riskControl)}"></label>`;
 }
 
-function renderRuleConditionMenu(menu, search = "", selectedType = "", currentRow = null) {
+function renderRuleConditionMenu(menu, search = "", selectedType = "") {
   const query = search.trim().toLowerCase();
   const groups = [...new Set(ruleConditionOptions.map(option => option.group))];
   const options = groups.map(group => {
     const items = ruleConditionOptions.filter(option => !option.legacy && option.group === group && (!query || `${group} ${option.label}`.toLowerCase().includes(query)));
     if (!items.length) return "";
-    return `<div class="voucher-condition-group"><span aria-hidden="true"></span>${escapeHtml(group)}</div>${items.map(option => {
-      const alreadyAdded = [...document.querySelectorAll("#ruleConditionRows .rule-condition-row")].some(row => row !== currentRow && row.dataset.ruleType === option.value);
-      return `<button type="button" class="voucher-condition-option${alreadyAdded ? " is-already-added" : ""}" role="option" aria-selected="${option.value === selectedType}" ${alreadyAdded ? 'disabled aria-disabled="true" title="Already added"' : ""} data-rule-type="${option.value}">${escapeHtml(option.label)}${alreadyAdded ? '<span class="rule-option-note">Already added</span>' : ""}</button>`;
-    }).join("")}`;
+    return `<div class="voucher-condition-group"><span aria-hidden="true"></span>${escapeHtml(group)}</div>${items.map(option => `<button type="button" class="voucher-condition-option" role="option" aria-selected="${option.value === selectedType}" data-rule-type="${option.value}">${escapeHtml(option.label)}</button>`).join("")}`;
   }).join("") || `<div class="voucher-condition-empty">No matching rules</div>`;
   menu.innerHTML = options;
 }
@@ -3129,11 +3126,21 @@ function initRuleForm(payload = {}) {
     if (picker) openRulePicker(picker);
   };
   document.getElementById("ruleAddConditionGroup").onclick = () => appendRuleConditionNode(rows.querySelector(":scope > .rule-condition-tree"), "group", readonly);
+  const closeRulePickers = (exceptPicker = null) => {
+    rows.querySelectorAll(".rule-condition-menu").forEach(menu => {
+      const picker = menu.closest(".rule-type-picker");
+      const search = picker?.querySelector(".rule-condition-search");
+      if (search === exceptPicker) return;
+      menu.hidden = true;
+      search?.setAttribute("aria-expanded", "false");
+    });
+  };
   const openRulePicker = picker => {
     const row = picker.closest(".rule-condition-row");
     const menu = row.querySelector(".rule-condition-menu");
+    closeRulePickers(picker);
     const selectedLabel = ruleConditionOptions.find(item => item.value === row.dataset.ruleType)?.label || "";
-    renderRuleConditionMenu(menu, picker.value === selectedLabel ? "" : picker.value, row.dataset.ruleType, row);
+    renderRuleConditionMenu(menu, picker.value === selectedLabel ? "" : picker.value, row.dataset.ruleType);
     menu.hidden = false;
     picker.setAttribute("aria-expanded", "true");
     const rect = picker.getBoundingClientRect();
@@ -3161,6 +3168,7 @@ function initRuleForm(payload = {}) {
   rows.oninput = event => {
     if (event.target.matches(".rule-condition-search")) {
       const row = event.target.closest(".rule-condition-row");
+      closeRulePickers(event.target);
       row.dataset.ruleType = "";
       row.dataset.ruleField = "";
       row.dataset.ruleSubtype = "";
@@ -3280,13 +3288,7 @@ function initRuleForm(payload = {}) {
     const segmentOption = event.target.closest("[data-segment-option]");
     if (segmentOption) {
       const picker = segmentOption.closest("[data-rule-segment-picker]");
-      const row = segmentOption.closest(".rule-condition-row");
       const segmentId = segmentOption.dataset.segmentOption;
-      const duplicateSegment = [...rows.querySelectorAll(".rule-condition-row")].some(other => other !== row && other.dataset.ruleType === "81");
-      if (duplicateSegment) {
-        toast("Use one Segment check and select the segment in it.", "error");
-        return;
-      }
       const segment = ruleSegments.find(item => item.id === segmentId);
       const search = picker.querySelector("[data-segment-search]");
       search.value = `${segment.id} - ${segment.name}`;
@@ -3444,11 +3446,8 @@ function initRuleForm(payload = {}) {
   };
   if (form.ruleMenuCloseHandler) document.removeEventListener("click", form.ruleMenuCloseHandler);
   form.ruleMenuCloseHandler = event => {
+    closeRulePickers(event.target.closest(".rule-type-picker")?.querySelector(".rule-condition-search") || null);
     if (rows.contains(event.target)) return;
-    rows.querySelectorAll(".rule-condition-menu").forEach(menu => {
-      menu.hidden = true;
-      menu.closest(".rule-type-picker").querySelector(".rule-condition-search")?.setAttribute("aria-expanded", "false");
-    });
     rows.querySelectorAll(".voucher-single-select-menu, .voucher-multi-select-menu").forEach(menu => { menu.hidden = true; });
     rows.querySelectorAll("[data-segment-menu], [data-rule-user-menu]").forEach(menu => { menu.hidden = true; });
     rows.querySelectorAll("[data-segment-search]").forEach(input => input.setAttribute("aria-expanded", "false"));
@@ -3467,15 +3466,6 @@ function initRuleForm(payload = {}) {
   };
   form.onsubmit = async event => {
     event.preventDefault();
-    const seenConditions = new Set();
-    let duplicateCondition = false;
-    for (const row of rows.querySelectorAll(".rule-condition-row")) {
-      const type = row.dataset.ruleType;
-      if (!type) continue;
-      if (seenConditions.has(type)) duplicateCondition = true;
-      seenConditions.add(type);
-    }
-    if (duplicateCondition) { toast("Remove repeated checks before saving.", "error"); return; }
     const conditions = collectRuleConditionGroup(rows.querySelector(":scope > .rule-condition-tree"));
     const valid = ruleConditionTreeIsComplete(conditions);
     if (!valid) { toast("Complete the rule settings.", "error"); return; }
