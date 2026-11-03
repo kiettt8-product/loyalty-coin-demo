@@ -1048,6 +1048,50 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-config-card { margin-bottom: 0; }
 .rule-config-content { display: grid; gap: 16px; padding: 24px; }
 .rule-config-content #ruleAddCondition { justify-self: start; }
+.rule-field-setup-screen { display: grid; gap: 16px; }
+.rule-field-setup-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.rule-field-setup-heading h1 { margin: 0; color: #001f3e; font-size: 20px; font-weight: 600; line-height: 28px; }
+.rule-field-setup-heading p { margin: 4px 0 0; color: #717182; font-size: 14px; line-height: 20px; }
+.rule-field-setup-heading > div:last-child { display: flex; gap: 8px; }
+.rule-field-categories { display: grid; gap: 16px; }
+.rule-field-category { overflow: hidden; border-radius: 4px; background: #fff; }
+.rule-field-category h2 { height: 48px; display: flex; align-items: center; gap: 10px; margin: 0; padding: 0 16px; border-bottom: 1px solid #f0f0f0; background: #f9fafb; color: #001f3e; font-size: 15px; font-weight: 600; }
+.rule-field-category h2 small { color: #717182; font-size: 12px; font-weight: 400; }
+.rule-field-category-chevron { color: #52677c; font-size: 16px; }
+.rule-field-table-wrap { overflow-x: auto; }
+.asset-table.rule-field-table { width: 100%; min-width: 740px; table-layout: fixed; border-collapse: collapse; }
+.asset-table.rule-field-table th:nth-child(1) { width: 29%; }
+.asset-table.rule-field-table th:nth-child(2) { width: 30%; }
+.asset-table.rule-field-table th:nth-child(3) { width: 25%; }
+.asset-table.rule-field-table th:nth-child(4), .asset-table.rule-field-table td:nth-child(4) { width: 16%; }
+.asset-table.rule-field-table th:last-child, .asset-table.rule-field-table td:last-child { position: static; text-align: center; box-shadow: none; }
+.asset-table.rule-field-table td:nth-child(1) { color: #17365d; }
+.asset-table.rule-field-table td:nth-child(2) { color: #717182; }
+.asset-table.rule-field-table code { font-size: 12px; }
+.rule-field-actions { white-space: nowrap !important; }
+.rule-field-actions .asset-icon-button { display: inline-grid; vertical-align: middle; }
+.rule-field-system-badge { margin-left: 8px; padding: 2px 6px; border-radius: 3px; background: #f3f4f6; color: #717182; font-size: 11px; }
+.rule-field-system-note { color: #99a1af; font-size: 12px; }
+.rule-field-empty { color: #717182 !important; text-align: center; }
+.rule-field-setup-note { color: #717182; font-size: 12px; line-height: 18px; }
+.rule-field-dialog, .rule-category-dialog { width: min(560px, calc(100vw - 32px)); max-width: none; max-height: calc(100vh - 40px); padding: 0; border: 0; border-radius: 4px; background: #fff; color: #001f3e; box-shadow: 0 8px 28px rgba(0,31,62,.2); }
+.rule-field-dialog::backdrop, .rule-category-dialog::backdrop { background: rgba(0,0,0,.35); }
+.rule-field-dialog form, .rule-category-dialog form { display: grid; }
+.rule-field-dialog-header { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid #f0f0f0; background: #f9fafb; }
+.rule-field-dialog-header h2 { margin: 0; color: #001f3e; font-size: 16px; font-weight: 600; }
+.rule-field-dialog-header > button { width: 28px; height: 28px; border: 0; background: transparent; color: #717182; font-size: 22px; }
+.rule-field-dialog-body { display: grid; gap: 16px; max-height: calc(100vh - 170px); overflow: auto; padding: 20px 24px; }
+.rule-field-dialog-body .rule-config-field { max-width: none; gap: 6px; }
+.rule-field-dialog-body .rule-config-field small { color: #717182; font-size: 12px; line-height: 17px; }
+.rule-field-surfaces { display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 0; padding: 12px; border: 1px solid #e5e7eb; border-radius: 4px; }
+.rule-field-surfaces legend { padding: 0 4px; color: #001f3e; font-size: 13px; }
+.rule-field-surfaces label { display: inline-flex; align-items: center; gap: 7px; color: #364153; font-size: 13px; }
+.rule-field-surfaces input { width: 14px; height: 14px; accent-color: #0033c9; }
+.rule-field-form-error { color: #fb2c36; font-size: 12px; line-height: 17px; }
+.rule-field-form-error[hidden] { display: none; }
+.rule-field-dialog-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 24px; border-top: 1px solid #f0f0f0; }
+.rule-field-dialog-body input, .rule-field-dialog-body select { max-width: none; height: 32px; }
+.rule-field-setup-screen [hidden] { display: none !important; }
 .rule-config-field { display: grid; gap: 8px; max-width: 720px; color: #001f3e; font-size: 14px; line-height: 17px; }
 .rule-compact-config { max-width: 360px; gap: 6px; }
 .rule-config-field b { color: #fb2c36; }

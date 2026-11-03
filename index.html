@@ -46,7 +46,8 @@
         <button data-route="promotion-list">Promotion Code</button>
         <button>Revoke Voucher</button>
       </div>
-      <button class="nav-parent rule-engine-nav" data-route="rule-list"><img class="nav-icon" src="assets/nav-rule.svg" alt="">Rule Engine</button>
+      <button class="nav-parent rule-engine-nav" data-nav-target="ruleEngineMenu" aria-expanded="false"><img class="nav-icon" src="assets/nav-rule.svg" alt="">Rule Engine<span>⌄</span></button>
+      <div class="nav-sub single" id="ruleEngineMenu" hidden><button data-route="rule-list">Rule List</button><button data-route="rule-field-setup">Field Setup</button></div>
       <button class="nav-parent" aria-expanded="false"><img class="nav-icon" src="assets/nav-inventory.svg" alt="">Inventory Management<span>⌄</span></button>
       <button class="nav-parent" data-nav-target="budgetManagementMenu" aria-expanded="false"><img class="nav-icon" src="assets/nav-budget.svg" alt="">Budget Management<span>⌄</span></button>
       <div class="nav-sub budget-menu" id="budgetManagementMenu" hidden>
@@ -775,6 +776,31 @@
     </div>
   </template>
 
+  <template id="ruleFieldSetupTemplate">
+    <div class="screen asset-screen rule-engine-screen rule-field-setup-screen">
+      <div class="rule-field-setup-heading"><div><h1>Field Setup</h1><p>Manage the checks available in Voucher Advance Rule and Rule Engine.</p></div><div><button type="button" class="asset-btn secondary" id="ruleAddCategory"><span class="plus-mark" aria-hidden="true"></span>Add category</button><button type="button" class="asset-btn primary" id="ruleAddField"><span class="plus-mark" aria-hidden="true"></span>Add new</button></div></div>
+      <div id="ruleFieldCategories" class="rule-field-categories"></div>
+      <div class="rule-field-setup-note">A check appears in each menu selected in its setup. Both menus use the same category and check name.</div>
+      <dialog class="rule-field-dialog" id="ruleFieldDialog" aria-labelledby="ruleFieldDialogTitle">
+        <form id="ruleFieldForm" method="dialog">
+          <div class="rule-field-dialog-header"><h2 id="ruleFieldDialogTitle">Add check</h2><button type="button" id="ruleFieldClose" aria-label="Close">×</button></div>
+          <div class="rule-field-dialog-body">
+            <label class="rule-config-field"><span>Check name <b>*</b></span><input id="ruleFieldName" maxlength="80" placeholder="For example: Check user status"></label>
+            <label class="rule-config-field"><span>Category <b>*</b></span><select id="ruleFieldCategory"></select></label>
+            <label class="rule-config-field"><span>Response field <b>*</b></span><input id="ruleFieldPath" placeholder="For example: userInfo.status"></label>
+            <label class="rule-config-field"><span>Possible values <b>*</b></span><input id="ruleFieldValues" placeholder="For example: Active, Inactive"><small>Separate values with commas. These become selectable values in both rule menus.</small></label>
+            <fieldset class="rule-field-surfaces"><legend>Show this check in</legend><label><input id="ruleFieldVoucher" type="checkbox"> Voucher &gt; Advance Rule</label><label><input id="ruleFieldExternal" type="checkbox"> Rule Engine</label></fieldset>
+            <div class="rule-field-form-error" id="ruleFieldError" hidden></div>
+          </div>
+          <div class="rule-field-dialog-footer"><button type="button" class="asset-btn secondary" id="ruleFieldCancel">Cancel</button><button type="submit" class="asset-btn primary">Save check</button></div>
+        </form>
+      </dialog>
+      <dialog class="rule-category-dialog" id="ruleCategoryDialog" aria-labelledby="ruleCategoryTitle">
+        <form id="ruleCategoryForm" method="dialog"><div class="rule-field-dialog-header"><h2 id="ruleCategoryTitle">Add category</h2><button type="button" id="ruleCategoryClose" aria-label="Close">×</button></div><div class="rule-field-dialog-body"><label class="rule-config-field"><span>Category name <b>*</b></span><input id="ruleCategoryName" maxlength="60" placeholder="Enter category name"></label><div class="rule-field-form-error" id="ruleCategoryError" hidden></div></div><div class="rule-field-dialog-footer"><button type="button" class="asset-btn secondary" id="ruleCategoryCancel">Cancel</button><button type="submit" class="asset-btn primary">Save category</button></div></form>
+      </dialog>
+    </div>
+  </template>
+
   <template id="ruleFormTemplate">
     <div class="screen asset-screen rule-engine-screen rule-config-screen">
       <form id="ruleConfigForm">
@@ -798,6 +824,6 @@
     </div>
   </template>
 
-  <script src="app.js?v=promo-rule-controls-12"></script>
+  <script src="app.js?v=rule-field-catalog-1"></script>
 </body>
 </html>

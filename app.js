@@ -651,6 +651,7 @@ const templates = {
   "gotit-direct-discount": document.getElementById("gotitDirectDiscountTemplate"),
   "roles-list": document.getElementById("rolesListTemplate"),
   "rule-list": document.getElementById("ruleListTemplate"),
+  "rule-field-setup": document.getElementById("ruleFieldSetupTemplate"),
   "rule-form": document.getElementById("ruleFormTemplate")
 };
 
@@ -732,8 +733,9 @@ function route(name, payload = {}) {
     || (name === "voucher-create" && button.dataset.route === "voucher-assets")
     || (name.startsWith("promotion-") && button.dataset.route === "promotion-list")
     || (name === "roles-list" && button.dataset.route === "roles-list")
-    || (name === "rule-form" && button.dataset.route === "rule-list")
+    || (name.startsWith("rule-") && button.dataset.route === "rule-list")
   ));
+  document.querySelector(".rule-engine-nav")?.classList.toggle("active", name.startsWith("rule-"));
   if (name === "list") initList();
   if (name === "form") initForm(payload);
   if (name === "trigger") initTrigger();
@@ -746,6 +748,7 @@ function route(name, payload = {}) {
   if (name === "promotion-form") initPromotionForm(payload);
   if (name === "roles-list") initRolesList();
   if (name === "rule-list") initRuleList();
+  if (name === "rule-field-setup") initRuleFieldSetup();
   if (name === "rule-form") initRuleForm(payload);
   if (name === "budget-approval") initBudgetApproval();
   if (["ai-banner", "coin-direct-discount", "gotit-direct-discount"].includes(name)) {
@@ -783,6 +786,11 @@ function route(name, payload = {}) {
     campaignMenu.hidden = false;
     campaignParent.setAttribute("aria-expanded", "true");
     campaignParent.querySelector("span").textContent = "⌃";
+    const ruleMenu = document.getElementById("ruleEngineMenu");
+    const ruleParent = document.querySelector('[data-nav-target="ruleEngineMenu"]');
+    ruleMenu.hidden = false;
+    ruleParent.setAttribute("aria-expanded", "true");
+    ruleParent.querySelector("span").textContent = "⌃";
   }
   if (name === "roles-list") {
     const userMenu = document.getElementById("userManagementMenu");
@@ -827,12 +835,44 @@ function renderVoucherAssetRows(rows = voucherAssets) {
   document.getElementById("voucherItemCount").textContent = rows.length ? `1-${rows.length} of 3024 items` : "0 items";
 }
 
+const RULE_FIELD_CATALOG_KEY = "crmRuleFieldCatalogV1";
+const ruleFieldBuiltinChecks = [
+  { id: "kyc", category: "Check user profile", label: "Check KYC level", field: "profile.kycLevel", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"], surfaces: ["voucher", "ruleEngine"] },
+  { id: "nfc", category: "Check user profile", label: "Check NFC status", field: "profile.nfcStatus", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success", surfaces: ["voucher", "ruleEngine"] },
+  { id: "ekyc", category: "Check user profile", label: "Check eKYC status", field: "profile.ekycStatus", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success", surfaces: ["voucher", "ruleEngine"] },
+  { id: "account-level", category: "Check user profile", label: "Check Account level", field: "profile.accountLevel", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"], surfaces: ["voucher", "ruleEngine"] },
+  { id: "104", category: "Account & Segment", label: "MMF account status", field: "account.mmfStatus", surfaces: ["ruleEngine"], builtin: true },
+  { id: "81", category: "Account & Segment", label: "Segment check", field: "segmentId", surfaces: ["ruleEngine"], builtin: true },
+  { id: "95", category: "Account & Segment", label: "Risk check", field: "risk.userType", surfaces: ["ruleEngine"], builtin: true }
+];
+function loadRuleFieldCatalog() {
+  const defaults = { categories: ["Check user profile", "Account & Segment"], checks: [] };
+  try {
+    const saved = JSON.parse(localStorage.getItem(RULE_FIELD_CATALOG_KEY) || "null");
+    if (!saved || !Array.isArray(saved.categories) || !Array.isArray(saved.checks)) return defaults;
+    defaults.categories.forEach(name => { if (!saved.categories.includes(name)) saved.categories.unshift(name); });
+    return saved;
+  } catch { return defaults; }
+}
+let ruleFieldCatalog = loadRuleFieldCatalog();
+function saveRuleFieldCatalog() {
+  localStorage.setItem(RULE_FIELD_CATALOG_KEY, JSON.stringify(ruleFieldCatalog));
+}
+function getCustomRuleFieldOptions(surface) {
+  return ruleFieldCatalog.checks.filter(check => check.category && check.surfaces.includes(surface)).map(check => ({
+    id: check.id, value: check.id, backendField: check.id, subtype: "custom", group: check.category,
+    label: check.name, operators: ["IN", "NOT IN"], values: check.values, multiple: true, defaults: []
+  }));
+}
 const voucherAdvancedRuleOptions = [
   { group: "Check user profile", id: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
   { group: "Check user profile", id: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
   { group: "Check user profile", id: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
   { group: "Check user profile", id: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"] }
 ];
+function getVoucherAdvancedRuleOptions() {
+  return [...voucherAdvancedRuleOptions, ...getCustomRuleFieldOptions("voucher")];
+}
 const voucherConditionConflicts = {
   kyc: ["ekyc", "account-level"],
   ekyc: ["kyc", "account-level"],
@@ -864,14 +904,15 @@ function renderVoucherConditionMenu(menu, search = "") {
   const currentId = currentRow?.dataset.conditionId || "";
   const selectedIds = [...document.querySelectorAll("#voucherConditionList .voucher-condition-row[data-condition-id]")].map(row => row.dataset.conditionId);
   const usedElsewhere = selectedIds.filter(id => id !== currentId);
-  const groups = [...new Set(voucherAdvancedRuleOptions.map(option => option.group))];
+  const optionsCatalog = getVoucherAdvancedRuleOptions();
+  const groups = [...new Set(optionsCatalog.map(option => option.group))];
   menu.innerHTML = groups.map(group => {
-    const options = voucherAdvancedRuleOptions.filter(option => option.group === group
+    const options = optionsCatalog.filter(option => option.group === group
       && (!query || `${group} ${option.label}`.toLowerCase().includes(query))
       && (!usedElsewhere.includes(option.id) || option.id === currentId));
     if (!options.length) return "";
     return `<div class="voucher-condition-group"><span aria-hidden="true"></span>${escapeHtml(group)}</div>${options.map(option => {
-      const disabled = option.id !== currentId && (selectedIds.length >= 2 || selectedIds.some(id => voucherConditionConflicts[id]?.includes(option.id)));
+      const disabled = option.id !== currentId && selectedIds.some(id => voucherConditionConflicts[id]?.includes(option.id));
       return `<button type="button" class="voucher-condition-option" role="option" aria-selected="${option.id === currentId}" ${disabled ? "disabled" : ""} data-condition-id="${escapeHtml(option.id)}">${escapeHtml(option.label)}</button>`;
     }).join("")}`;
   }).join("") || `<div class="voucher-condition-empty">No matching conditions</div>`;
@@ -922,7 +963,7 @@ function bindVoucherConditionRow(row) {
   const picker = row.querySelector(".voucher-condition-search");
   const menu = row.querySelector(".voucher-condition-menu");
   const openMenu = () => {
-    const hasSelectedLabel = picker.value === voucherAdvancedRuleOptions.find(option => option.id === row.dataset.conditionId)?.label;
+    const hasSelectedLabel = picker.value === getVoucherAdvancedRuleOptions().find(option => option.id === row.dataset.conditionId)?.label;
     picker.parentElement.classList.toggle("has-selection", hasSelectedLabel);
     renderVoucherConditionMenu(menu, hasSelectedLabel ? "" : picker.value);
     menu.hidden = false;
@@ -947,7 +988,7 @@ function bindVoucherConditionRow(row) {
   menu.addEventListener("click", event => {
     const button = event.target.closest("[data-condition-id]");
     if (!button) return;
-    const option = voucherAdvancedRuleOptions.find(item => item.id === button.dataset.conditionId);
+    const option = getVoucherAdvancedRuleOptions().find(item => item.id === button.dataset.conditionId);
     if (option) configureVoucherCondition(row, option);
   });
   const valueHost = row.querySelector(".voucher-condition-value");
@@ -974,7 +1015,7 @@ function bindVoucherConditionRow(row) {
     control.setAttribute("aria-expanded", String(shouldOpen));
   });
   valueHost.addEventListener("click", event => {
-    const option = voucherAdvancedRuleOptions.find(item => item.id === row.dataset.conditionId);
+    const option = getVoucherAdvancedRuleOptions().find(item => item.id === row.dataset.conditionId);
     if (!option?.multiple) return;
     const menu = valueHost.querySelector(".voucher-multi-select-menu");
     const removeValue = event.target.closest("[data-remove-value]");
@@ -1008,7 +1049,7 @@ function bindVoucherConditionRow(row) {
   });
   valueHost.addEventListener("input", event => {
     if (!event.target.matches(".voucher-multi-select-search")) return;
-    const option = voucherAdvancedRuleOptions.find(item => item.id === row.dataset.conditionId);
+    const option = getVoucherAdvancedRuleOptions().find(item => item.id === row.dataset.conditionId);
     renderVoucherMultiSelect(row, option);
     valueHost.querySelector(".voucher-multi-select-menu").hidden = false;
     valueHost.querySelector(".voucher-multi-select-control").setAttribute("aria-expanded", "true");
@@ -1029,7 +1070,7 @@ function bindVoucherConditionRow(row) {
       const selected = JSON.parse(row.dataset.selectedValues || "[]");
       if (selected.length) {
         row.dataset.selectedValues = JSON.stringify(selected.slice(0, -1));
-        renderVoucherMultiSelect(row, voucherAdvancedRuleOptions.find(item => item.id === row.dataset.conditionId));
+        renderVoucherMultiSelect(row, getVoucherAdvancedRuleOptions().find(item => item.id === row.dataset.conditionId));
       }
     }
   });
@@ -1078,7 +1119,7 @@ function bindVoucherConditionRow(row) {
     row.querySelectorAll(".voucher-single-select-control[aria-expanded='true']").forEach(item => item.setAttribute("aria-expanded", "false"));
     const search = control?.querySelector(".voucher-multi-select-search");
     if (search) search.value = "";
-    if (control && row.dataset.conditionId) renderVoucherMultiSelect(row, voucherAdvancedRuleOptions.find(option => option.id === row.dataset.conditionId));
+    if (control && row.dataset.conditionId) renderVoucherMultiSelect(row, getVoucherAdvancedRuleOptions().find(option => option.id === row.dataset.conditionId));
   };
   document.addEventListener("click", closeOnOutsideClick);
   picker.addEventListener("keydown", event => {
@@ -1112,7 +1153,7 @@ function updateVoucherConditionRemoveButtons() {
   const rows = [...document.querySelectorAll("#voucherConditionList .voucher-condition-row")];
   const selectedIds = rows.filter(row => row.dataset.conditionId).map(row => row.dataset.conditionId);
   const hasIncompleteRow = rows.some(row => !row.dataset.conditionId);
-  const hasAvailableCondition = selectedIds.length < 2 && voucherAdvancedRuleOptions.some(option =>
+  const hasAvailableCondition = getVoucherAdvancedRuleOptions().some(option =>
     !selectedIds.includes(option.id) && !selectedIds.some(id => voucherConditionConflicts[id]?.includes(option.id)));
   const addButton = document.getElementById("voucherAddRule");
   if (addButton) addButton.disabled = hasIncompleteRow || !hasAvailableCondition;
@@ -2092,23 +2133,163 @@ function initRuleList() {
   renderRuleRows();
 }
 
+function ruleFieldSurfaceLabel(check) {
+  const labels = [];
+  if (check.surfaces.includes("voucher")) labels.push("Voucher");
+  if (check.surfaces.includes("ruleEngine")) labels.push("Rule Engine");
+  return labels.length ? labels.join(" · ") : "Not shown";
+}
+
+function renderRuleFieldSetup() {
+  const holder = document.getElementById("ruleFieldCategories");
+  if (!holder) return;
+  const categories = [...ruleFieldCatalog.categories];
+  const checks = [
+    ...ruleFieldBuiltinChecks.map(check => ({ ...check, builtin: true, surfaces: [...check.surfaces] })),
+    ...ruleFieldCatalog.checks.map(check => ({ ...check, builtin: false }))
+  ];
+  checks.forEach(check => { if (check.category && !categories.includes(check.category)) categories.push(check.category); });
+  if (checks.some(check => !check.category)) categories.push("Not assigned");
+  holder.innerHTML = categories.map(category => {
+    const categoryChecks = checks.filter(check => (check.category || "Not assigned") === category);
+    const rows = categoryChecks.map(check => `<tr>
+      <td>${escapeHtml(check.label || check.name)}${check.builtin ? '<span class="rule-field-system-badge">Built in</span>' : ""}</td>
+      <td><code>${escapeHtml(check.field || check.responseField)}</code></td>
+      <td>${escapeHtml(ruleFieldSurfaceLabel(check))}</td>
+      <td class="rule-field-actions">${check.builtin ? '<span class="rule-field-system-note">System check</span>' : `<button type="button" class="asset-icon-button" data-edit-field="${escapeHtml(check.id)}" aria-label="Edit ${escapeHtml(check.name)}" title="Edit"><img src="assets/action-edit.svg" alt=""></button><button type="button" class="asset-icon-button" data-delete-field="${escapeHtml(check.id)}" aria-label="Delete ${escapeHtml(check.name)}" title="Delete"><img src="assets/action-delete.svg" alt=""></button>`}</td>
+    </tr>`).join("");
+    return `<section class="rule-field-category"><h2><span class="rule-field-category-chevron">⌄</span>${escapeHtml(category)}<small>${categoryChecks.length} checks</small></h2>
+      <div class="rule-field-table-wrap"><table class="asset-table rule-field-table"><thead><tr><th>Check name</th><th>Response field</th><th>Shown in</th><th>Action</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="rule-field-empty">No checks in this category yet.</td></tr>'}</tbody></table></div>
+    </section>`;
+  }).join("");
+}
+
+function populateRuleFieldCategories(selected = "") {
+  const select = document.getElementById("ruleFieldCategory");
+  if (!select) return;
+  select.innerHTML = `<option value="">No category — hidden from rule menus</option>${ruleFieldCatalog.categories.map(category => `<option value="${escapeHtml(category)}" ${selected === category ? "selected" : ""}>${escapeHtml(category)}</option>`).join("")}`;
+  select.value = selected;
+}
+
+function openRuleFieldDialog(check = null) {
+  const dialog = document.getElementById("ruleFieldDialog");
+  const form = document.getElementById("ruleFieldForm");
+  form.dataset.editId = check?.id || "";
+  document.getElementById("ruleFieldDialogTitle").textContent = check ? "Edit check" : "Add new check";
+  document.getElementById("ruleFieldName").value = check?.name || "";
+  document.getElementById("ruleFieldPath").value = check?.responseField || "";
+  document.getElementById("ruleFieldValues").value = (check?.values || []).join(", ");
+  document.getElementById("ruleFieldVoucher").checked = check?.surfaces.includes("voucher") || false;
+  document.getElementById("ruleFieldExternal").checked = check?.surfaces.includes("ruleEngine") || false;
+  document.getElementById("ruleFieldError").hidden = true;
+  populateRuleFieldCategories(check?.category || "");
+  dialog.showModal();
+}
+
+function initRuleFieldSetup() {
+  refreshRuleConditionOptions();
+  renderRuleFieldSetup();
+  const categoryDialog = document.getElementById("ruleCategoryDialog");
+  const categoryForm = document.getElementById("ruleCategoryForm");
+  const closeCategoryDialog = () => categoryDialog.close();
+  document.getElementById("ruleAddCategory").onclick = () => {
+    document.getElementById("ruleCategoryName").value = "";
+    document.getElementById("ruleCategoryError").hidden = true;
+    categoryDialog.showModal();
+  };
+  document.getElementById("ruleCategoryClose").onclick = closeCategoryDialog;
+  document.getElementById("ruleCategoryCancel").onclick = closeCategoryDialog;
+  categoryForm.onsubmit = event => {
+    event.preventDefault();
+    const name = document.getElementById("ruleCategoryName").value.trim();
+    const error = document.getElementById("ruleCategoryError");
+    if (!name) { error.textContent = "Enter a category name."; error.hidden = false; return; }
+    if (ruleFieldCatalog.categories.some(category => category.toLocaleLowerCase() === name.toLocaleLowerCase())) { error.textContent = "This category already exists."; error.hidden = false; return; }
+    ruleFieldCatalog.categories.push(name);
+    saveRuleFieldCatalog();
+    renderRuleFieldSetup();
+    categoryDialog.close();
+    toast(`Category “${name}” added.`);
+  };
+
+  const fieldDialog = document.getElementById("ruleFieldDialog");
+  const fieldForm = document.getElementById("ruleFieldForm");
+  const closeFieldDialog = () => fieldDialog.close();
+  document.getElementById("ruleAddField").onclick = () => openRuleFieldDialog();
+  document.getElementById("ruleFieldClose").onclick = closeFieldDialog;
+  document.getElementById("ruleFieldCancel").onclick = closeFieldDialog;
+  fieldForm.onsubmit = event => {
+    event.preventDefault();
+    const name = document.getElementById("ruleFieldName").value.trim();
+    const category = document.getElementById("ruleFieldCategory").value;
+    const responseField = document.getElementById("ruleFieldPath").value.trim();
+    const values = [...new Set(document.getElementById("ruleFieldValues").value.split(",").map(value => value.trim()).filter(Boolean))];
+    const surfaces = [];
+    if (document.getElementById("ruleFieldVoucher").checked) surfaces.push("voucher");
+    if (document.getElementById("ruleFieldExternal").checked) surfaces.push("ruleEngine");
+    const editId = fieldForm.dataset.editId;
+    const current = ruleFieldCatalog.checks.find(check => check.id === editId);
+    const error = document.getElementById("ruleFieldError");
+    const duplicateName = ruleFieldCatalog.checks.some(check => check.id !== editId && check.category === category && check.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+    const message = !name ? "Enter a check name." : !responseField ? "Enter the response field path." : !values.length ? "Enter at least one possible value." : !surfaces.length && category ? "Choose where this check should appear, or remove its category." : duplicateName ? "This check name already exists in the selected category." : "";
+    if (message) { error.textContent = message; error.hidden = false; return; }
+    const check = { id: current?.id || `field-${Date.now()}`, name, category, responseField, values, surfaces: category ? surfaces : [] };
+    if (current) Object.assign(current, check);
+    else ruleFieldCatalog.checks.push(check);
+    saveRuleFieldCatalog();
+    refreshRuleConditionOptions();
+    renderRuleFieldSetup();
+    fieldDialog.close();
+    toast(current ? `Check “${name}” updated.` : `Check “${name}” added.`);
+  };
+
+  document.getElementById("ruleFieldCategories").onclick = event => {
+    const edit = event.target.closest("[data-edit-field]");
+    if (edit) {
+      const check = ruleFieldCatalog.checks.find(item => item.id === edit.dataset.editField);
+      if (check) openRuleFieldDialog(check);
+      return;
+    }
+    const remove = event.target.closest("[data-delete-field]");
+    if (remove) {
+      const check = ruleFieldCatalog.checks.find(item => item.id === remove.dataset.deleteField);
+      if (!check) return;
+      if (ruleEngineRules.some(rule => rule.conditions.some(condition => condition.field === check.id))) { toast("This check is used by a Rule ID. Remove it from that rule before deleting.", "error"); return; }
+      if (!window.confirm(`Delete check “${check.name}”?`)) return;
+      ruleFieldCatalog.checks = ruleFieldCatalog.checks.filter(item => item.id !== check.id);
+      saveRuleFieldCatalog();
+      refreshRuleConditionOptions();
+      renderRuleFieldSetup();
+      toast(`Check “${check.name}” deleted.`);
+    }
+  };
+}
+
 // Only rule types marked as in use in Rule Usage appear here. Keep the familiar
 // CRM Advance Rule groups so this picker reads like the voucher rule picker.
 // Add each check type once. For multiple values, use that check's own multi-select or subrules.
-const ruleConditionOptions = [
+const builtInRuleConditionOptions = [
   { group: "Check user profile", value: "profile-kyc", backendField: "109", subtype: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
   { group: "Check user profile", value: "profile-nfc", backendField: "109", subtype: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
   { group: "Check user profile", value: "profile-ekyc", backendField: "109", subtype: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
   { group: "Check user profile", value: "profile-account-level", backendField: "109", subtype: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"] },
   { group: "Check user profile", value: "109", backendField: "109", label: "User profile check", legacy: true },
-  { group: "Account & segment", value: "104", label: "MMF account status" },
-  { group: "Account & segment", value: "81", label: "Segment check" },
-  { group: "Account & segment", value: "95", label: "Risk check" },
-  { group: "Dynamic rules", value: "100", backendField: "100", label: "Dynamic filter" },
-  { group: "Dynamic rules", value: "103", backendField: "103", label: "Dynamic counter" },
-  { group: "Usage counters", value: "10", label: "User counter" },
-  { group: "Usage counters", value: "86", label: "User counter per period" }
+  { group: "Account & Segment", value: "104", label: "MMF account status" },
+  { group: "Account & Segment", value: "81", label: "Segment check" },
+  { group: "Account & Segment", value: "95", label: "Risk check" },
+  { group: "Dynamic rules", value: "100", backendField: "100", label: "Dynamic filter", legacy: true },
+  { group: "Dynamic rules", value: "103", backendField: "103", label: "Dynamic counter", legacy: true },
+  { group: "Usage counters", value: "10", label: "User counter", legacy: true },
+  { group: "Usage counters", value: "86", label: "User counter per period", legacy: true }
 ];
+let ruleConditionOptions = [];
+function refreshRuleConditionOptions() {
+  ruleConditionOptions = [
+    ...builtInRuleConditionOptions,
+    ...getCustomRuleFieldOptions("ruleEngine").map(option => ({ ...option, backendField: option.id }))
+  ];
+}
+refreshRuleConditionOptions();
 
 const ruleFilterKeys = [
   { value: "requestInfo.extraInfo.pack", label: "Campaign pack", path: "requestInfo.extraInfo.pack", dataType: "STRING" },
