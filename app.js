@@ -675,7 +675,13 @@ const directDiscountStates = {
     alertEmails: ["loyalty.business@vng.com.vn"],
     alertThresholds: [10, 20]
   },
-  gotit: { merchants: directDiscountMerchants, applicable: ["16778", "16564"], nonApplicable: ["4023", "1252"] }
+  gotit: {
+    merchants: directDiscountMerchants,
+    applicable: ["16778", "16564"],
+    nonApplicable: ["4023", "1252"],
+    alertEmails: ["gotit.business@vng.com.vn"],
+    alertThresholds: [10, 20]
+  }
 };
 let directDiscountState = directDiscountStates.coin;
 
@@ -4851,20 +4857,20 @@ function bindMerchantPicker(type) {
   renderMerchantPicker(type);
 }
 
-function renderCoinBudgetAlertTags(type) {
+function renderCoinBudgetAlertTags(type, prefix = "coin") {
   const isEmail = type === "email";
-  const holder = document.querySelector(isEmail ? "#coinAlertEmailControl .tags" : "#coinAlertThresholdControl .tags");
+  const holder = document.querySelector(isEmail ? `#${prefix}AlertEmailControl .tags` : `#${prefix}AlertThresholdControl .tags`);
   if (!holder) return;
   const values = isEmail ? directDiscountState.alertEmails : directDiscountState.alertThresholds;
   holder.innerHTML = values.map(value => `<span class="tag">${escapeHtml(String(value))}${isEmail ? "" : "%"}<button type="button" data-alert-value="${escapeHtml(String(value))}" aria-label="Remove ${escapeHtml(String(value))}${isEmail ? "" : "%"}">×</button></span>`).join("");
   holder.querySelectorAll("[data-alert-value]").forEach(button => button.onclick = () => {
     if (isEmail) directDiscountState.alertEmails = directDiscountState.alertEmails.filter(value => value !== button.dataset.alertValue);
     else directDiscountState.alertThresholds = directDiscountState.alertThresholds.filter(value => value !== Number(button.dataset.alertValue));
-    renderCoinBudgetAlertTags(type);
+    renderCoinBudgetAlertTags(type, prefix);
   });
 }
 
-function bindCoinBudgetAlertInput(id, type) {
+function bindCoinBudgetAlertInput(id, type, prefix = "coin") {
   const input = document.getElementById(id);
   if (!input) return;
   input.onkeydown = event => {
@@ -4889,16 +4895,20 @@ function bindCoinBudgetAlertInput(id, type) {
       directDiscountState.alertThresholds.sort((a, b) => b - a);
     }
     input.value = "";
-    renderCoinBudgetAlertTags(type);
+    renderCoinBudgetAlertTags(type, prefix);
   };
 }
 
+function initDirectDiscountBudgetAlert(prefix, productLabel) {
+  bindCoinBudgetAlertInput(`${prefix}AlertEmailInput`, "email", prefix);
+  bindCoinBudgetAlertInput(`${prefix}AlertThresholdInput`, "threshold", prefix);
+  renderCoinBudgetAlertTags("email", prefix);
+  renderCoinBudgetAlertTags("threshold", prefix);
+  document.getElementById(`save${prefix === "coin" ? "Coin" : "Gotit"}BudgetAlert`).onclick = () => toast(`${productLabel} budget alert settings saved.`);
+}
+
 function initCoinBudgetAlert() {
-  bindCoinBudgetAlertInput("coinAlertEmailInput", "email");
-  bindCoinBudgetAlertInput("coinAlertThresholdInput", "threshold");
-  renderCoinBudgetAlertTags("email");
-  renderCoinBudgetAlertTags("threshold");
-  document.getElementById("saveCoinBudgetAlert").onclick = () => toast("Budget alert settings saved.");
+  initDirectDiscountBudgetAlert("coin", "Coin2DD");
 }
 
 function initDirectDiscount(type, hasConversionRate) {
@@ -5234,6 +5244,7 @@ function initTopupBudgetDetail({ id }) {
 
 function initGotitDirectDiscount() {
   initDirectDiscount("gotit", false);
+  initDirectDiscountBudgetAlert("gotit", "Got It");
 }
 
 const assistantToggle = document.getElementById("assistantToggle");
