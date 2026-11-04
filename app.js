@@ -2929,7 +2929,7 @@ const builtInRuleConditionOptions = [
   { group: "Account & Segment", fieldSetupId: "104", value: "104", label: "Check MMF account status", operators: ["Is"], values: ["Has account", "Has no account"] },
   { group: "Account & Segment", fieldSetupId: "81", value: "81", label: "Segment check" },
   { group: "Account & Segment", fieldSetupId: "95", value: "95", label: "Risk check" },
-  { group: "Usage limits", value: "counter-condition", backendField: "counter-condition", label: "Request count limit", counterCondition: true, surfaces: ["ruleEngine"] },
+  { group: "Usage", value: "counter-condition", backendField: "counter-condition", label: "Dynamic Counter", counterCondition: true, surfaces: ["ruleEngine"] },
   { group: "Usage counters", value: "10", label: "User counter", legacy: true },
   { group: "Usage counters", value: "86", label: "User counter per period", legacy: true }
 ];
@@ -3101,7 +3101,7 @@ function ruleCountConditionMarkup(limit = {}, readonly = false) {
     : '<div class="rule-count-empty-dimension"><input type="text" value="" placeholder="No fields available" aria-label="Count by request field" disabled><small>Add a request field in Field Setup to count by a field.</small></div>';
   return `<div class="rule-count-condition-config" data-counter-condition>
     <div class="rule-count-limit-grid">
-      <label><span>Maximum count</span><input type="number" min="1" step="1" data-count-limit-field="maximum" value="${escapeHtml(limit.maximum || "")}" placeholder="Enter a number" ${readonly ? "disabled" : ""}></label>
+      <label><span>Maximum allowed requests</span><input type="number" min="1" step="1" data-count-limit-field="maximum" value="${escapeHtml(limit.maximum || "")}" placeholder="Enter a number" ${readonly ? "disabled" : ""}></label>
       <div class="rule-count-dimension-field"><span>Count separately by <small>(optional)</small></span>${dimensionsMarkup}</div>
       <label><span>Reset count</span><select data-count-limit-field="resetMode" ${readonly ? "disabled" : ""}><option value="never" ${resetMode === "never" ? "selected" : ""}>No reset</option><option value="period" ${resetMode === "period" ? "selected" : ""}>After a period</option></select></label>
       <div class="rule-count-period-fields" data-count-period-fields ${resetMode === "period" ? "" : "hidden"}><span>Reset every</span><div><input type="number" min="1" step="1" data-count-limit-field="periodLength" value="${escapeHtml(limit.periodLength || "1")}" aria-label="Period length" ${readonly ? "disabled" : ""}><select data-count-limit-field="periodUnit" aria-label="Period unit" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleTimeUnits, limit.periodUnit || "DAY")}</select></div></div>
