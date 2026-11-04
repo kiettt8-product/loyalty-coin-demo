@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-      <link rel="stylesheet" href="styles.css?v=topup-budget-approval-3">
+      <link rel="stylesheet" href="styles.css?v=topup-budget-v2-detail-1">
 </head>
 <body>
   <header class="topbar">
@@ -594,11 +594,25 @@
           </table>
         </div>
       </section>
-      <dialog class="topup-history-dialog" id="topupHistoryDialog" aria-labelledby="topupHistoryTitle">
-        <div class="topup-history-header"><div><h2 id="topupHistoryTitle">Top-up history</h2><p id="topupHistorySubtitle"></p></div><button type="button" id="closeTopupHistory" aria-label="Close">×</button></div>
-        <div class="topup-history-body" id="topupHistoryBody"></div>
-        <div class="topup-history-footer"><button type="button" class="asset-btn primary" id="closeTopupHistoryFooter">Close</button></div>
-      </dialog>
+    </div>
+  </template>
+
+  <template id="topupApprovalDetailTemplate">
+    <div class="screen budget-topup-detail-screen">
+      <section class="budget-topup-detail-overview">
+        <h1>MKT Code: <span id="topupDetailMktCode"></span></h1>
+        <h2>Total budget approved: <span id="topupDetailApproved"></span> VND</h2>
+        <h2>Total budget need approved: <span id="topupDetailPending"></span> VND</h2>
+        <button type="button" class="budget-topup-back-link" id="topupDetailBack">Back to list</button>
+      </section>
+      <section class="budget-topup-detail-card" aria-label="Top-up request history">
+        <div class="budget-topup-detail-scroll">
+          <table class="budget-approval-table budget-topup-detail-table">
+            <thead><tr><th>Row</th><th>Product</th><th>MKT Code</th><th>Source wallet</th><th>Requestor</th><th>Requested time</th><th class="budget-number">Remaining budget</th><th class="budget-number">Top-up requested</th><th>Status</th><th>Review by</th><th>Reviewed time</th><th>Note</th></tr></thead>
+            <tbody id="topupDetailRows"></tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </template>
 
@@ -908,6 +922,6 @@
     </div>
   </template>
 
-      <script src="app.js?v=topup-budget-approval-3"></script>
+      <script src="app.js?v=topup-budget-v2-detail-1"></script>
 </body>
 </html>

@@ -647,6 +647,7 @@ const templates = {
   "promotion-form": document.getElementById("promotionFormTemplate"),
   "ai-banner": document.getElementById("aiBannerTemplate"),
   "budget-approval": document.getElementById("budgetApprovalTemplate"),
+  "budget-topup-detail": document.getElementById("topupApprovalDetailTemplate"),
   "coin-direct-discount": document.getElementById("coinDirectDiscountTemplate"),
   "gotit-direct-discount": document.getElementById("gotitDirectDiscountTemplate"),
   "roles-list": document.getElementById("rolesListTemplate"),
@@ -749,6 +750,7 @@ function route(name, payload = {}) {
     || (["asset-massive", "asset-coin-create"].includes(name) && button.dataset.route === "asset-list")
     || (name === "voucher-create" && button.dataset.route === "voucher-assets")
     || (name.startsWith("promotion-") && button.dataset.route === "promotion-list")
+    || (name === "budget-topup-detail" && button.dataset.route === "budget-approval")
     || (name === "roles-list" && button.dataset.route === "roles-list")
     || (name === "rule-form" && button.dataset.route === "rule-list")
     || (name === "rule-field-form" && button.dataset.route === "rule-field-setup")
@@ -772,6 +774,7 @@ function route(name, payload = {}) {
   if (name === "rule-counter-field-form") initRuleCounterFieldForm(payload);
   if (name === "rule-form") initRuleForm(payload);
   if (name === "budget-approval") initBudgetApproval();
+  if (name === "budget-topup-detail") initTopupBudgetDetail(payload);
   if (["ai-banner", "coin-direct-discount", "gotit-direct-discount"].includes(name)) {
     const otherMenu = document.getElementById("othersMenu");
     const otherParent = document.querySelector('[data-nav-target="othersMenu"]');
@@ -5316,20 +5319,19 @@ const topupApprovalSeedRows = [
   { id: "gotit", product: "Got It to Direct Discount", mktCode: "DGS_240205_250", wallet: "[ZION] [210825003500004] ZMP2408_014", remaining: 120000000, amount: 50000000, requestor: "Business user", submittedAt: "04 Nov 2026 09:26", status: "Reviewing" }
 ];
 
+function readTopupApprovalRows() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(topupApprovalStorageKey) || "null");
+    return Array.isArray(saved) && saved.length ? saved : topupApprovalSeedRows.map(row => ({ ...row }));
+  } catch {
+    return topupApprovalSeedRows.map(row => ({ ...row }));
+  }
+}
+
 function initTopupBudgetApproval() {
   const body = document.getElementById("topupApprovalRows");
   if (!body) return;
-  const historyDialog = document.getElementById("topupHistoryDialog");
-  const historyBody = document.getElementById("topupHistoryBody");
-  const readRows = () => {
-    try {
-      const saved = JSON.parse(sessionStorage.getItem(topupApprovalStorageKey) || "null");
-      return Array.isArray(saved) && saved.length ? saved : topupApprovalSeedRows.map(row => ({ ...row }));
-    } catch {
-      return topupApprovalSeedRows.map(row => ({ ...row }));
-    }
-  };
-  let rows = readRows();
+  let rows = readTopupApprovalRows();
   const render = () => {
     body.innerHTML = rows.map(row => {
       const statusClass = row.status === "Approved" ? "is-approved" : row.status === "Reviewing" ? "is-reviewing" : "is-rejected";
@@ -5350,28 +5352,6 @@ function initTopupBudgetApproval() {
     try { sessionStorage.setItem(topupApprovalStorageKey, JSON.stringify(rows)); } catch { /* demo remains usable without storage */ }
   };
   const formatMoney = amount => `${Number(amount).toLocaleString("en-US")} VND`;
-  const openHistory = row => {
-    const events = [
-      { title: "Top-up request submitted", time: row.submittedAt, detail: `${row.requestor} requested ${formatMoney(row.amount)}.` },
-      ...(row.decidedAt ? [{ title: `Request ${row.status.toLowerCase()}`, time: row.decidedAt, detail: `Reviewed by ${row.reviewer || "FP&A reviewer"}.` }] : [])
-    ];
-    document.getElementById("topupHistorySubtitle").textContent = `${row.product} · ${row.mktCode}`;
-    historyBody.innerHTML = `
-      <dl class="topup-history-summary">
-        <div><dt>MKT Code</dt><dd>${escapeHtml(row.mktCode)}</dd></div>
-        <div><dt>Source wallet</dt><dd>${escapeHtml(row.wallet)}</dd></div>
-        <div><dt>Remaining budget at request</dt><dd>${formatMoney(row.remaining)}</dd></div>
-        <div><dt>Top-up requested</dt><dd>${formatMoney(row.amount)}</dd></div>
-        <div><dt>Current status</dt><dd><span class="budget-status-chip ${row.status === "Approved" ? "is-approved" : row.status === "Rejected" ? "is-rejected" : "is-reviewing"}">${escapeHtml(row.status)}</span></dd></div>
-      </dl>
-      <h3>Activity</h3>
-      <ol class="topup-history-timeline">${events.map(item => `<li><span class="topup-history-dot"></span><div><strong>${escapeHtml(item.title)}</strong><time>${escapeHtml(item.time)}</time><p>${escapeHtml(item.detail)}</p></div></li>`).join("")}</ol>
-      <p class="topup-history-demo-note">Demo history. No real budget transaction has been made.</p>`;
-    historyDialog.showModal();
-  };
-  document.getElementById("closeTopupHistory").onclick = () => historyDialog.close();
-  document.getElementById("closeTopupHistoryFooter").onclick = () => historyDialog.close();
-  historyDialog.addEventListener("click", event => { if (event.target === historyDialog) historyDialog.close(); });
   body.onclick = async event => {
     const button = event.target.closest("[data-topup-action]");
     if (!button) return;
@@ -5379,7 +5359,7 @@ function initTopupBudgetApproval() {
     if (!row) return;
     const action = button.dataset.topupAction;
     if (action === "view") {
-      openHistory(row);
+      route("budget-topup-detail", { id: row.id });
       return;
     }
     const approving = action === "approve";
@@ -5398,6 +5378,26 @@ function initTopupBudgetApproval() {
     toast(`${row.status} in demo. No budget has been changed.`);
   };
   render();
+}
+
+function initTopupBudgetDetail({ id }) {
+  const allRows = readTopupApprovalRows();
+  const selected = allRows.find(row => row.id === id) || allRows[0];
+  if (!selected) return;
+  const historyRows = allRows.filter(row => row.mktCode === selected.mktCode);
+  const money = amount => Number(amount).toLocaleString("en-US");
+  document.getElementById("topupDetailMktCode").textContent = selected.mktCode;
+  document.getElementById("topupDetailApproved").textContent = money(historyRows.filter(row => row.status === "Approved").reduce((sum, row) => sum + Number(row.amount || 0), 0));
+  document.getElementById("topupDetailPending").textContent = money(historyRows.filter(row => row.status === "Reviewing").reduce((sum, row) => sum + Number(row.amount || 0), 0));
+  document.getElementById("topupDetailRows").innerHTML = historyRows.map((row, index) => {
+    const statusClass = row.status === "Approved" ? "is-approved" : row.status === "Rejected" ? "is-rejected" : "is-reviewing";
+    return `<tr>
+      <td>${index + 1}</td><td>${escapeHtml(row.product)}</td><td>${escapeHtml(row.mktCode)}</td><td class="topup-wallet-cell">${escapeHtml(row.wallet)}</td>
+      <td>${escapeHtml(row.requestor)}</td><td>${escapeHtml(row.submittedAt)}</td><td class="budget-number">${money(row.remaining)} VND</td><td class="budget-number">${money(row.amount)} VND</td>
+      <td><span class="budget-status-chip ${statusClass}">${escapeHtml(row.status)}</span></td><td>${escapeHtml(row.reviewer || "—")}</td><td>${escapeHtml(row.decidedAt || "—")}</td><td>${escapeHtml(row.note || "—")}</td>
+    </tr>`;
+  }).join("");
+  document.getElementById("topupDetailBack").onclick = () => route("budget-approval");
 }
 
 function initGotitDirectDiscount() {
