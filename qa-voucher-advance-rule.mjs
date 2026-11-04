@@ -26,7 +26,14 @@ page.on("requestfailed", request => {
 
 try {
   await page.goto("http://127.0.0.1:4173", { waitUntil: "networkidle" });
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem("crmRuleFieldCatalogV1", JSON.stringify({
+      categories: ["Check user profile", "Account & Segment", "Custom checks"],
+      systemCategories: ["Check user profile", "Account & Segment"],
+      checks: [{ id: "demo-state-check", name: "Demo State Check", category: "Custom checks", responseField: "demo.userState", dataType: "string", values: ["Ready", "Paused"], surfaces: ["voucher", "ruleEngine"] }]
+    }));
+  });
   await page.reload({ waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Asset Management" }).click();
   await page.getByRole("button", { name: "Voucher", exact: true }).click();
@@ -39,7 +46,7 @@ try {
   await page.getByRole("option", { name: "Check KYC level", exact: true }).click();
   await page.getByRole("button", { name: "+ Add condition", exact: true }).click();
   await page.locator("#voucherConditionList .rule-condition-row").nth(1).locator(".rule-condition-search").click();
-  await page.getByRole("option", { name: "Check NFC status", exact: true }).click();
+  await page.getByRole("option", { name: "Demo State Check", exact: true }).click();
 
   const geometry = await page.locator("#voucherConditionList .rule-condition-row").evaluateAll(rows => {
     const rect = node => {
@@ -69,13 +76,22 @@ try {
     if (rowTopDelta > 3) throw new Error(`Condition ${index + 1} controls do not share a top edge: ${JSON.stringify(item)}`);
   }
 
-  const connector = await page.locator("#voucherConditionList .rule-condition-connector").evaluate(node => {
-    const outer = node.getBoundingClientRect();
-    const control = node.querySelector("select").getBoundingClientRect();
-    return { outer: { y: outer.y, height: outer.height }, control: { y: control.y, height: control.height } };
+  const connector = await page.locator("#voucherConditionList .rule-condition-node").nth(1).evaluate(node => {
+    const previousControl = node.previousElementSibling.querySelector(".rule-condition-search").getBoundingClientRect();
+    const nextControl = node.querySelector(".rule-condition-search").getBoundingClientRect();
+    const outer = node.querySelector(".rule-condition-connector").getBoundingClientRect();
+    const control = node.querySelector(".rule-condition-connector select").getBoundingClientRect();
+    return {
+      previousBottom: previousControl.bottom,
+      nextTop: nextControl.top,
+      gapCenter: (previousControl.bottom + nextControl.top) / 2,
+      outer: { y: outer.y, height: outer.height },
+      control: { y: control.y, height: control.height },
+      controlCenter: control.y + control.height / 2
+    };
   });
-  const centerDelta = Math.abs((connector.outer.y + connector.outer.height / 2) - (connector.control.y + connector.control.height / 2));
-  if (centerDelta > 1) throw new Error(`AND/OR selector is not vertically centered in its connector space: ${JSON.stringify(connector)}`);
+  const centerDelta = Math.abs(connector.gapCenter - connector.controlCenter);
+  if (centerDelta > 1) throw new Error(`AND/OR selector is not centered between condition rows: ${JSON.stringify(connector)}`);
 
   await page.locator(".voucher-advanced-rule").scrollIntoViewIfNeeded();
   await page.mouse.move(1590, 15);
