@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-      <link rel="stylesheet" href="styles.css?v=rule-count-limits-1">
+      <link rel="stylesheet" href="styles.css?v=counter-request-fields-1">
 </head>
 <body>
   <header class="topbar">
@@ -786,8 +786,13 @@
   <template id="ruleFieldSetupTemplate">
     <div class="screen asset-screen rule-engine-screen rule-field-setup-screen">
       <div class="rule-field-catalog-panel">
-        <div class="rule-field-setup-toolbar"><button type="button" class="asset-btn secondary" id="ruleAddCategory"><span class="plus-mark" aria-hidden="true"></span>Add category</button><button type="button" class="asset-btn primary" id="ruleAddField"><span class="plus-mark" aria-hidden="true"></span>Add new</button></div>
+        <div class="rule-field-setup-toolbar"><button type="button" class="asset-btn secondary" id="ruleAddCategory"><span class="plus-mark" aria-hidden="true"></span>Add category</button><button type="button" class="asset-btn secondary" id="ruleAddCounterField"><span class="plus-mark" aria-hidden="true"></span>Add request field</button><button type="button" class="asset-btn primary" id="ruleAddField"><span class="plus-mark" aria-hidden="true"></span>Add check</button></div>
         <div id="ruleFieldCategories" class="rule-field-categories"></div>
+        <section class="rule-field-category rule-counter-field-catalog">
+          <h2><span class="rule-field-category-name">Counter fields</span><small id="ruleCounterFieldCount">0 fields</small></h2>
+          <p>Choose fields from a sample request sent to Rule Engine. These fields can be used to keep separate counts.</p>
+          <div class="rule-field-table-wrap"><table class="asset-table rule-field-table"><thead><tr><th>Field name</th><th>Request field</th><th>Type</th><th>Action</th></tr></thead><tbody id="ruleCounterFieldRows"></tbody></table></div>
+        </section>
       </div>
       <dialog class="rule-category-dialog" id="ruleCategoryDialog" aria-labelledby="ruleCategoryTitle">
         <form id="ruleCategoryForm" method="dialog"><div class="rule-field-dialog-header"><h2 id="ruleCategoryTitle">Add category</h2><button type="button" id="ruleCategoryClose" aria-label="Close">×</button></div><div class="rule-field-dialog-body"><label class="rule-config-field"><span>Category name <b>*</b></span><input id="ruleCategoryName" maxlength="60" placeholder="Enter category name"></label><div class="rule-field-form-error" id="ruleCategoryError" hidden></div></div><div class="rule-field-dialog-footer"><button type="button" class="asset-btn secondary" id="ruleCategoryCancel">Cancel</button><button type="submit" class="asset-btn primary" id="ruleCategorySave">Save category</button></div></form>
@@ -831,6 +836,36 @@
     </div>
   </template>
 
+  <template id="ruleCounterFieldFormTemplate">
+    <div class="screen asset-screen rule-engine-screen rule-field-form-screen">
+      <form id="ruleCounterFieldForm" class="rule-field-form">
+        <section class="other-section rule-config-card">
+          <h1 id="ruleCounterFieldTitle">Add request field</h1>
+          <div class="rule-config-content">
+            <label class="rule-config-field"><span>Field name <b>*</b></span><input id="ruleCounterFieldName" required maxlength="80" placeholder="For example: User ID"><small>This name appears when choosing fields to count by.</small></label>
+          </div>
+        </section>
+        <section class="other-section rule-config-card">
+          <h1>Request data</h1>
+          <div class="rule-config-content">
+            <section class="rule-sample-section">
+              <div class="rule-sample-heading"><div><strong>Sample JSON request <b>*</b></strong><small>Paste an example of the data a service sends to Rule Engine. Fields are found automatically as you type.</small></div></div>
+              <textarea id="ruleCounterFieldSample" class="rule-sample-input" rows="8" placeholder="Paste sample request JSON here" spellcheck="false"></textarea>
+              <div class="rule-field-form-error" id="ruleCounterSampleError" hidden></div>
+              <label class="rule-config-field rule-sample-search" id="ruleCounterFieldSearchWrap" hidden><span>Search fields</span><input id="ruleCounterFieldSearch" placeholder="Search by field name"></label>
+              <div class="rule-config-field rule-field-choice-label" id="ruleCounterFieldChoiceWrap" hidden><span>Choose a field <b>*</b></span></div>
+              <div class="rule-sample-field-list" id="ruleCounterFieldChoices" hidden></div>
+              <div class="rule-sample-selected"><span>Selected request field</span><code id="ruleCounterFieldSelectedPath">Choose a field from the list</code><small id="ruleCounterFieldSelectedType"></small></div>
+              <input type="hidden" id="ruleCounterFieldPath"><input type="hidden" id="ruleCounterFieldType">
+            </section>
+          </div>
+        </section>
+        <div class="rule-field-form-error rule-field-page-error" id="ruleCounterFieldError" hidden></div>
+        <div class="rule-form-actions"><button type="button" class="asset-btn secondary" id="ruleCounterFieldCancel">Cancel</button><button type="submit" class="asset-btn primary">Save field</button></div>
+      </form>
+    </div>
+  </template>
+
   <template id="ruleFormTemplate">
     <div class="screen asset-screen rule-engine-screen rule-config-screen">
       <form id="ruleConfigForm" class="rule-segment-form">
@@ -855,6 +890,6 @@
     </div>
   </template>
 
-      <script src="app.js?v=rule-count-limits-1"></script>
+      <script src="app.js?v=counter-request-fields-1"></script>
 </body>
 </html>

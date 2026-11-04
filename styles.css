@@ -1083,6 +1083,9 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-field-form .rule-form-actions { position: sticky; bottom: 0; z-index: 30; display: flex; justify-content: flex-end; justify-self: stretch; width: auto; margin: 0 -24px -24px; padding: 12px 24px; border-top: 1px solid #e5e7eb; background: #fff; box-shadow: 0 -2px 8px rgba(0, 0, 0, .08); }
 .rule-field-categories { display: grid; gap: 16px; padding: 16px; }
 .rule-field-category { overflow: hidden; border: 1px solid #e5e7eb; border-radius: 4px; background: #fff; }
+.rule-counter-field-catalog { margin: 0 16px 16px; }
+.rule-counter-field-catalog > p { margin: 0; padding: 12px 16px; color: #66798b; font-size: 13px; line-height: 20px; }
+.rule-counter-field-catalog h2 .rule-field-category-name { font-weight: 500; }
 .rule-field-category h2 { min-height: 48px; display: flex; align-items: center; gap: 10px; margin: 0; padding: 6px 16px; border-bottom: 1px solid #f0f0f0; background: #f9fafb; color: #001f3e; font-size: 15px; font-weight: 600; }
 .rule-field-category-name { min-width: 0; }
 .rule-field-category h2 small { color: #717182; font-size: 12px; font-weight: 400; }
@@ -1699,6 +1702,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-count-limit-grid input, .rule-count-limit-grid select { width: 100%; min-width: 0; height: 36px; }
 .rule-count-dimensions > summary { min-height: 36px; }
 .rule-count-dimensions .rule-multi-options { z-index: 30; }
+.rule-count-no-fields { display: flex; min-height: 36px; align-items: center; padding: 6px 10px; border: 1px dashed #d9d9d9; border-radius: 4px; background: #fafbfc; color: #66798b; font-size: 13px; }
 .rule-count-period-fields { grid-column: 3; }
 .rule-count-period-fields[hidden] { display: none; }
 .rule-count-period-fields > div { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); gap: 8px; }

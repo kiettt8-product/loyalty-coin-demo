@@ -653,6 +653,7 @@ const templates = {
   "rule-list": document.getElementById("ruleListTemplate"),
   "rule-field-setup": document.getElementById("ruleFieldSetupTemplate"),
   "rule-field-form": document.getElementById("ruleFieldFormTemplate"),
+  "rule-counter-field-form": document.getElementById("ruleCounterFieldFormTemplate"),
   "rule-form": document.getElementById("ruleFormTemplate")
 };
 
@@ -751,6 +752,7 @@ function route(name, payload = {}) {
     || (name === "roles-list" && button.dataset.route === "roles-list")
     || (name === "rule-form" && button.dataset.route === "rule-list")
     || (name === "rule-field-form" && button.dataset.route === "rule-field-setup")
+    || (name === "rule-counter-field-form" && button.dataset.route === "rule-field-setup")
   ));
   document.querySelector(".rule-engine-nav")?.classList.toggle("active", name.startsWith("rule-"));
   if (name === "list") initList();
@@ -767,6 +769,7 @@ function route(name, payload = {}) {
   if (name === "rule-list") initRuleList();
   if (name === "rule-field-setup") initRuleFieldSetup();
   if (name === "rule-field-form") initRuleFieldForm(payload);
+  if (name === "rule-counter-field-form") initRuleCounterFieldForm(payload);
   if (name === "rule-form") initRuleForm(payload);
   if (name === "budget-approval") initBudgetApproval();
   if (["ai-banner", "coin-direct-discount", "gotit-direct-discount"].includes(name)) {
@@ -865,10 +868,11 @@ const ruleFieldBuiltinChecks = [
 ];
 const RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES = ["Check user profile", "Account & Segment"];
 function loadRuleFieldCatalog() {
-  const defaults = { categories: [...RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES], systemCategories: [...RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES], checks: [] };
+  const defaults = { categories: [...RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES], systemCategories: [...RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES], checks: [], counterFields: [] };
   try {
     const saved = JSON.parse(localStorage.getItem(RULE_FIELD_CATALOG_KEY) || "null");
     if (!saved || !Array.isArray(saved.categories) || !Array.isArray(saved.checks)) return defaults;
+    if (!Array.isArray(saved.counterFields)) saved.counterFields = [];
     if (!Array.isArray(saved.systemCategories)) saved.systemCategories = [...RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES];
     const oldDynamicCategories = new Set(["dynamic filter", "dynamic counter", "dynamic rules"]);
     const renameOldCategory = category => oldDynamicCategories.has(String(category || "").trim().toLocaleLowerCase()) ? "Custom checks" : category;
@@ -2408,11 +2412,15 @@ function ruleFieldSurfaceLabel(check) {
   return labels.length ? `<span class="rule-field-surface-list">${labels.map(label => `<span class="rule-field-surface-tag">${label}</span>`).join("")}</span>` : '<span class="rule-field-surface-empty">Not available</span>';
 }
 
+function ruleUsesCounterField(rule, field) {
+  return (rule.countLimits || []).some(limit => (limit.keys || []).includes(field.path));
+}
+
 const ruleFieldSystemCategories = () => ruleFieldCatalog.systemCategories || [];
 
 function parseRuleSampleFields(sample) {
   const root = JSON.parse(sample);
-  if (!root || typeof root !== "object") throw new Error("The response must be a JSON object or array.");
+  if (!root || typeof root !== "object") throw new Error("JSON must be an object or array.");
   const fields = new Map();
   const typeOf = value => value === null ? "null" : Array.isArray(value) ? "array" : typeof value;
   const walk = (value, path = "", jsonStringRoots = [], depth = 0) => {
@@ -2484,6 +2492,15 @@ function renderRuleFieldSetup() {
       <div class="rule-field-table-wrap"><table class="asset-table rule-field-table"><thead><tr><th>Rule name</th><th>Response field</th><th>Available in</th><th>Action</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="rule-field-empty">No checks in this category yet.</td></tr>'}</tbody></table></div>
     </section>`;
   }).join("");
+  const counterFields = ruleFieldCatalog.counterFields || [];
+  const counterRows = counterFields.map(field => `<tr>
+    <td>${escapeHtml(field.name)}</td>
+    <td><code>${escapeHtml(field.path)}</code></td>
+    <td>${escapeHtml(ruleFieldTypeLabel(field.dataType))}</td>
+    <td class="rule-field-actions"><button type="button" class="asset-icon-button" data-edit-counter-field="${escapeHtml(field.id)}" aria-label="Edit ${escapeHtml(field.name)}" title="Edit"><img src="assets/action-edit.svg" alt=""></button><button type="button" class="asset-icon-button" data-delete-counter-field="${escapeHtml(field.id)}" aria-label="Delete ${escapeHtml(field.name)}" title="Delete"><img src="assets/action-delete.svg" alt=""></button></td>
+  </tr>`).join("");
+  document.getElementById("ruleCounterFieldRows").innerHTML = counterRows || '<tr><td colspan="4" class="rule-field-empty">No request fields added yet.</td></tr>';
+  document.getElementById("ruleCounterFieldCount").textContent = `${counterFields.length} ${counterFields.length === 1 ? "field" : "fields"}`;
 }
 
 function populateRuleFieldCategories(selected = "") {
@@ -2547,6 +2564,7 @@ function initRuleFieldSetup() {
   };
 
   document.getElementById("ruleAddField").onclick = () => openRuleFieldForm();
+  document.getElementById("ruleAddCounterField").onclick = () => route("rule-counter-field-form");
 
   document.getElementById("ruleFieldCategories").onclick = async event => {
     const editCategory = event.target.closest("[data-edit-category]");
@@ -2585,6 +2603,24 @@ function initRuleFieldSetup() {
       renderRuleFieldSetup();
       toast(`Check “${check.name}” deleted.`);
     }
+  };
+  document.getElementById("ruleCounterFieldRows").onclick = async event => {
+    const edit = event.target.closest("[data-edit-counter-field]");
+    if (edit) {
+      const field = ruleFieldCatalog.counterFields.find(item => item.id === edit.dataset.editCounterField);
+      if (field) route("rule-counter-field-form", { fieldId: field.id });
+      return;
+    }
+    const remove = event.target.closest("[data-delete-counter-field]");
+    if (!remove) return;
+    const field = ruleFieldCatalog.counterFields.find(item => item.id === remove.dataset.deleteCounterField);
+    if (!field) return;
+    if (ruleEngineRules.some(rule => ruleUsesCounterField(rule, field))) { toast("This request field is used by a counter. Remove it from that rule before deleting it.", "error"); return; }
+    if (!await confirmRuleAction({ title: "Delete request field?", message: `Delete “${field.name}”? It will no longer be available for new counters.`, confirmLabel: "Delete field", danger: true })) return;
+    ruleFieldCatalog.counterFields = ruleFieldCatalog.counterFields.filter(item => item.id !== field.id);
+    saveRuleFieldCatalog();
+    renderRuleFieldSetup();
+    toast(`Request field “${field.name}” deleted.`);
   };
 }
 
@@ -2774,6 +2810,106 @@ function initRuleFieldForm(payload = {}) {
   };
 }
 
+function initRuleCounterFieldForm(payload = {}) {
+  const form = document.getElementById("ruleCounterFieldForm");
+  const field = ruleFieldCatalog.counterFields.find(item => item.id === payload.fieldId) || null;
+  form.dataset.editId = field?.id || "";
+  document.getElementById("ruleCounterFieldTitle").textContent = field ? "Edit request field" : "Add request field";
+  document.getElementById("ruleCounterFieldName").value = field?.name || "";
+  document.getElementById("ruleCounterFieldSample").value = field?.sampleJson || "";
+  document.getElementById("ruleCounterFieldPath").value = field?.path || "";
+  document.getElementById("ruleCounterFieldType").value = field?.dataType || "";
+  document.getElementById("ruleCounterFieldSelectedPath").textContent = field?.path || "Choose a field from the list";
+  document.getElementById("ruleCounterFieldSelectedType").textContent = field?.dataType ? `Field type: ${ruleFieldTypeLabel(field.dataType)}` : "";
+  document.getElementById("ruleCounterFieldError").hidden = true;
+  document.getElementById("ruleCounterSampleError").hidden = true;
+  const sample = document.getElementById("ruleCounterFieldSample");
+  const choices = document.getElementById("ruleCounterFieldChoices");
+  const search = document.getElementById("ruleCounterFieldSearch");
+  let parsedFields = [];
+  let parseTimer;
+
+  const renderChoices = () => {
+    const query = search.value.trim().toLocaleLowerCase();
+    const selectedPath = document.getElementById("ruleCounterFieldPath").value;
+    const matches = parsedFields.filter(item => !query || `${item.path} ${item.dataType}`.toLocaleLowerCase().includes(query));
+    choices.innerHTML = matches.length ? matches.map(item => `<label class="rule-sample-field-choice"><input type="radio" name="ruleCounterSampleField" value="${escapeHtml(item.path)}" data-field-type="${escapeHtml(item.dataType)}" ${item.path === selectedPath ? "checked" : ""}><span><code>${escapeHtml(item.path)}</code><small>${escapeHtml(ruleFieldTypeLabel(item.dataType))}</small></span></label>`).join("") : '<div class="rule-sample-empty">No matching fields.</div>';
+  };
+  const parseSample = (showError = false) => {
+    const raw = sample.value.trim();
+    const error = document.getElementById("ruleCounterSampleError");
+    error.hidden = true;
+    parsedFields = [];
+    if (!raw) {
+      document.getElementById("ruleCounterFieldSearchWrap").hidden = true;
+      document.getElementById("ruleCounterFieldChoiceWrap").hidden = true;
+      choices.hidden = true;
+      return false;
+    }
+    try {
+      parsedFields = parseRuleSampleFields(raw).filter(item => ["string", "number", "boolean", "mixed"].includes(item.dataType));
+      if (!parsedFields.length) throw new Error("No text, number, or true/false fields found in this request.");
+      document.getElementById("ruleCounterFieldSearchWrap").hidden = false;
+      document.getElementById("ruleCounterFieldChoiceWrap").hidden = false;
+      choices.hidden = false;
+      renderChoices();
+      return true;
+    } catch (cause) {
+      document.getElementById("ruleCounterFieldSearchWrap").hidden = true;
+      document.getElementById("ruleCounterFieldChoiceWrap").hidden = true;
+      choices.hidden = true;
+      if (showError) {
+        error.textContent = cause instanceof SyntaxError ? "Enter a valid JSON request." : cause.message;
+        error.hidden = false;
+      }
+      return false;
+    }
+  };
+  sample.addEventListener("input", () => {
+    clearTimeout(parseTimer);
+    document.getElementById("ruleCounterFieldPath").value = "";
+    document.getElementById("ruleCounterFieldType").value = "";
+    document.getElementById("ruleCounterFieldSelectedPath").textContent = "Choose a field from the list";
+    document.getElementById("ruleCounterFieldSelectedType").textContent = "";
+    parseTimer = setTimeout(() => parseSample(false), 250);
+  });
+  sample.addEventListener("blur", () => parseSample(true));
+  search.addEventListener("input", renderChoices);
+  choices.addEventListener("change", event => {
+    const selected = event.target.closest('input[name="ruleCounterSampleField"]');
+    if (!selected) return;
+    document.getElementById("ruleCounterFieldPath").value = selected.value;
+    document.getElementById("ruleCounterFieldType").value = selected.dataset.fieldType;
+    document.getElementById("ruleCounterFieldSelectedPath").textContent = selected.value;
+    document.getElementById("ruleCounterFieldSelectedType").textContent = `Field type: ${ruleFieldTypeLabel(selected.dataset.fieldType)}`;
+  });
+  if (field?.sampleJson) parseSample(false);
+
+  document.getElementById("ruleCounterFieldCancel").onclick = async () => {
+    if (!await confirmRuleAction({ title: "Discard request field?", message: "Your unsaved request field changes will be lost.", confirmLabel: "Discard changes", cancelLabel: "Keep editing", danger: true })) return;
+    route("rule-field-setup");
+  };
+  form.onsubmit = async event => {
+    event.preventDefault();
+    const name = document.getElementById("ruleCounterFieldName").value.trim();
+    const path = document.getElementById("ruleCounterFieldPath").value;
+    const dataType = document.getElementById("ruleCounterFieldType").value;
+    const error = document.getElementById("ruleCounterFieldError");
+    const duplicateName = ruleFieldCatalog.counterFields.some(item => item.id !== field?.id && item.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+    const duplicatePath = ruleFieldCatalog.counterFields.some(item => item.id !== field?.id && item.path === path);
+    const pathInUse = field && path !== field.path && ruleEngineRules.some(rule => ruleUsesCounterField(rule, field));
+    const message = !name ? "Enter a field name." : !sample.value.trim() ? "Paste a sample request." : !path ? "Choose a field from the sample request." : !["string", "number", "boolean", "mixed"].includes(dataType) ? "Choose a text, number, or true/false field." : duplicateName ? "This field name already exists." : duplicatePath ? "This request path already exists." : pathInUse ? "This field is used by a counter. Remove it from that rule before changing the request field." : "";
+    if (message) { error.textContent = message; error.hidden = false; return; }
+    if (!await confirmRuleAction({ title: field ? "Save request field changes?" : "Add this request field?", message: field ? `Save the changes to “${name}”?` : `Add “${name}” to the fields available for counters?`, confirmLabel: field ? "Save changes" : "Add field" })) return;
+    const nextField = { id: field?.id || `counter-field-${Date.now()}`, name, path, dataType, sampleJson: sample.value.trim() };
+    if (field) Object.assign(field, nextField);
+    else ruleFieldCatalog.counterFields.push(nextField);
+    saveRuleFieldCatalog();
+    route("rule-field-setup");
+    toast(field ? `Request field “${name}” updated.` : `Request field “${name}” added.`);
+  };
+}
+
 function ruleFieldTypeLabel(type) {
   return ({ string: "Text", number: "Number", boolean: "True / false", null: "Empty", object: "Object", array: "List", mixed: "Mixed values" })[type] || type;
 }
@@ -2943,25 +3079,23 @@ const dynamicCounterTypes = [
   { value: "LIMIT_COUNTER_BY_MULTIPLE_KEY", label: "Count by selected fields" },
   { value: "LIMIT_COUNTER_BY_MULTIPLE_KEY_PERIOD", label: "Count by selected fields per period" }
 ];
-// Keep business-facing labels simple. These two request fields are verified in
-// the old counter UI / Rule Usage examples; Tech should confirm the full catalog.
-const ruleCountDimensions = [
-  { value: "requestInfo.userId", label: "User ID" },
-  { value: "requestInfo.first6CardNo", label: "First 6 card digits" }
-];
+function getRuleCountDimensions() {
+  return (ruleFieldCatalog.counterFields || []).map(field => ({ value: field.path, label: field.name }));
+}
 function ruleCountLimitMarkup(limit = {}, readonly = false, index = 0) {
   const selectedKeys = limit.keys || [];
+  const dimensions = getRuleCountDimensions();
   const resetMode = limit.resetMode || (limit.periodUnit ? "period" : "never");
-  const dimensionOptions = ruleCountDimensions.map(field => `<label><input type="checkbox" data-count-dimension value="${escapeHtml(field.value)}" ${selectedKeys.includes(field.value) ? "checked" : ""} ${readonly ? "disabled" : ""}><span>${escapeHtml(field.label)}</span></label>`).join("");
+  const dimensionOptions = dimensions.map(field => `<label><input type="checkbox" data-count-dimension value="${escapeHtml(field.value)}" ${selectedKeys.includes(field.value) ? "checked" : ""} ${readonly ? "disabled" : ""}><span>${escapeHtml(field.label)}<small>${escapeHtml(field.value)}</small></span></label>`).join("");
   const chips = selectedKeys.map(key => {
-    const field = ruleCountDimensions.find(item => item.value === key);
-    return field ? `<span class="rule-multi-chip">${escapeHtml(field.label)}${readonly ? "" : `<button type="button" data-remove-count-dimension="${escapeHtml(key)}" aria-label="Remove ${escapeHtml(field.label)}">×</button>`}</span>` : "";
+    const field = dimensions.find(item => item.value === key) || { value: key, label: key };
+    return `<span class="rule-multi-chip">${escapeHtml(field.label)}${readonly ? "" : `<button type="button" data-remove-count-dimension="${escapeHtml(key)}" aria-label="Remove ${escapeHtml(field.label)}">×</button>`}</span>`;
   }).join("");
   return `<section class="rule-count-limit" data-count-limit>
     <div class="rule-count-limit-head"><strong>Limit ${index + 1}</strong>${readonly ? "" : '<button type="button" class="rule-item-remove" data-remove-count-limit aria-label="Remove count limit">×</button>'}</div>
     <div class="rule-count-limit-grid">
       <label><span>Maximum count</span><input type="number" min="1" step="1" data-count-limit-field="maximum" value="${escapeHtml(limit.maximum || "")}" placeholder="Enter a number" ${readonly ? "disabled" : ""}></label>
-      <div class="rule-count-dimension-field"><span>Count separately by <small>(optional)</small></span><details class="rule-multi-select rule-count-dimensions" data-count-dimensions><summary aria-label="Choose fields to count by"><span class="rule-multi-selected">${chips}</span><span class="rule-multi-placeholder" ${selectedKeys.length ? "hidden" : ""}>All matching requests</span><span class="rule-multi-chevron" aria-hidden="true">⌄</span></summary><div class="rule-multi-options">${dimensionOptions}</div></details><small class="rule-count-help">No fields uses one shared limit. Selected fields keep a separate count for each value combination.</small></div>
+      <div class="rule-count-dimension-field"><span>Count separately by <small>(optional)</small></span>${dimensions.length ? `<details class="rule-multi-select rule-count-dimensions" data-count-dimensions><summary aria-label="Choose fields to count by"><span class="rule-multi-selected">${chips}</span><span class="rule-multi-placeholder" ${selectedKeys.length ? "hidden" : ""}>All matching requests</span><span class="rule-multi-chevron" aria-hidden="true">⌄</span></summary><div class="rule-multi-options">${dimensionOptions}</div></details>` : '<div class="rule-count-no-fields">No request fields set up yet. Add them in Rule Engine → Field Setup.</div>'}<small class="rule-count-help">Leave empty to count matching requests together. Selected fields create a separate count for each value combination.</small></div>
       <label><span>Reset count</span><select data-count-limit-field="resetMode" ${readonly ? "disabled" : ""}><option value="never" ${resetMode === "never" ? "selected" : ""}>No reset</option><option value="period" ${resetMode === "period" ? "selected" : ""}>After a period</option></select></label>
       <div class="rule-count-period-fields" data-count-period-fields ${resetMode === "period" ? "" : "hidden"}><span>Reset every</span><div><input type="number" min="1" step="1" data-count-limit-field="periodLength" value="${escapeHtml(limit.periodLength || "1")}" aria-label="Period length" ${readonly ? "disabled" : ""}><select data-count-limit-field="periodUnit" aria-label="Period unit" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleTimeUnits, limit.periodUnit || "DAY")}</select></div></div>
     </div>
@@ -2986,12 +3120,13 @@ function syncRuleCountDimensions(card) {
   const selected = [...card.querySelectorAll("[data-count-dimension]:checked")];
   placeholder.hidden = selected.length > 0;
   summary.innerHTML = selected.map(input => {
-    const label = ruleCountDimensions.find(field => field.value === input.value)?.label || input.value;
+    const label = getRuleCountDimensions().find(field => field.value === input.value)?.label || input.value;
     return `<span class="rule-multi-chip">${escapeHtml(label)}${input.disabled ? "" : `<button type="button" data-remove-count-dimension="${escapeHtml(input.value)}" aria-label="Remove ${escapeHtml(label)}">×</button>`}</span>`;
   }).join("");
 }
 function ruleCountLimitsAreComplete(limits) {
-  return limits.every(limit => Number.isInteger(Number(limit.maximum)) && Number(limit.maximum) > 0 && (limit.resetMode !== "period" || (Number.isInteger(Number(limit.periodLength)) && Number(limit.periodLength) > 0 && Boolean(limit.periodUnit))));
+  const configuredFields = new Set(getRuleCountDimensions().map(field => field.value));
+  return limits.every(limit => Number.isInteger(Number(limit.maximum)) && Number(limit.maximum) > 0 && (limit.keys || []).every(key => configuredFields.has(key)) && (limit.resetMode !== "period" || (Number.isInteger(Number(limit.periodLength)) && Number(limit.periodLength) > 0 && Boolean(limit.periodUnit))));
 }
 const dynamicFilterMethods = [
   { value: "checkSegment", label: "Check segment", code: "checkSegment" },
