@@ -791,6 +791,10 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .voucher-advanced-toggle[aria-expanded="false"] { border-bottom: 0; }
 .voucher-advanced-content { display: block; padding: 16px; border-top: 0; }
 .voucher-condition-list { display: grid; gap: 12px; }
+.voucher-advanced-content .rule-condition-tree { gap: 8px; }
+.voucher-advanced-content .rule-condition-connector { min-height: 36px; padding-left: 4px; transform: none; }
+.voucher-advanced-content .rule-condition-connector-line { display: none; }
+.voucher-advanced-content .rule-condition-group-card { padding: 16px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .08); }
 .voucher-condition-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) 32px; gap: 16px; align-items: start; }
 .voucher-condition-picker { position: relative; min-width: 0; }
 .voucher-condition-picker > input,
@@ -856,6 +860,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .voucher-condition-remove { width: 32px; height: 32px; display: grid; place-items: center; padding: 0; border: 0; background: transparent; cursor: pointer; }
 .voucher-condition-remove img { width: 16px; height: 16px; }
 .voucher-advanced-actions { margin-top: 12px; }
+.voucher-advanced-actions .asset-btn { min-width: 0; }
 .voucher-advanced-actions button { min-width: 92px; }
 .voucher-advanced-actions button:disabled { border-color: #d9d9d9; background: #f5f5f5; color: #bfbfbf; cursor: not-allowed; box-shadow: none; }
 .voucher-form-section:has(.voucher-condition-menu:not([hidden]), .voucher-multi-select-menu:not([hidden])) { position: relative; z-index: 10; overflow: visible; }

@@ -1247,8 +1247,7 @@ function initVoucherAssetCreate() {
       button.textContent = body.hidden ? "›" : "⌄";
     };
   });
-  addVoucherConditionRow();
-  document.getElementById("voucherAddRule").addEventListener("click", addVoucherConditionRow);
+  initVoucherAdvanceRuleBuilder();
   document.getElementById("voucherAdvancedToggle").addEventListener("click", event => {
     const button = event.currentTarget;
     const content = document.getElementById("voucherAdvancedContent");
@@ -1263,8 +1262,168 @@ function initVoucherAssetCreate() {
   };
   document.getElementById("voucherCreateForm").onsubmit = event => {
     event.preventDefault();
+    const ruleRows = document.getElementById("voucherConditionList");
+    const hasConfiguredRule = ruleRows.querySelector(".rule-condition-row[data-rule-type]");
+    const conditions = collectRuleConditionGroup(ruleRows.querySelector(":scope > .rule-condition-tree"));
+    if (hasConfiguredRule && !ruleConditionTreeIsComplete(conditions)) {
+      toast("Complete each selected advance rule condition.", "error");
+      return;
+    }
     toast("Complete mandatory fields before distributing the voucher.", "error");
   };
+}
+
+function initVoucherAdvanceRuleBuilder() {
+  const rows = document.getElementById("voucherConditionList");
+  if (!rows) return;
+  rows.innerHTML = ruleConditionGroupMarkup([{ kind: "condition" }]);
+
+  const closePickers = except => rows.querySelectorAll(".rule-condition-menu").forEach(menu => {
+    const input = menu.closest(".rule-type-picker")?.querySelector(".rule-condition-search");
+    if (input === except) return;
+    menu.hidden = true;
+    input?.setAttribute("aria-expanded", "false");
+  });
+  const openPicker = input => {
+    const row = input.closest(".rule-condition-row");
+    if (!row) return;
+    const option = ruleConditionOptions.find(item => item.value === row.dataset.ruleType);
+    const menu = row.querySelector(".rule-condition-menu");
+    closePickers(input);
+    renderRuleConditionMenu(menu, input.value === option?.label ? "" : input.value, row.dataset.ruleType);
+    menu.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+    const rect = input.getBoundingClientRect();
+    input.parentElement.classList.toggle("opens-up", window.innerHeight - rect.bottom < 330 && rect.top > 330);
+  };
+  const addNode = (kind, group = rows.querySelector(":scope > .rule-condition-tree")) => {
+    const empty = kind === "condition" && [...rows.querySelectorAll(":scope .rule-condition-row")].find(row => !row.dataset.ruleType);
+    if (empty) {
+      const input = empty.querySelector(".rule-condition-search");
+      input.focus(); openPicker(input); return;
+    }
+    const input = appendRuleConditionNode(group, kind);
+    input?.focus();
+    if (input) openPicker(input);
+  };
+
+  rows.addEventListener("focusin", event => { if (event.target.matches(".rule-condition-search")) openPicker(event.target); });
+  rows.addEventListener("click", event => {
+    if (event.target.matches(".rule-condition-search")) openPicker(event.target);
+    const choice = event.target.closest(".voucher-condition-option[data-rule-type]");
+    if (choice) {
+      const row = choice.closest(".rule-condition-row");
+      const option = ruleConditionOptions.find(item => item.value === choice.dataset.ruleType);
+      if (!option) return;
+      row.dataset.ruleType = option.value;
+      row.dataset.ruleField = option.backendField || option.value;
+      row.dataset.ruleSubtype = option.subtype || "";
+      const input = row.querySelector(".rule-condition-search");
+      input.value = option.label;
+      input.setAttribute("value", option.label);
+      input.setAttribute("aria-expanded", "false");
+      input.parentElement.classList.add("has-selection");
+      row.querySelector(".voucher-condition-remove").hidden = false;
+      row.querySelector(".rule-condition-menu").hidden = true;
+      row.classList.remove("is-dynamic");
+      row.querySelector(".rule-configuration").hidden = false;
+      row.querySelector(".voucher-condition-operator").hidden = false;
+      row.querySelector(".voucher-condition-value").hidden = false;
+      if (option.operators) configureRuleSimpleCondition(row, option);
+      else if (["81", "95"].includes(option.value)) configureRuleSpecialCondition(row, option);
+      return;
+    }
+    const add = event.target.closest("[data-add-condition-node]");
+    if (add) { addNode(add.dataset.addConditionNode, add.closest(".rule-condition-tree")); return; }
+    const removeGroup = event.target.closest("[data-remove-condition-group]");
+    const removeCondition = event.target.closest(".voucher-condition-remove, .rule-condition-remove");
+    if (removeGroup || removeCondition) {
+      const node = (removeGroup || removeCondition).closest(".rule-condition-node");
+      const group = node?.closest(".rule-condition-tree");
+      if (!node || !group) return;
+      node.remove();
+      const depth = Number(group.dataset.groupDepth || 0);
+      group.outerHTML = ruleConditionGroupMarkup(collectRuleConditionGroup(group), false, depth);
+      return;
+    }
+    const simpleValue = event.target.closest("[data-simple-value]");
+    if (simpleValue) {
+      const row = simpleValue.closest(".rule-condition-row");
+      const selected = JSON.parse(row.dataset.selectedValues || "[]");
+      const value = simpleValue.dataset.simpleValue;
+      row.dataset.selectedValues = JSON.stringify(selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value]);
+      const search = row.querySelector(".voucher-multi-select-search"); search.value = "";
+      renderRuleSimpleMultiValue(row, ruleConditionOptions.find(item => item.value === row.dataset.ruleType));
+      row.querySelector(".voucher-multi-select-menu").hidden = false;
+      search.focus(); return;
+    }
+    const removeValue = event.target.closest("[data-remove-simple-value]");
+    if (removeValue) {
+      const row = removeValue.closest(".rule-condition-row");
+      row.dataset.selectedValues = JSON.stringify(JSON.parse(row.dataset.selectedValues || "[]").filter(value => value !== removeValue.dataset.removeSimpleValue));
+      renderRuleSimpleMultiValue(row, ruleConditionOptions.find(item => item.value === row.dataset.ruleType)); return;
+    }
+    const singleValue = event.target.closest("[data-single-value]");
+    if (singleValue) {
+      const host = singleValue.closest(".voucher-single-select");
+      host.querySelector(".voucher-single-select-control > span").textContent = singleValue.dataset.singleValue;
+      host.querySelectorAll("[data-single-value]").forEach(item => item.setAttribute("aria-selected", String(item === singleValue)));
+      host.querySelector(".voucher-single-select-menu").hidden = true;
+      host.querySelector(".voucher-single-select-control").setAttribute("aria-expanded", "false"); return;
+    }
+    const singleControl = event.target.closest(".voucher-single-select-control");
+    if (singleControl && !singleControl.disabled) {
+      const menu = singleControl.closest(".voucher-single-select").querySelector(".voucher-single-select-menu");
+      const show = menu.hidden;
+      rows.querySelectorAll(".voucher-single-select-menu, .voucher-multi-select-menu").forEach(item => item.hidden = true);
+      menu.hidden = !show; singleControl.setAttribute("aria-expanded", String(show)); return;
+    }
+    if (event.target.closest(".voucher-multi-select-control")) {
+      const row = event.target.closest(".rule-condition-row");
+      const menu = row.querySelector(".voucher-multi-select-menu");
+      menu.hidden = false;
+      renderRuleSimpleMultiValue(row, ruleConditionOptions.find(item => item.value === row.dataset.ruleType));
+      row.querySelector(".voucher-multi-select-search").focus();
+    }
+  });
+  rows.addEventListener("input", event => {
+    if (event.target.matches(".rule-condition-search")) {
+      const row = event.target.closest(".rule-condition-row");
+      closePickers(event.target);
+      row.dataset.ruleType = ""; row.dataset.ruleField = ""; row.dataset.ruleSubtype = "";
+      event.target.removeAttribute("value"); event.target.parentElement.classList.remove("has-selection");
+      row.classList.remove("is-dynamic");
+      row.querySelector(".rule-configuration").innerHTML = "";
+      row.querySelector(".voucher-condition-remove").hidden = true;
+      row.querySelector(".voucher-condition-operator").innerHTML = voucherSingleSelectMarkup("Operator", [], "", true);
+      row.querySelector(".voucher-condition-value").innerHTML = voucherSingleSelectMarkup("Select value", [], "", true);
+      renderRuleConditionMenu(row.querySelector(".rule-condition-menu"), event.target.value);
+      row.querySelector(".rule-condition-menu").hidden = false; event.target.setAttribute("aria-expanded", "true");
+    }
+    if (event.target.matches(".voucher-multi-select-search")) {
+      const row = event.target.closest(".rule-condition-row");
+      const option = ruleConditionOptions.find(item => item.value === row.dataset.ruleType);
+      if (option?.multiple) { renderRuleSimpleMultiValue(row, option); row.querySelector(".voucher-multi-select-menu").hidden = false; }
+    }
+  });
+  rows.addEventListener("keydown", event => {
+    if (event.target.matches(".rule-condition-search")) {
+      const row = event.target.closest(".rule-condition-row");
+      if (event.key === "Escape") { row.querySelector(".rule-condition-menu").hidden = true; event.target.setAttribute("aria-expanded", "false"); }
+      if (event.key === "Enter") { const option = row.querySelector(".voucher-condition-option[data-rule-type]"); if (option) { event.preventDefault(); option.click(); } }
+    }
+    if (event.target.matches(".voucher-multi-select-search") && event.key === "Enter") {
+      const option = event.target.closest(".voucher-condition-value").querySelector("[data-simple-value]");
+      if (option) { event.preventDefault(); option.click(); }
+    }
+  });
+  document.getElementById("voucherAddRule").addEventListener("click", () => addNode("condition"));
+  document.getElementById("voucherAddConditionGroup").addEventListener("click", () => addNode("group"));
+  document.addEventListener("click", event => {
+    if (rows.contains(event.target)) return;
+    closePickers(null);
+    rows.querySelectorAll(".voucher-single-select-menu, .voucher-multi-select-menu").forEach(menu => menu.hidden = true);
+  });
 }
 
 function assetIdentifierCell(item) {
@@ -2519,23 +2678,31 @@ function ruleFieldTypeLabel(type) {
 // Fields configured in Field Setup appear as regular checks in their selected
 // category. Dynamic Filter and Dynamic Counter are not condition types.
 const builtInRuleConditionOptions = [
-  { group: "Check user profile", value: "profile-kyc", backendField: "109", subtype: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
-  { group: "Check user profile", value: "profile-nfc", backendField: "109", subtype: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
-  { group: "Check user profile", value: "profile-ekyc", backendField: "109", subtype: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
-  { group: "Check user profile", value: "profile-account-level", backendField: "109", subtype: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"] },
+  { group: "Check user profile", fieldSetupId: "kyc", value: "profile-kyc", backendField: "109", subtype: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
+  { group: "Check user profile", fieldSetupId: "nfc", value: "profile-nfc", backendField: "109", subtype: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
+  { group: "Check user profile", fieldSetupId: "ekyc", value: "profile-ekyc", backendField: "109", subtype: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
+  { group: "Check user profile", fieldSetupId: "account-level", value: "profile-account-level", backendField: "109", subtype: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"] },
   { group: "Check user profile", value: "109", backendField: "109", label: "User profile check", legacy: true },
-  { group: "Account & Segment", value: "104", label: "Check MMF account status", operators: ["Is"], values: ["Has account", "Has no account"] },
-  { group: "Account & Segment", value: "81", label: "Segment check" },
-  { group: "Account & Segment", value: "95", label: "Risk check" },
+  { group: "Account & Segment", fieldSetupId: "104", value: "104", label: "Check MMF account status", operators: ["Is"], values: ["Has account", "Has no account"] },
+  { group: "Account & Segment", fieldSetupId: "81", value: "81", label: "Segment check" },
+  { group: "Account & Segment", fieldSetupId: "95", value: "95", label: "Risk check" },
   { group: "Usage counters", value: "10", label: "User counter", legacy: true },
   { group: "Usage counters", value: "86", label: "User counter per period", legacy: true }
 ];
 let ruleConditionOptions = [];
 function refreshRuleConditionOptions() {
-  ruleConditionOptions = [
-    ...builtInRuleConditionOptions,
-    ...customRuleEngineFields()
-  ];
+  const builtIns = builtInRuleConditionOptions.map(option => {
+    const fieldSetup = ruleFieldBuiltinChecks.find(check => check.id === option.fieldSetupId);
+    return { ...option, group: fieldSetup?.category || option.group, surfaces: fieldSetup?.surfaces || ["ruleEngine"] };
+  });
+  const custom = [...customRuleEngineFields("ruleEngine"), ...customRuleEngineFields("voucher")]
+    .reduce((merged, option) => {
+      const existing = merged.find(item => item.value === option.value);
+      if (existing) existing.surfaces = [...new Set([...existing.surfaces, ...option.surfaces])];
+      else merged.push(option);
+      return merged;
+    }, []);
+  ruleConditionOptions = [...builtIns, ...custom];
 }
 refreshRuleConditionOptions();
 
@@ -2564,14 +2731,15 @@ const ruleSegments = [
 ];
 const ruleJmesKeys = [{ value: "requestInfo.embeddedData.columninfo.merchantInfo.providedList", label: "Merchant list", dataType: "ARRAY" }];
 
-function customRuleEngineFields() {
-  return ruleFieldCatalog.checks.filter(check => check.surfaces.includes("ruleEngine") && check.responseField).map(check => ({
+function customRuleEngineFields(surface = "ruleEngine") {
+  return ruleFieldCatalog.checks.filter(check => check.surfaces.includes(surface) && check.responseField).map(check => ({
     id: check.id,
     value: check.id,
     backendField: check.id,
     fieldId: check.id,
     responseField: check.responseField,
     custom: true,
+    surfaces: [...check.surfaces],
     group: check.category || "Other fields",
     category: check.category || "Other fields",
     label: check.name,
@@ -2719,9 +2887,11 @@ function ruleCompactUserTypePickerMarkup(config = {}, readonly = false) {
 
 function renderRuleConditionMenu(menu, search = "", selectedType = "") {
   const query = search.trim().toLowerCase();
-  const groups = [...new Set(ruleConditionOptions.map(option => option.group))];
+  const surface = menu.closest("[data-rule-surface]")?.dataset.ruleSurface || "ruleEngine";
+  const optionsCatalog = ruleConditionOptions.filter(option => option.surfaces?.includes(surface));
+  const groups = [...new Set(optionsCatalog.map(option => option.group))];
   const options = groups.map(group => {
-    const items = ruleConditionOptions.filter(option => !option.legacy && option.group === group && (!query || `${group} ${option.label}`.toLowerCase().includes(query)));
+    const items = optionsCatalog.filter(option => !option.legacy && option.group === group && (!query || `${group} ${option.label}`.toLowerCase().includes(query)));
     if (!items.length) return "";
     return `<div class="voucher-condition-group"><span aria-hidden="true"></span>${escapeHtml(group)}</div>${items.map(option => `<button type="button" class="voucher-condition-option" role="option" aria-selected="${option.value === selectedType}" data-rule-type="${option.value}">${escapeHtml(option.label)}</button>`).join("")}`;
   }).join("") || `<div class="voucher-condition-empty">No matching rules</div>`;
@@ -2863,7 +3033,7 @@ function normalizeRuleConditionNodes(nodes = []) {
 
 function ruleConditionGroupMarkup(nodes = [], readonly = false, depth = 0) {
   const items = normalizeRuleConditionNodes(nodes);
-  if (!items.length && depth === 0) items.push({ kind: "condition" });
+  if (!items.length) items.push({ kind: "condition" });
   const content = items.map((item, index) => {
     const connector = index ? `<div class="rule-condition-connector"><span class="rule-condition-connector-line" aria-hidden="true"></span><select data-condition-connective aria-label="Join condition ${index + 1}" ${readonly ? "disabled" : ""}><option value="all" ${(item.connective || "all") === "all" ? "selected" : ""}>AND</option><option value="any" ${(item.connective || "all") === "any" ? "selected" : ""}>OR</option></select></div>` : "";
     const body = item.kind === "group"

@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-      <link rel="stylesheet" href="styles.css?v=rule-field-catalog-32">
+      <link rel="stylesheet" href="styles.css?v=voucher-advance-rule-builder-1">
 </head>
 <body>
   <header class="topbar">
@@ -251,8 +251,8 @@
           <div class="voucher-rule-box voucher-advanced-rule">
             <button type="button" class="voucher-rule-title voucher-advanced-toggle" id="voucherAdvancedToggle" aria-expanded="true"><span class="chevron-down" aria-hidden="true"></span>Advance Rule</button>
             <div class="voucher-advanced-content" id="voucherAdvancedContent">
-              <div class="voucher-condition-list" id="voucherConditionList"></div>
-              <div class="voucher-advanced-actions"><button type="button" class="asset-btn secondary" id="voucherAddRule">Add Rule</button></div>
+              <div class="voucher-condition-list" id="voucherConditionList" data-rule-surface="voucher"></div>
+              <div class="voucher-advanced-actions rule-condition-actions"><button type="button" class="asset-btn primary" id="voucherAddRule">+ Add condition</button><button type="button" class="asset-btn secondary" id="voucherAddConditionGroup">+ Add condition group</button></div>
             </div>
           </div>
         </div>
@@ -850,6 +850,6 @@
     </div>
   </template>
 
-      <script src="app.js?v=rule-field-catalog-33"></script>
+      <script src="app.js?v=voucher-advance-rule-builder-1"></script>
 </body>
 </html>
