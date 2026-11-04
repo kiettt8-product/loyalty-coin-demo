@@ -2413,7 +2413,11 @@ function ruleFieldSurfaceLabel(check) {
 }
 
 function ruleUsesCounterField(rule, field) {
-  return (rule.countLimits || []).some(limit => (limit.keys || []).includes(field.path));
+  const usesIn = conditions => (conditions || []).some(condition => {
+    if (condition.kind === "group") return usesIn(condition.conditions);
+    return condition.conditionType === "counter-condition" && (condition.config?.keys || condition.counter?.keys || []).includes(field.path);
+  });
+  return usesIn(rule.conditions) || (rule.countLimits || []).some(limit => (limit.keys || []).includes(field.path));
 }
 
 const ruleFieldSystemCategories = () => ruleFieldCatalog.systemCategories || [];
@@ -2914,8 +2918,8 @@ function ruleFieldTypeLabel(type) {
   return ({ string: "Text", number: "Number", boolean: "True / false", null: "Empty", object: "Object", array: "List", mixed: "Mixed values" })[type] || type;
 }
 
-// Fields configured in Field Setup appear as regular checks in their selected
-// category. Dynamic Filter and Dynamic Counter are not condition types.
+// Configured response fields appear as checks. Request count is also a normal
+// condition in this tree, so it can use the same AND/OR connectors and groups.
 const builtInRuleConditionOptions = [
   { group: "Check user profile", fieldSetupId: "kyc", value: "profile-kyc", backendField: "109", subtype: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
   { group: "Check user profile", fieldSetupId: "nfc", value: "profile-nfc", backendField: "109", subtype: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
@@ -2925,6 +2929,7 @@ const builtInRuleConditionOptions = [
   { group: "Account & Segment", fieldSetupId: "104", value: "104", label: "Check MMF account status", operators: ["Is"], values: ["Has account", "Has no account"] },
   { group: "Account & Segment", fieldSetupId: "81", value: "81", label: "Segment check" },
   { group: "Account & Segment", fieldSetupId: "95", value: "95", label: "Risk check" },
+  { group: "Usage limits", value: "counter-condition", backendField: "counter-condition", label: "Request count limit", counterCondition: true, surfaces: ["ruleEngine"] },
   { group: "Usage counters", value: "10", label: "User counter", legacy: true },
   { group: "Usage counters", value: "86", label: "User counter per period", legacy: true }
 ];
@@ -3082,7 +3087,7 @@ const dynamicCounterTypes = [
 function getRuleCountDimensions() {
   return (ruleFieldCatalog.counterFields || []).map(field => ({ value: field.path, label: field.name }));
 }
-function ruleCountLimitMarkup(limit = {}, readonly = false, index = 0) {
+function ruleCountConditionMarkup(limit = {}, readonly = false) {
   const selectedKeys = limit.keys || [];
   const dimensions = getRuleCountDimensions();
   const resetMode = limit.resetMode || (limit.periodUnit ? "period" : "never");
@@ -3091,42 +3096,41 @@ function ruleCountLimitMarkup(limit = {}, readonly = false, index = 0) {
     const field = dimensions.find(item => item.value === key) || { value: key, label: key };
     return `<span class="rule-multi-chip">${escapeHtml(field.label)}${readonly ? "" : `<button type="button" data-remove-count-dimension="${escapeHtml(key)}" aria-label="Remove ${escapeHtml(field.label)}">×</button>`}</span>`;
   }).join("");
-  return `<section class="rule-count-limit" data-count-limit>
-    <div class="rule-count-limit-head"><strong>Limit ${index + 1}</strong>${readonly ? "" : '<button type="button" class="rule-item-remove" data-remove-count-limit aria-label="Remove count limit">×</button>'}</div>
+  return `<div class="rule-count-condition-config" data-counter-condition>
+    <p class="rule-count-condition-help">Allow no more than this many matching requests.</p>
     <div class="rule-count-limit-grid">
       <label><span>Maximum count</span><input type="number" min="1" step="1" data-count-limit-field="maximum" value="${escapeHtml(limit.maximum || "")}" placeholder="Enter a number" ${readonly ? "disabled" : ""}></label>
       <div class="rule-count-dimension-field"><span>Count separately by <small>(optional)</small></span>${dimensions.length ? `<details class="rule-multi-select rule-count-dimensions" data-count-dimensions><summary aria-label="Choose fields to count by"><span class="rule-multi-selected">${chips}</span><span class="rule-multi-placeholder" ${selectedKeys.length ? "hidden" : ""}>All matching requests</span><span class="rule-multi-chevron" aria-hidden="true">⌄</span></summary><div class="rule-multi-options">${dimensionOptions}</div></details>` : '<div class="rule-count-no-fields">No request fields set up yet. Add them in Rule Engine → Field Setup.</div>'}<small class="rule-count-help">Leave empty to count matching requests together. Selected fields create a separate count for each value combination.</small></div>
       <label><span>Reset count</span><select data-count-limit-field="resetMode" ${readonly ? "disabled" : ""}><option value="never" ${resetMode === "never" ? "selected" : ""}>No reset</option><option value="period" ${resetMode === "period" ? "selected" : ""}>After a period</option></select></label>
       <div class="rule-count-period-fields" data-count-period-fields ${resetMode === "period" ? "" : "hidden"}><span>Reset every</span><div><input type="number" min="1" step="1" data-count-limit-field="periodLength" value="${escapeHtml(limit.periodLength || "1")}" aria-label="Period length" ${readonly ? "disabled" : ""}><select data-count-limit-field="periodUnit" aria-label="Period unit" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleTimeUnits, limit.periodUnit || "DAY")}</select></div></div>
     </div>
-  </section>`;
+  </div>`;
 }
-function collectRuleCountLimits(holder) {
-  return [...holder.querySelectorAll(":scope > [data-count-limit]")].map(card => {
-    const read = name => card.querySelector(`[data-count-limit-field="${name}"]`)?.value || "";
-    const resetMode = read("resetMode") || "never";
-    const keys = [...card.querySelectorAll("[data-count-dimension]:checked")].map(input => input.value);
-    const periodLength = read("periodLength");
-    const periodUnit = read("periodUnit");
-    let type = keys.length > 1 ? "LIMIT_COUNTER_BY_MULTIPLE_KEY" : keys.length === 1 ? "LIMIT_COUNTER_BY_KEY" : "LIMIT_COUNTER";
-    if (resetMode === "period") type += "_PERIOD";
-    return { maximum: read("maximum"), keys, resetMode, ...(resetMode === "period" ? { periodLength, periodUnit } : {}), type };
-  });
+function collectRuleCountCondition(row) {
+  const config = row.querySelector("[data-counter-condition]");
+  const read = name => config?.querySelector(`[data-count-limit-field="${name}"]`)?.value || "";
+  const resetMode = read("resetMode") || "never";
+  const keys = [...(config?.querySelectorAll("[data-count-dimension]:checked") || [])].map(input => input.value);
+  const periodLength = read("periodLength");
+  const periodUnit = read("periodUnit");
+  let type = keys.length > 1 ? "LIMIT_COUNTER_BY_MULTIPLE_KEY" : keys.length === 1 ? "LIMIT_COUNTER_BY_KEY" : "LIMIT_COUNTER";
+  if (resetMode === "period") type += "_PERIOD";
+  return { maximum: read("maximum"), keys, resetMode, ...(resetMode === "period" ? { periodLength, periodUnit } : {}), type };
 }
-function syncRuleCountDimensions(card) {
-  if (!card) return;
-  const summary = card.querySelector(".rule-multi-selected");
-  const placeholder = card.querySelector(".rule-multi-placeholder");
-  const selected = [...card.querySelectorAll("[data-count-dimension]:checked")];
+function syncRuleCountDimensions(config) {
+  if (!config) return;
+  const summary = config.querySelector(".rule-multi-selected");
+  const placeholder = config.querySelector(".rule-multi-placeholder");
+  const selected = [...config.querySelectorAll("[data-count-dimension]:checked")];
   placeholder.hidden = selected.length > 0;
   summary.innerHTML = selected.map(input => {
     const label = getRuleCountDimensions().find(field => field.value === input.value)?.label || input.value;
     return `<span class="rule-multi-chip">${escapeHtml(label)}${input.disabled ? "" : `<button type="button" data-remove-count-dimension="${escapeHtml(input.value)}" aria-label="Remove ${escapeHtml(label)}">×</button>`}</span>`;
   }).join("");
 }
-function ruleCountLimitsAreComplete(limits) {
+function ruleCountConditionIsComplete(limit = {}) {
   const configuredFields = new Set(getRuleCountDimensions().map(field => field.value));
-  return limits.every(limit => Number.isInteger(Number(limit.maximum)) && Number(limit.maximum) > 0 && (limit.keys || []).every(key => configuredFields.has(key)) && (limit.resetMode !== "period" || (Number.isInteger(Number(limit.periodLength)) && Number(limit.periodLength) > 0 && Boolean(limit.periodUnit))));
+  return Number.isInteger(Number(limit.maximum)) && Number(limit.maximum) > 0 && (limit.keys || []).every(key => configuredFields.has(key)) && (limit.resetMode !== "period" || (Number.isInteger(Number(limit.periodLength)) && Number(limit.periodLength) > 0 && Boolean(limit.periodUnit)));
 }
 const dynamicFilterMethods = [
   { value: "checkSegment", label: "Check segment", code: "checkSegment" },
@@ -3318,7 +3322,8 @@ function ruleConditionRow(condition = {}, readonly = false) {
   row.dataset.ruleType = selectedOption?.value || condition.field || "";
   row.dataset.ruleField = selectedOption?.backendField || condition.field || "";
   row.dataset.ruleSubtype = selectedOption?.subtype || condition.subRule || "";
-  if (selectedOption && selectedOption.operators) configureRuleSimpleCondition(row, selectedOption, condition, readonly);
+  if (selectedOption?.counterCondition) configureRuleCounterCondition(row, condition.config || condition.counter || condition, readonly);
+  else if (selectedOption && selectedOption.operators) configureRuleSimpleCondition(row, selectedOption, condition, readonly);
   else if (selectedOption && ["81", "95"].includes(selectedOption.value)) configureRuleSpecialCondition(row, selectedOption, condition, readonly);
   else if (condition.field) {
     row.classList.add("is-dynamic");
@@ -3329,6 +3334,19 @@ function ruleConditionRow(condition = {}, readonly = false) {
   }
   row.querySelectorAll("[data-multi-field]").forEach(syncRuleMultiSelect);
   return row;
+}
+
+function configureRuleCounterCondition(row, config = {}, readonly = false) {
+  const option = ruleConditionOptions.find(item => item.value === "counter-condition");
+  row.classList.add("is-dynamic", "is-counter-condition");
+  row.querySelector(".rule-condition-search").value = option?.label || "Request count";
+  row.querySelector(".rule-type-picker").classList.add("has-selection");
+  row.querySelector(".voucher-condition-operator").hidden = true;
+  row.querySelector(".voucher-condition-value").hidden = true;
+  const host = row.querySelector(".rule-configuration");
+  host.hidden = false;
+  host.innerHTML = ruleCountConditionMarkup(config, readonly);
+  syncRuleCountDimensions(host.querySelector("[data-counter-condition]"));
 }
 
 function normalizeRuleConditionNodes(nodes = []) {
@@ -3572,6 +3590,7 @@ function collectRuleCondition(row) {
       ...(option.listCheck && operator === "Number of matching items" ? { listMatch } : option.listCheck ? { listMatch: { countOperator: listMatch.countOperator } } : {})
     };
   }
+  if (option?.counterCondition) return { field, conditionType: option.value, config: collectRuleCountCondition(row) };
   if (["95", "81", "10", "86", "109"].includes(field)) return { field, config: collectSimpleRuleConfig(row) };
   return { field };
 }
@@ -3612,8 +3631,10 @@ function ruleConditionTreeIsComplete(conditions) {
   return conditions.every(condition => {
     if (condition.kind === "group") return ruleConditionTreeIsComplete(condition.conditions || []);
     if (!condition.field) return false;
-    const option = ruleConditionOptions.find(item => item.backendField === condition.field && item.subtype === condition.subRule)
+    const option = ruleConditionOptions.find(item => item.value === condition.conditionType)
+      || ruleConditionOptions.find(item => item.backendField === condition.field && item.subtype === condition.subRule)
       || ruleConditionOptions.find(item => item.value === condition.field);
+    if (option?.counterCondition) return ruleCountConditionIsComplete(condition.config || condition.counter || {});
     if (option?.operators) {
       if (option.listCheck) {
         if (["Has any items", "Is empty"].includes(condition.operator)) return true;
@@ -3641,38 +3662,9 @@ function initRuleForm(payload = {}) {
   document.getElementById("ruleName").readOnly = readonly;
   document.getElementById("ruleDescription").readOnly = readonly;
   const rows = document.getElementById("ruleConditionRows");
-  rows.innerHTML = ruleConditionGroupMarkup(rule?.conditions?.length ? rule.conditions : [{}], readonly);
-  const countLimits = document.getElementById("ruleCountLimits");
-  countLimits.innerHTML = (rule?.countLimits || []).map((limit, index) => ruleCountLimitMarkup(limit, readonly, index)).join("");
-  countLimits.querySelectorAll("[data-count-limit]").forEach(syncRuleCountDimensions);
-  const addCountLimit = document.getElementById("ruleAddCountLimit");
-  addCountLimit.hidden = readonly;
-  addCountLimit.onclick = () => {
-    countLimits.insertAdjacentHTML("beforeend", ruleCountLimitMarkup({}, false, countLimits.querySelectorAll("[data-count-limit]").length));
-    const added = countLimits.querySelector(":scope > [data-count-limit]:last-child");
-    syncRuleCountDimensions(added);
-    added?.querySelector('[data-count-limit-field="maximum"]')?.focus();
-  };
-  countLimits.onclick = event => {
-    const removeDimension = event.target.closest("[data-remove-count-dimension]");
-    if (removeDimension) {
-      const card = removeDimension.closest("[data-count-limit]");
-      const checkbox = [...card.querySelectorAll("[data-count-dimension]")].find(input => input.value === removeDimension.dataset.removeCountDimension);
-      if (checkbox) checkbox.checked = false;
-      syncRuleCountDimensions(card);
-      return;
-    }
-    const removeLimit = event.target.closest("[data-remove-count-limit]");
-    if (removeLimit) {
-      removeLimit.closest("[data-count-limit]").remove();
-      countLimits.querySelectorAll(":scope > [data-count-limit]").forEach((card, index) => { card.querySelector(".rule-count-limit-head strong").textContent = `Limit ${index + 1}`; });
-    }
-  };
-  countLimits.onchange = event => {
-    const card = event.target.closest("[data-count-limit]");
-    if (event.target.matches('[data-count-limit-field="resetMode"]')) card.querySelector("[data-count-period-fields]").hidden = event.target.value !== "period";
-    if (event.target.matches("[data-count-dimension]")) syncRuleCountDimensions(card);
-  };
+  const savedConditions = [...(rule?.conditions || [])];
+  (rule?.countLimits || []).forEach(limit => savedConditions.push({ field: "counter-condition", conditionType: "counter-condition", config: limit }));
+  rows.innerHTML = ruleConditionGroupMarkup(savedConditions.length ? savedConditions : [{}], readonly);
   document.getElementById("ruleAddCondition").hidden = readonly;
   document.getElementById("ruleAddConditionGroup").hidden = readonly;
   form.querySelector('[type="submit"]').hidden = readonly;
@@ -3741,7 +3733,7 @@ function initRuleForm(payload = {}) {
       row.dataset.ruleField = "";
       row.dataset.ruleSubtype = "";
       event.target.removeAttribute("value");
-      row.classList.remove("is-dynamic", "is-list-check");
+      row.classList.remove("is-dynamic", "is-list-check", "is-counter-condition");
       row.querySelector(".voucher-condition-operator").hidden = false;
       row.querySelector(".voucher-condition-value").hidden = false;
       row.querySelector(".rule-configuration").innerHTML = "";
@@ -3785,6 +3777,11 @@ function initRuleForm(payload = {}) {
   };
   rows.onchange = event => {
     const row = event.target.closest(".rule-condition-row");
+    if (event.target.matches('[data-count-limit-field="resetMode"]')) {
+      const config = event.target.closest("[data-counter-condition]");
+      config.querySelector("[data-count-period-fields]").hidden = event.target.value !== "period";
+    }
+    if (event.target.matches("[data-count-dimension]")) syncRuleCountDimensions(event.target.closest("[data-counter-condition]"));
     if (event.target.matches(".rule-filter-key")) {
       const item = event.target.closest(".rule-filter-condition");
       const selectedField = event.target.selectedOptions[0];
@@ -3913,11 +3910,12 @@ function initRuleForm(payload = {}) {
       row.querySelector(".voucher-condition-remove").hidden = readonly;
       row.querySelector(".rule-condition-menu").hidden = true;
       if (previousType !== type) {
-        row.classList.remove("is-dynamic", "is-list-check");
+        row.classList.remove("is-dynamic", "is-list-check", "is-counter-condition");
         row.querySelector(".rule-configuration").hidden = false;
         row.querySelector(".voucher-condition-operator").hidden = false;
         row.querySelector(".voucher-condition-value").hidden = false;
-        if (option.operators) configureRuleSimpleCondition(row, option, {}, readonly);
+        if (option.counterCondition) configureRuleCounterCondition(row, {}, readonly);
+        else if (option.operators) configureRuleSimpleCondition(row, option, {}, readonly);
         else if (["81", "95"].includes(option.value)) configureRuleSpecialCondition(row, option, {}, readonly);
         else {
           row.classList.add("is-dynamic");
@@ -3926,6 +3924,14 @@ function initRuleForm(payload = {}) {
           row.querySelector(".rule-configuration").innerHTML = renderRuleTypeFields(row.dataset.ruleField, {}, readonly, option.label);
         }
       }
+      return;
+    }
+    const removeCountDimension = event.target.closest("[data-remove-count-dimension]");
+    if (removeCountDimension) {
+      const config = removeCountDimension.closest("[data-counter-condition]");
+      const checkbox = [...config.querySelectorAll("[data-count-dimension]")].find(input => input.value === removeCountDimension.dataset.removeCountDimension);
+      if (checkbox) checkbox.checked = false;
+      syncRuleCountDimensions(config);
       return;
     }
     const singleValue = event.target.closest("[data-single-value]");
@@ -4038,15 +4044,13 @@ function initRuleForm(payload = {}) {
   form.onsubmit = async event => {
     event.preventDefault();
     const conditions = collectRuleConditionGroup(rows.querySelector(":scope > .rule-condition-tree"));
-    const countLimits = collectRuleCountLimits(document.getElementById("ruleCountLimits"));
     const valid = ruleConditionTreeIsComplete(conditions);
     if (!valid) { toast("Complete the rule settings.", "error"); return; }
-    if (!ruleCountLimitsAreComplete(countLimits)) { toast("Enter a whole number above zero for each count limit and reset period.", "error"); return; }
     const name = document.getElementById("ruleName").value.trim();
     if (!name) return;
     if (!await confirmRuleAction({ title: activeRuleForm.mode === "edit" ? "Save rule changes?" : "Save this rule?", message: activeRuleForm.mode === "edit" ? `Save the changes to “${name}”?` : `Create “${name}” with the selected checks?`, confirmLabel: activeRuleForm.mode === "edit" ? "Save changes" : "Save rule" })) return;
-    const data = { name, description: document.getElementById("ruleDescription").value.trim(), conditions, countLimits };
-    if (activeRuleForm.mode === "edit" && rule) { Object.assign(rule, data); toast(`Rule ${rule.id} updated.`); }
+    const data = { name, description: document.getElementById("ruleDescription").value.trim(), conditions };
+    if (activeRuleForm.mode === "edit" && rule) { Object.assign(rule, data); delete rule.countLimits; toast(`Rule ${rule.id} updated.`); }
     else { const id = `RE-${nextRuleNumber++}`; ruleEngineRules.unshift({ id, ...data, owner: "kiettt8" }); toast(`Rule created. Rule ID: ${id}`); }
     route("rule-list");
   };
