@@ -36,3 +36,13 @@ http://127.0.0.1:4173
 15. Got it to Direct Discount: cùng Budget Overview và App ID selector như Coin to Direct Discount nhưng không có conversion rate.
 
 `qa-promotion.mjs` kiểm tra Promotion Code flow. `qa.mjs` kiểm tra Loyalty Coin flow. `qa-asset.mjs` kiểm tra Promo Asset Massive và Coin Create flow.
+
+### Check Voucher Advance Rule layout
+
+With the local demo server running, run:
+
+```bash
+node qa-voucher-advance-rule.mjs
+```
+
+This Playwright check verifies that condition fields share the same column positions and height, the AND/OR selector is centered, and the Advance Rule screenshot matches its baseline. To refresh the screenshot after an intentional design change, run `node qa-voucher-advance-rule.mjs --update-visual` and review `qa-baselines/voucher-advance-rule.png` before committing it.
