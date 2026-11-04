@@ -1376,7 +1376,7 @@ function initVoucherAdvanceRuleBuilder() {
       input.parentElement.classList.add("has-selection");
       row.querySelector(".voucher-condition-remove").hidden = false;
       row.querySelector(".rule-condition-menu").hidden = true;
-      row.classList.remove("is-dynamic");
+      row.classList.remove("is-dynamic", "is-list-check");
       row.querySelector(".rule-configuration").hidden = false;
       row.querySelector(".voucher-condition-operator").hidden = false;
       row.querySelector(".voucher-condition-value").hidden = false;
@@ -1420,7 +1420,11 @@ function initVoucherAdvanceRuleBuilder() {
       host.querySelector(".voucher-single-select-control > span").textContent = singleValue.dataset.singleValue;
       host.querySelectorAll("[data-single-value]").forEach(item => item.setAttribute("aria-selected", String(item === singleValue)));
       host.querySelector(".voucher-single-select-menu").hidden = true;
-      host.querySelector(".voucher-single-select-control").setAttribute("aria-expanded", "false"); return;
+      host.querySelector(".voucher-single-select-control").setAttribute("aria-expanded", "false");
+      const row = host.closest(".rule-condition-row");
+      const option = row && ruleConditionOptions.find(item => item.value === row.dataset.ruleType);
+      if (option?.listCheck && host.closest(".voucher-condition-operator")) configureRuleListCheckValue(row, singleValue.dataset.singleValue, row.querySelector("[data-list-count]")?.value || "", option, collectRuleListMatch(row));
+      return;
     }
     const singleControl = event.target.closest(".voucher-single-select-control");
     if (singleControl && !singleControl.disabled) {
@@ -1443,7 +1447,7 @@ function initVoucherAdvanceRuleBuilder() {
       closePickers(event.target);
       row.dataset.ruleType = ""; row.dataset.ruleField = ""; row.dataset.ruleSubtype = "";
       event.target.removeAttribute("value"); event.target.parentElement.classList.remove("has-selection");
-      row.classList.remove("is-dynamic");
+      row.classList.remove("is-dynamic", "is-list-check");
       row.querySelector(".rule-configuration").innerHTML = "";
       row.querySelector(".voucher-condition-remove").hidden = true;
       row.querySelector(".voucher-condition-operator").innerHTML = voucherSingleSelectMarkup("Operator", [], "", true);
@@ -2426,6 +2430,7 @@ function parseRuleSampleFields(sample) {
       }
     }
     if (Array.isArray(value)) {
+      if (path && fields.size < 1000) fields.set(path, { path, dataType: "array", jsonStringRoots });
       const arrayPath = path ? `${path}[]` : "[]";
       value.forEach(item => walk(item, arrayPath, jsonStringRoots, depth + 1));
       return;
@@ -2593,7 +2598,7 @@ function initRuleFieldForm(payload = {}) {
   document.getElementById("ruleFieldPath").value = check?.responseField || "";
   document.getElementById("ruleFieldType").value = check?.dataType || "";
   document.getElementById("ruleFieldJsonRoots").value = JSON.stringify(check?.jsonStringRoots || []);
-  document.getElementById("ruleFieldSample").value = "";
+  document.getElementById("ruleFieldSample").value = check?.sampleJson || "";
   document.getElementById("ruleFieldSample").dataset.parsedFields = "";
   document.getElementById("ruleFieldSampleError").hidden = true;
   document.getElementById("ruleFieldSearch").value = "";
@@ -2602,11 +2607,14 @@ function initRuleFieldForm(payload = {}) {
   document.getElementById("ruleFieldChoices").hidden = true;
   document.getElementById("ruleFieldChoices").replaceChildren();
   document.getElementById("ruleFieldSelectedPath").textContent = check?.responseField || "Choose a field from the list";
-  document.getElementById("ruleFieldSelectedType").textContent = check?.dataType ? `Field type: ${ruleFieldTypeLabel(check.dataType)}` : "";
+  document.getElementById("ruleFieldSelectedType").textContent = check?.dataType === "array"
+    ? "Field type: List · rule creators can count all items or items matching a value."
+    : check?.dataType ? `Field type: ${ruleFieldTypeLabel(check.dataType)}` : "";
   document.getElementById("ruleFieldValues").value = (check?.values || []).join(", ");
+  document.querySelector(".rule-known-values").hidden = check?.dataType === "array";
   document.getElementById("ruleFieldSampleHelp").textContent = check
-    ? "Paste a new sample JSON response to choose another field. Leave blank to keep the current field. Sample values are not saved."
-    : "Paste a sample JSON response. Available fields will appear below. Sample values are not saved.";
+    ? "The sample is saved with this check. Edit it here to change the available fields."
+    : "Paste a sample JSON response. Choose a field from the fields found below. The sample is saved with this check.";
   const valuesInput = document.getElementById("ruleFieldValues");
   const syncValuesHelp = () => {
     const hasValues = valuesInput.value.split(",").some(value => value.trim());
@@ -2702,6 +2710,7 @@ function initRuleFieldForm(payload = {}) {
     document.getElementById("ruleFieldJsonRoots").value = "[]";
     document.getElementById("ruleFieldSelectedPath").textContent = "Choose a field from the list";
     document.getElementById("ruleFieldSelectedType").textContent = "";
+    document.querySelector(".rule-known-values").hidden = false;
     document.getElementById("ruleFieldSearchWrap").hidden = true;
     document.getElementById("ruleFieldChoiceWrap").hidden = true;
     sampleChoices.hidden = true;
@@ -2725,9 +2734,12 @@ function initRuleFieldForm(payload = {}) {
     document.getElementById("ruleFieldType").value = selected.dataset.fieldType;
     document.getElementById("ruleFieldJsonRoots").value = selected.dataset.jsonRoots || "[]";
     document.getElementById("ruleFieldSelectedPath").textContent = selected.value;
-    document.getElementById("ruleFieldSelectedType").textContent = `Field type: ${ruleFieldTypeLabel(selected.dataset.fieldType)}`;
+    const isList = selected.dataset.fieldType === "array";
+    document.getElementById("ruleFieldSelectedType").textContent = isList ? "Field type: List · rule creators can count all items or items matching a value." : `Field type: ${ruleFieldTypeLabel(selected.dataset.fieldType)}`;
+    document.querySelector(".rule-known-values").hidden = isList;
     syncValuesHelp();
   });
+  if (check?.sampleJson) parseSample({ showError: false });
   form.onsubmit = async event => {
     event.preventDefault();
     const name = document.getElementById("ruleFieldName").value.trim();
@@ -2751,7 +2763,8 @@ function initRuleFieldForm(payload = {}) {
       return;
     }
     if (!await confirmRuleAction({ title: current ? "Save check changes?" : "Save this check?", message: current ? `Save the changes to “${name}”?` : `Add “${name}” to the selected category and rule menus?`, confirmLabel: current ? "Save changes" : "Save check" })) return;
-    const nextCheck = { id: current?.id || `field-${Date.now()}`, name, category, responseField, dataType, jsonStringRoots, values, surfaces };
+    const sampleJson = sampleInput.value.trim() || current?.sampleJson || "";
+    const nextCheck = { id: current?.id || `field-${Date.now()}`, name, category, responseField, dataType, jsonStringRoots, sampleJson, values, surfaces };
     if (current) Object.assign(current, nextCheck);
     else ruleFieldCatalog.checks.push(nextCheck);
     saveRuleFieldCatalog();
@@ -2822,7 +2835,19 @@ const ruleSegments = [
 const ruleJmesKeys = [{ value: "requestInfo.embeddedData.columninfo.merchantInfo.providedList", label: "Merchant list", dataType: "ARRAY" }];
 
 function customRuleEngineFields(surface = "ruleEngine") {
-  return ruleFieldCatalog.checks.filter(check => check.surfaces.includes(surface) && check.responseField).map(check => ({
+  return ruleFieldCatalog.checks.filter(check => check.surfaces.includes(surface) && check.responseField).map(check => {
+    let listItemFields = [];
+    if (check.dataType === "array" && check.sampleJson) {
+      try {
+        const prefix = `${check.responseField}[].`;
+        const fields = parseRuleSampleFields(check.sampleJson);
+        listItemFields = fields
+          .filter(field => field.path.startsWith(prefix))
+          .map(field => ({ value: field.path.slice(prefix.length), label: field.path.slice(prefix.length), dataType: field.dataType }));
+        if (!listItemFields.length && fields.some(field => field.path === `${check.responseField}[]`)) listItemFields = [{ value: "", label: "Item value", dataType: fields.find(field => field.path === `${check.responseField}[]`)?.dataType || "string" }];
+      } catch { /* Keep the list usable even if an older saved sample is invalid. */ }
+    }
+    return ({
     id: check.id,
     value: check.id,
     backendField: check.id,
@@ -2834,16 +2859,21 @@ function customRuleEngineFields(surface = "ruleEngine") {
     category: check.category || "Other fields",
     label: check.name,
     dataType: check.dataType || "string",
-    operators: check.values?.length
+    operators: check.dataType === "array"
+      ? ["Has any items", "Is empty", "Number of items", "Number of matching items"]
+      : check.values?.length
       ? ["In", "Not In"]
       : check.dataType === "number"
       ? ["Equals", "Not Equals", "Greater Than", "Greater Than Or Equals", "Less Than", "Less Than Or Equals"]
       : ["Equals", "Not Equals"],
     values: check.values?.length ? check.values : check.dataType === "boolean" ? ["true", "false"] : [],
-    multiple: Boolean(check.values?.length),
-    valueInput: check.values?.length || check.dataType === "boolean" ? "" : check.dataType === "number" ? "Enter a number" : "Enter a value",
-    valueInputType: check.dataType === "number" ? "number" : "text"
-  }));
+    multiple: check.dataType === "array" ? false : Boolean(check.values?.length),
+    valueInput: check.values?.length || check.dataType === "boolean" || check.dataType === "array" ? "" : check.dataType === "number" ? "Enter a number" : "Enter a value",
+    valueInputType: check.dataType === "number" || check.dataType === "array" ? "number" : "text",
+    listCheck: check.dataType === "array",
+    listItemFields
+  });
+  });
 }
 
 function dynamicFilterFieldOptions() {
@@ -3144,7 +3174,10 @@ function configureRuleSimpleCondition(row, option, condition = {}, readonly = fa
   const configuredValue = condition.value || condition.config?.value || option.defaultValue || (option.value === "risk-status" && condition.config?.event ? condition.config.event : "");
   row.querySelector(".voucher-condition-operator").innerHTML = voucherSingleSelectMarkup("Operator", option.operators, operator, readonly);
   const valueHost = row.querySelector(".voucher-condition-value");
-  if (option.multiple) {
+  valueHost.classList.remove("is-not-needed");
+  if (option.listCheck) {
+    configureRuleListCheckValue(row, operator, configuredValue, option, condition.listMatch || {}, readonly);
+  } else if (option.multiple) {
     valueHost.innerHTML = voucherValueControlMarkup(readonly);
     row.dataset.selectedValues = JSON.stringify(condition.values || condition.config?.values || option.defaults || (configuredValue ? [configuredValue] : []));
     const control = valueHost.querySelector(".voucher-multi-select-control");
@@ -3155,8 +3188,52 @@ function configureRuleSimpleCondition(row, option, condition = {}, readonly = fa
   } else {
     valueHost.innerHTML = voucherSingleSelectMarkup("Select value", option.values, configuredValue, readonly);
   }
-  row.querySelector(".rule-configuration").innerHTML = "";
-  row.querySelector(".rule-configuration").hidden = true;
+  if (!option.listCheck) row.querySelector(".rule-configuration").innerHTML = "";
+  row.querySelector(".rule-configuration").hidden = !option.listCheck || operator !== "Number of matching items";
+}
+
+const ruleListCountOperators = [
+  { value: "is", label: "is" }, { value: "greater than", label: "greater than" },
+  { value: "at least", label: "at least" }, { value: "less than", label: "less than" },
+  { value: "at most", label: "at most" }
+];
+function ruleListMatchMarkup(option, match = {}, readonly = false) {
+  const fields = option.listItemFields?.length ? option.listItemFields : [{ value: "", label: "Item value" }];
+  const primitive = fields.length === 1 && fields[0].value === "";
+  return `<div class="rule-list-match-config">
+    <div class="rule-list-match-title">Count items that match</div>
+    ${primitive ? '<span class="rule-list-item-field-label">Item value</span>' : `<select data-list-match-field aria-label="Item field" ${readonly ? "disabled" : ""}>${fields.map(field => `<option value="${escapeHtml(field.value)}" ${field.value === (match.field ?? fields[0].value) ? "selected" : ""}>${escapeHtml(field.label)}</option>`).join("")}</select>`}
+    <select data-list-match-operator aria-label="Item condition" ${readonly ? "disabled" : ""}><option value="is" ${(match.operator || "is") === "is" ? "selected" : ""}>is</option><option value="is not" ${(match.operator || "is") === "is not" ? "selected" : ""}>is not</option></select>
+    <input data-list-match-value aria-label="Item value" value="${escapeHtml(match.value || "")}" placeholder="Enter a value" ${readonly ? "disabled" : ""}>
+  </div>`;
+}
+function collectRuleListMatch(row) {
+  const config = row.querySelector(".rule-list-match-config");
+  const countOperator = row.querySelector("[data-list-count-operator]")?.value || "at least";
+  if (!config) return { countOperator };
+  return {
+    countOperator,
+    field: config.querySelector("[data-list-match-field]")?.value ?? "",
+    operator: config.querySelector("[data-list-match-operator]")?.value || "is",
+    value: config.querySelector("[data-list-match-value]")?.value.trim() || ""
+  };
+}
+function configureRuleListCheckValue(row, operator, value = "", option, match = {}, readonly = false) {
+  const valueHost = row.querySelector(".voucher-condition-value");
+  const needsCount = operator.startsWith("Number of items") || operator === "Number of matching items";
+  const config = row.querySelector(".rule-configuration");
+  row.classList.toggle("is-list-check", operator === "Number of matching items");
+  if (!needsCount) {
+    valueHost.innerHTML = '<div class="rule-list-value-not-needed">No value needed</div>';
+    valueHost.classList.add("is-not-needed");
+    config.hidden = true;
+    config.innerHTML = "";
+    return;
+  }
+  valueHost.classList.remove("is-not-needed");
+  valueHost.innerHTML = `<div class="rule-list-count-control"><select data-list-count-operator aria-label="Compare item count" ${readonly ? "disabled" : ""}>${ruleListCountOperators.map(item => `<option value="${item.value}" ${(item.value === (match.countOperator || "at least")) ? "selected" : ""}>${item.label}</option>`).join("")}</select><input class="rule-simple-value-input" data-list-count type="number" min="0" step="1" aria-label="Item count" placeholder="Enter count" value="${escapeHtml(value)}" ${readonly ? "disabled" : ""}></div>`;
+  config.innerHTML = operator === "Number of matching items" ? ruleListMatchMarkup(option, match, readonly) : "";
+  config.hidden = operator !== "Number of matching items";
 }
 
 function configureRuleSpecialCondition(row, option, condition = {}, readonly = false) {
@@ -3164,7 +3241,7 @@ function configureRuleSpecialCondition(row, option, condition = {}, readonly = f
   const operator = row.querySelector(".voucher-condition-operator");
   const value = row.querySelector(".voucher-condition-value");
   const extra = row.querySelector(".rule-configuration");
-  row.classList.remove("is-dynamic", "is-segment-check", "is-risk-check");
+  row.classList.remove("is-dynamic", "is-segment-check", "is-risk-check", "is-list-check");
   extra.hidden = false;
   operator.hidden = false;
   value.hidden = false;
@@ -3299,13 +3376,15 @@ function collectRuleCondition(row) {
     const selectedValue = row.querySelector(".voucher-condition-value .voucher-single-select-control > span")?.textContent || "";
     const value = selectedValue === "Select value" ? "" : selectedValue || row.querySelector(".rule-simple-value-input")?.value.trim() || "";
     const values = option.multiple ? JSON.parse(row.dataset.selectedValues || "[]") : undefined;
+    const listMatch = option.listCheck ? collectRuleListMatch(row) : undefined;
     return {
       field,
       conditionType: option.value,
       ...(row.dataset.ruleSubtype ? { subRule: row.dataset.ruleSubtype } : {}),
       ...(option.custom ? { fieldId: option.fieldId, responseField: option.responseField, category: option.category } : {}),
       operator,
-      ...(option.multiple ? { values } : { value })
+      ...(option.multiple ? { values } : { value }),
+      ...(option.listCheck && operator === "Number of matching items" ? { listMatch } : option.listCheck ? { listMatch: { countOperator: listMatch.countOperator } } : {})
     };
   }
   if (["95", "81", "10", "86", "109"].includes(field)) return { field, config: collectSimpleRuleConfig(row) };
@@ -3350,7 +3429,15 @@ function ruleConditionTreeIsComplete(conditions) {
     if (!condition.field) return false;
     const option = ruleConditionOptions.find(item => item.backendField === condition.field && item.subtype === condition.subRule)
       || ruleConditionOptions.find(item => item.value === condition.field);
-    if (option?.operators) return Boolean(condition.operator && (option.multiple ? condition.values?.length : condition.value));
+    if (option?.operators) {
+      if (option.listCheck) {
+        if (["Has any items", "Is empty"].includes(condition.operator)) return true;
+        if (!condition.value || Number(condition.value) < 0) return false;
+        if (condition.operator === "Number of matching items") return Boolean(condition.listMatch && condition.listMatch.operator && condition.listMatch.value);
+        return condition.operator === "Number of items";
+      }
+      return Boolean(condition.operator && (option.multiple ? condition.values?.length : condition.value));
+    }
     if (condition.field === "95") return Boolean(condition.config?.riskControl && condition.config.userTypes?.length);
     if (condition.field === "81") return Boolean(condition.config?.segmentId);
     if (["10", "86"].includes(condition.field)) return Boolean(condition.config?.code && condition.config.counter);
@@ -3438,7 +3525,7 @@ function initRuleForm(payload = {}) {
       row.dataset.ruleField = "";
       row.dataset.ruleSubtype = "";
       event.target.removeAttribute("value");
-      row.classList.remove("is-dynamic");
+      row.classList.remove("is-dynamic", "is-list-check");
       row.querySelector(".voucher-condition-operator").hidden = false;
       row.querySelector(".voucher-condition-value").hidden = false;
       row.querySelector(".rule-configuration").innerHTML = "";
@@ -3610,7 +3697,7 @@ function initRuleForm(payload = {}) {
       row.querySelector(".voucher-condition-remove").hidden = readonly;
       row.querySelector(".rule-condition-menu").hidden = true;
       if (previousType !== type) {
-        row.classList.remove("is-dynamic");
+        row.classList.remove("is-dynamic", "is-list-check");
         row.querySelector(".rule-configuration").hidden = false;
         row.querySelector(".voucher-condition-operator").hidden = false;
         row.querySelector(".voucher-condition-value").hidden = false;
@@ -3632,6 +3719,9 @@ function initRuleForm(payload = {}) {
       host.querySelectorAll("[data-single-value]").forEach(item => item.setAttribute("aria-selected", String(item === singleValue)));
       host.querySelector(".voucher-single-select-menu").hidden = true;
       host.querySelector(".voucher-single-select-control").setAttribute("aria-expanded", "false");
+      const row = host.closest(".rule-condition-row");
+      const option = row && ruleConditionOptions.find(item => item.value === row.dataset.ruleType);
+      if (option?.listCheck && host.closest(".voucher-condition-operator")) configureRuleListCheckValue(row, singleValue.dataset.singleValue, row.querySelector("[data-list-count]")?.value || "", option, collectRuleListMatch(row), readonly);
       return;
     }
     const singleControl = event.target.closest(".voucher-single-select-control");
