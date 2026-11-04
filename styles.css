@@ -1039,17 +1039,19 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .budget-approval-toolbar img { width: 14px; height: 14px; object-fit: contain; }
 .budget-approval-table-scroll { min-width: 0; overflow-x: auto; }
 .budget-approval-table { width: 100%; min-width: 1200px; table-layout: fixed; border-collapse: collapse; color: rgba(0,31,62,.88); font-size: 14px; }
-.topup-approval-table { min-width: 1520px; }
-.topup-approval-table th:nth-child(1) { width: 11%; }
+.topup-approval-table { min-width: 1440px; }
+.topup-approval-table th:nth-child(1) { width: 12%; }
 .topup-approval-table th:nth-child(2) { width: 10%; }
-.topup-approval-table th:nth-child(3) { width: 20%; }
-.topup-approval-table th:nth-child(4), .topup-approval-table th:nth-child(5) { width: 10%; }
-.topup-approval-table th:nth-child(6) { width: 9%; }
-.topup-approval-table th:nth-child(7) { width: 10%; }
-.topup-approval-table th:nth-child(8) { width: 8%; }
-.topup-approval-table th:nth-child(9) { width: 12%; }
+.topup-approval-table th:nth-child(3) { width: 19%; }
+.topup-approval-table th:nth-child(4) { width: 13%; }
+.topup-approval-table th:nth-child(5) { width: 11%; }
+.topup-approval-table th:nth-child(6) { width: 11%; }
+.topup-approval-table th:nth-child(7) { width: 8%; }
+.topup-approval-table th:nth-child(8) { width: 16%; }
 .topup-wallet-cell { font-size: 12px; line-height: 17px !important; }
 .topup-row-actions { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.topup-view-button { width: 28px; height: 28px; cursor: pointer; }
+.topup-view-button:hover { border-radius: 4px; background: #f0f5ff; }
 .topup-action { min-height: 28px; padding: 3px 8px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; color: #364153; font: inherit; font-size: 12px; cursor: pointer; }
 .topup-action:hover { border-color: #1677ff; color: #1677ff; }
 .topup-action.approve { border-color: #1677ff; background: #1677ff; color: #fff; }
@@ -1068,16 +1070,16 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .budget-topup-detail-scroll { min-width: 0; overflow-x: auto; }
 .budget-topup-detail-table { min-width: 1600px; }
 .budget-topup-detail-table th:nth-child(1) { width: 3%; }
-.budget-topup-detail-table th:nth-child(2) { width: 11%; }
+.budget-topup-detail-table th:nth-child(2) { width: 10%; }
 .budget-topup-detail-table th:nth-child(3) { width: 9%; }
-.budget-topup-detail-table th:nth-child(4) { width: 14%; }
+.budget-topup-detail-table th:nth-child(4) { width: 16%; }
 .budget-topup-detail-table th:nth-child(5) { width: 8%; }
-.budget-topup-detail-table th:nth-child(6) { width: 9%; }
-.budget-topup-detail-table th:nth-child(7), .budget-topup-detail-table th:nth-child(8) { width: 10%; }
-.budget-topup-detail-table th:nth-child(9) { width: 7%; }
-.budget-topup-detail-table th:nth-child(10) { width: 7%; }
-.budget-topup-detail-table th:nth-child(11) { width: 8%; }
-.budget-topup-detail-table th:nth-child(12) { width: 4%; }
+.budget-topup-detail-table th:nth-child(6) { width: 12%; }
+.budget-topup-detail-table th:nth-child(7) { width: 11%; }
+.budget-topup-detail-table th:nth-child(8) { width: 8%; }
+.budget-topup-detail-table th:nth-child(9) { width: 8%; }
+.budget-topup-detail-table th:nth-child(10) { width: 8%; }
+.budget-topup-detail-table th:nth-child(11) { width: 7%; }
 
 /* Rule Engine reuses the CRM asset list and form components. */
 .rule-engine-nav.active { color: #1677ff; }

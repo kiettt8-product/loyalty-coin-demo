@@ -5315,8 +5315,8 @@ function initBudgetApproval() {
 
 const topupApprovalStorageKey = "budget-approval-topup-demo";
 const topupApprovalSeedRows = [
-  { id: "coin2dd", product: "Coin to Direct Discount", mktCode: "LYT_240815_003", wallet: "—", remaining: 820000000, amount: 100000000, requestor: "Business user", submittedAt: "04 Nov 2026 09:12", status: "Reviewing" },
-  { id: "gotit", product: "Got It to Direct Discount", mktCode: "DGS_240205_250", wallet: "[ZION] [210825003500004] ZMP2408_014", remaining: 120000000, amount: 50000000, requestor: "Business user", submittedAt: "04 Nov 2026 09:26", status: "Reviewing" }
+  { id: "coin2dd", product: "Coin to Direct Discount", mktCode: "LYT_240815_003", wallet: "—", amount: 100000000, requestor: "Business user", submittedAt: "04 Nov 2026 09:12", status: "Reviewing" },
+  { id: "gotit", product: "Got It to Direct Discount", mktCode: "DGS_240205_250", wallet: "[ZION] [210825003500004] ZMP2408_014", amount: 50000000, requestor: "Business user", submittedAt: "04 Nov 2026 09:26", status: "Reviewing" }
 ];
 
 function readTopupApprovalRows() {
@@ -5340,11 +5340,10 @@ function initTopupBudgetApproval() {
         <td>${escapeHtml(row.product)}</td>
         <td><span class="budget-request-link">${escapeHtml(row.mktCode)}</span></td>
         <td class="topup-wallet-cell">${escapeHtml(row.wallet)}</td>
-        <td class="budget-number">${Number(row.remaining).toLocaleString("en-US")} VND</td>
         <td class="budget-number"><strong>${Number(row.amount).toLocaleString("en-US")} VND</strong></td>
         <td>${escapeHtml(row.requestor)}</td><td>${escapeHtml(row.submittedAt)}</td>
         <td><span class="budget-status-chip ${statusClass}">${escapeHtml(row.status)}</span></td>
-        <td><div class="topup-row-actions"><button type="button" class="topup-action" data-topup-action="view" data-topup-id="${escapeHtml(row.id)}">View</button>${pending ? `<button type="button" class="topup-action approve" data-topup-action="approve" data-topup-id="${escapeHtml(row.id)}">Approve</button><button type="button" class="topup-action reject" data-topup-action="reject" data-topup-id="${escapeHtml(row.id)}">Reject</button>` : ""}</div></td>
+        <td><div class="topup-row-actions"><button type="button" class="asset-icon-button topup-view-button" data-topup-action="view" data-topup-id="${escapeHtml(row.id)}" aria-label="View top-up history" title="View"><img src="assets/action-view.svg" alt="" aria-hidden="true"></button>${pending ? `<button type="button" class="topup-action approve" data-topup-action="approve" data-topup-id="${escapeHtml(row.id)}">Approve</button><button type="button" class="topup-action reject" data-topup-action="reject" data-topup-id="${escapeHtml(row.id)}">Reject</button>` : ""}</div></td>
       </tr>`;
     }).join("");
   };
@@ -5393,7 +5392,7 @@ function initTopupBudgetDetail({ id }) {
     const statusClass = row.status === "Approved" ? "is-approved" : row.status === "Rejected" ? "is-rejected" : "is-reviewing";
     return `<tr>
       <td>${index + 1}</td><td>${escapeHtml(row.product)}</td><td>${escapeHtml(row.mktCode)}</td><td class="topup-wallet-cell">${escapeHtml(row.wallet)}</td>
-      <td>${escapeHtml(row.requestor)}</td><td>${escapeHtml(row.submittedAt)}</td><td class="budget-number">${money(row.remaining)} VND</td><td class="budget-number">${money(row.amount)} VND</td>
+      <td>${escapeHtml(row.requestor)}</td><td>${escapeHtml(row.submittedAt)}</td><td class="budget-number">${money(row.amount)} VND</td>
       <td><span class="budget-status-chip ${statusClass}">${escapeHtml(row.status)}</span></td><td>${escapeHtml(row.reviewer || "—")}</td><td>${escapeHtml(row.decidedAt || "—")}</td><td>${escapeHtml(row.note || "—")}</td>
     </tr>`;
   }).join("");
