@@ -48,10 +48,10 @@ const state = {
 };
 
 let ruleEngineRules = [
-  { id: "500235", name: "KYC eligibility check", team: "Promotion", registerDocument: "", owner: "kiettt8", description: "Checks whether the user has an eligible KYC level.", conditions: [{ field: "109", subRule: "kyc", operator: "IN", values: ["K1", "K2", "K3"] }] },
-  { id: "500236", name: "System risk check", team: "Risk", registerDocument: "", owner: "nghiatn", description: "Checks the user's risk type.", conditions: [{ field: "95", config: { riskControl: "Đánh giá rủi ro toàn hệ thống", userTypes: ["Normal User", "Malicious"] } }] },
-  { id: "500237", name: "Segment membership check", team: "Growth", registerDocument: "", owner: "linhnt22", description: "Checks whether the user belongs to a selected segment.", conditions: [{ field: "81", config: { segmentId: "508" } }] },
-  { id: "500238", name: "MMF account eligibility", team: "Promotion", registerDocument: "", owner: "kiettt8", description: "Checks whether the user has an MMF account.", conditions: [{ field: "104", operator: "Is", value: "Has no account" }] }
+  { id: "500235", name: "KYC eligibility check", team: "Promotion", registerDocument: "", createdAt: "2026-10-21T09:15:00+07:00", owner: "kiettt8", description: "Checks whether the user has an eligible KYC level.", conditions: [{ field: "109", subRule: "kyc", operator: "IN", values: ["K1", "K2", "K3"] }] },
+  { id: "500236", name: "System risk check", team: "Risk", registerDocument: "", createdAt: "2026-10-24T14:20:00+07:00", owner: "nghiatn", description: "Checks the user's risk type.", conditions: [{ field: "95", config: { riskControl: "Đánh giá rủi ro toàn hệ thống", userTypes: ["Normal User", "Malicious"] } }] },
+  { id: "500237", name: "Segment membership check", team: "Growth", registerDocument: "", createdAt: "2026-10-28T11:05:00+07:00", owner: "linhnt22", description: "Checks whether the user belongs to a selected segment.", conditions: [{ field: "81", config: { segmentId: "508" } }] },
+  { id: "500238", name: "MMF account eligibility", team: "Promotion", registerDocument: "", createdAt: "2026-11-02T16:40:00+07:00", owner: "kiettt8", description: "Checks whether the user has an MMF account.", conditions: [{ field: "104", operator: "Is", value: "Has no account" }] }
 ];
 let nextRuleNumber = 500239;
 let activeRuleForm = { mode: "create", id: null };
@@ -2371,11 +2371,18 @@ function initRolesList() {
 function renderRuleRows(rules = ruleEngineRules) {
   const body = document.getElementById("ruleRows");
   const actionIcon = (kind, label, id) => `<button type="button" class="asset-icon-button rule-action-${kind}" data-rule-action="${kind}" data-rule-id="${escapeHtml(id)}" aria-label="${label}" title="${label}"><img src="assets/action-${kind}.svg" alt="" aria-hidden="true"></button>`;
+  const formatCreatedAt = value => {
+    if (!value) return "—";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+    return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Asia/Ho_Chi_Minh" }).format(date);
+  };
   body.innerHTML = rules.map(rule => `<tr>
     <td class="rule-id-cell">${escapeHtml(rule.id)}</td>
     <td>${escapeHtml(rule.name)}</td>
     <td>${escapeHtml(rule.team || "—")}</td>
     <td>${rule.registerDocument ? `<a class="rule-register-link" href="${escapeHtml(rule.registerDocument)}" target="_blank" rel="noopener noreferrer">Open document</a>` : '<span class="rule-register-empty">—</span>'}</td>
+    <td class="rule-created-time">${escapeHtml(formatCreatedAt(rule.createdAt))}</td>
     <td>${escapeHtml(rule.owner)}</td>
     <td><div class="rule-row-actions">${actionIcon("view", "View", rule.id)}${actionIcon("edit", "Edit", rule.id)}${actionIcon("delete", "Delete", rule.id)}</div></td>
   </tr>`).join("");
@@ -2384,17 +2391,13 @@ function renderRuleRows(rules = ruleEngineRules) {
 }
 
 function initRuleList() {
-  const team = document.getElementById("ruleTeam");
   const owner = document.getElementById("ruleCreatedBy");
-  [...new Set(ruleEngineRules.map(rule => rule.team).filter(Boolean))].sort().forEach(name => team.add(new Option(name, name)));
   [...new Set(ruleEngineRules.map(rule => rule.owner))].sort().forEach(name => owner.add(new Option(name, name)));
   const search = () => {
     const query = document.getElementById("ruleSearch").value.trim().toLocaleLowerCase();
     const createdBy = owner.value;
-    const selectedTeam = team.value;
     renderRuleRows(ruleEngineRules.filter(rule =>
-      (!query || rule.id.toLocaleLowerCase().includes(query) || rule.name.toLocaleLowerCase().includes(query) || (rule.team || "").toLocaleLowerCase().includes(query))
-      && (!selectedTeam || rule.team === selectedTeam)
+      (!query || rule.id.toLocaleLowerCase().includes(query) || rule.name.toLocaleLowerCase().includes(query))
       && (!createdBy || rule.owner === createdBy)
     ));
   };
@@ -2403,7 +2406,6 @@ function initRuleList() {
   document.getElementById("ruleSearch").onkeydown = event => { if (event.key === "Enter") search(); };
   document.getElementById("ruleReset").onclick = () => {
     document.getElementById("ruleSearch").value = "";
-    team.value = "";
     owner.value = "";
     search();
   };
@@ -3955,7 +3957,7 @@ function initRuleForm(payload = {}) {
     if (!await confirmRuleAction({ title: activeRuleForm.mode === "edit" ? "Save rule changes?" : "Save this rule?", message: activeRuleForm.mode === "edit" ? `Save the changes to “${name}”?` : `Create “${name}” with the selected checks?`, confirmLabel: activeRuleForm.mode === "edit" ? "Save changes" : "Save rule" })) return;
     const data = { name, team, registerDocument, description: document.getElementById("ruleDescription").value.trim(), conditions };
     if (activeRuleForm.mode === "edit" && rule) { Object.assign(rule, data); delete rule.countLimits; toast(`Rule ${rule.id} updated.`); }
-    else { const id = String(nextRuleNumber++); ruleEngineRules.unshift({ id, ...data, owner: "kiettt8" }); toast(`Rule created. Rule ID: ${id}`); }
+    else { const id = String(nextRuleNumber++); ruleEngineRules.unshift({ id, ...data, createdAt: new Date().toISOString(), owner: "kiettt8" }); toast(`Rule created. Rule ID: ${id}`); }
     route("rule-list");
   };
 }

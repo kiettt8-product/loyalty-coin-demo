@@ -1088,26 +1088,27 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 
 /* Rule Engine reuses the CRM asset list and form components. */
 .rule-engine-nav.active { color: #1677ff; }
-.rule-filter-grid { grid-template-columns: minmax(240px, 2fr) minmax(130px, 1fr) minmax(130px, 1fr) auto; }
+.rule-filter-grid { grid-template-columns: minmax(240px, 2fr) minmax(160px, 1fr) auto; }
 .rule-filter-grid #ruleSearch { grid-column: 1; }
-.rule-filter-grid #ruleTeam { grid-column: 2; }
-.rule-filter-grid #ruleCreatedBy { grid-column: 3; }
-.rule-filter-actions { grid-column: 4; gap: 14px; }
+.rule-filter-grid #ruleCreatedBy { grid-column: 2; }
+.rule-filter-actions { grid-column: 3; gap: 14px; }
 .rule-list-panel { min-height: 794px; }
 .rule-table-wrap { position: relative; min-height: 666px; }
 .asset-table.rule-table { width: 100%; min-width: 0; table-layout: fixed; }
-.asset-table.rule-table th:nth-child(1), .asset-table.rule-table td:nth-child(1) { width: 15%; }
-.asset-table.rule-table th:nth-child(2), .asset-table.rule-table td:nth-child(2) { width: 23%; }
-.asset-table.rule-table th:nth-child(3), .asset-table.rule-table td:nth-child(3) { width: 13%; }
-.asset-table.rule-table th:nth-child(4), .asset-table.rule-table td:nth-child(4) { width: 18%; }
-.asset-table.rule-table th:nth-child(5), .asset-table.rule-table td:nth-child(5) { width: 13%; }
-.asset-table.rule-table th:nth-child(6), .asset-table.rule-table td:nth-child(6) { width: 18%; }
+.asset-table.rule-table th:nth-child(1), .asset-table.rule-table td:nth-child(1) { width: 12%; }
+.asset-table.rule-table th:nth-child(2), .asset-table.rule-table td:nth-child(2) { width: 20%; }
+.asset-table.rule-table th:nth-child(3), .asset-table.rule-table td:nth-child(3) { width: 11%; }
+.asset-table.rule-table th:nth-child(4), .asset-table.rule-table td:nth-child(4) { width: 15%; }
+.asset-table.rule-table th:nth-child(5), .asset-table.rule-table td:nth-child(5) { width: 15%; }
+.asset-table.rule-table th:nth-child(6), .asset-table.rule-table td:nth-child(6) { width: 11%; }
+.asset-table.rule-table th:nth-child(7), .asset-table.rule-table td:nth-child(7) { width: 16%; }
 .asset-table.rule-table tbody tr td,
 .asset-table.rule-table tbody tr:first-child td,
 .asset-table.rule-table tbody tr:nth-child(2) td { height: 64px; }
 .asset-table.rule-table td:nth-child(1) { color: #0033c9; font-variant-numeric: tabular-nums; }
 .asset-table.rule-table td:last-child { text-align: center; }
 .asset-table.rule-table td:nth-child(4) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.asset-table.rule-table td:nth-child(5) { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .rule-register-link { color: #1677ff; text-decoration: none; }
 .rule-register-link:hover { text-decoration: underline; }
 .rule-register-empty { color: #9aa4b2; }
@@ -1300,9 +1301,8 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 @media (max-width: 1200px) {
   .rule-filter-grid { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
   .rule-filter-grid #ruleSearch { grid-column: 1 / 3; }
-  .rule-filter-grid #ruleTeam { grid-column: 1; }
-  .rule-filter-grid #ruleCreatedBy { grid-column: 2; }
-  .rule-filter-actions { grid-column: 1 / 3; justify-content: flex-end; }
+  .rule-filter-grid #ruleCreatedBy { grid-column: 1; }
+  .rule-filter-actions { grid-column: 2; justify-content: flex-end; }
 }
 @media (max-width: 900px) {
   .rule-condition-row { grid-template-columns: minmax(0, 1fr) 32px; }
@@ -1321,7 +1321,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 }
 @media (max-width: 600px) {
   .rule-filter-grid { grid-template-columns: 1fr; }
-  .rule-filter-grid #ruleSearch, .rule-filter-grid #ruleTeam, .rule-filter-grid #ruleCreatedBy, .rule-filter-actions { grid-column: auto; }
+  .rule-filter-grid #ruleSearch, .rule-filter-grid #ruleCreatedBy, .rule-filter-actions { grid-column: auto; }
   .rule-filter-actions { justify-content: flex-start; }
   .rule-table-wrap { overflow-x: auto; }
   .asset-table.rule-table { min-width: 900px; width: 100%; }
