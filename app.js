@@ -2225,7 +2225,7 @@ const roleModules = [
   ["Inventory Management", 21], ["Home Header Inventory", 22], ["Reminder Inventory", 23],
   ["Home Slider Inventory", 24], ["Product Page Banner Inventory", 25], ["Map Bank Page Banner", 26],
   ["Popup Inventory", 27], ["SKU Inventory", 28], ["Reward Inventory", 29], ["Task Inventory", 30],
-  ["Group Inventory", 31], ["Rule Engine", 32], ["Rule List", 33],
+  ["Group Inventory", 31], ["Rule Engine", 32], ["Rule List", 33], ["Field Setup", 33],
   ["Budget Management", 34], ["Budget Approval", 35], ["Campaign Approval", 36],
   ["Assistant Management", 37], ["Configuration", 38], ["Others", 39], ["Coin to Direct Discount", 40]
 ];
@@ -2271,7 +2271,7 @@ function renderRoleRows(rows = filteredRoles) {
 function renderRolePermissionRows() {
   document.getElementById("rolesPermissionRows").innerHTML = roleModules.map(([name, group]) => {
     const enabled = roleEnabledActionIndexes[group] || [];
-    const child = ["User List", "Role List", "Label List", "Segment", "Merchant and Service Logo", "Notification", "ZMS", "Banner", "Reminder", "Popup", "SKU", "SKU Template", "Story", "Voucher", "ZBS Template", "Merchant Code", "Notification Campaign", "ZMS Campaign", "Promo Asset Campaign", "Promo Store Campaign", "Trigger Based Campaign", "Revoke Voucher", "Promotion Code", "Home Header Inventory", "Reminder Inventory", "Home Slider Inventory", "Product Page Banner Inventory", "Map Bank Page Banner", "Popup Inventory", "SKU Inventory", "Reward Inventory", "Task Inventory", "Group Inventory", "Rule List", "Budget Approval", "Campaign Approval"].includes(name);
+    const child = ["User List", "Role List", "Label List", "Segment", "Merchant and Service Logo", "Notification", "ZMS", "Banner", "Reminder", "Popup", "SKU", "SKU Template", "Story", "Voucher", "ZBS Template", "Merchant Code", "Notification Campaign", "ZMS Campaign", "Promo Asset Campaign", "Promo Store Campaign", "Trigger Based Campaign", "Revoke Voucher", "Promotion Code", "Home Header Inventory", "Reminder Inventory", "Home Slider Inventory", "Product Page Banner Inventory", "Map Bank Page Banner", "Popup Inventory", "SKU Inventory", "Reward Inventory", "Task Inventory", "Group Inventory", "Rule List", "Field Setup", "Budget Approval", "Campaign Approval"].includes(name);
     return `<tr class="${child ? "is-child" : ""}"><td>${escapeHtml(name)}</td>${roleActions.map((action, index) => {
       const key = `${name}:${action}`;
       const disabled = !enabled.includes(index);
