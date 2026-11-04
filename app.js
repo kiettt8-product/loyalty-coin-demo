@@ -48,12 +48,12 @@ const state = {
 };
 
 let ruleEngineRules = [
-  { id: "RE-10001", name: "KYC eligibility check", team: "Promotion", registerDocument: "", owner: "kiettt8", description: "Checks whether the user has an eligible KYC level.", conditions: [{ field: "109", subRule: "kyc", operator: "IN", values: ["K1", "K2", "K3"] }] },
-  { id: "RE-10002", name: "System risk check", team: "Risk", registerDocument: "", owner: "nghiatn", description: "Checks the user's risk type.", conditions: [{ field: "95", config: { riskControl: "Đánh giá rủi ro toàn hệ thống", userTypes: ["Normal User", "Malicious"] } }] },
-  { id: "RE-10003", name: "Segment membership check", team: "Growth", registerDocument: "", owner: "linhnt22", description: "Checks whether the user belongs to a selected segment.", conditions: [{ field: "81", config: { segmentId: "508" } }] },
-  { id: "RE-10004", name: "MMF account eligibility", team: "Promotion", registerDocument: "", owner: "kiettt8", description: "Checks whether the user has an MMF account.", conditions: [{ field: "104", operator: "Is", value: "Has no account" }] }
+  { id: "500235", name: "KYC eligibility check", team: "Promotion", registerDocument: "", owner: "kiettt8", description: "Checks whether the user has an eligible KYC level.", conditions: [{ field: "109", subRule: "kyc", operator: "IN", values: ["K1", "K2", "K3"] }] },
+  { id: "500236", name: "System risk check", team: "Risk", registerDocument: "", owner: "nghiatn", description: "Checks the user's risk type.", conditions: [{ field: "95", config: { riskControl: "Đánh giá rủi ro toàn hệ thống", userTypes: ["Normal User", "Malicious"] } }] },
+  { id: "500237", name: "Segment membership check", team: "Growth", registerDocument: "", owner: "linhnt22", description: "Checks whether the user belongs to a selected segment.", conditions: [{ field: "81", config: { segmentId: "508" } }] },
+  { id: "500238", name: "MMF account eligibility", team: "Promotion", registerDocument: "", owner: "kiettt8", description: "Checks whether the user has an MMF account.", conditions: [{ field: "104", operator: "Is", value: "Has no account" }] }
 ];
-let nextRuleNumber = 10005;
+let nextRuleNumber = 500239;
 let activeRuleForm = { mode: "create", id: null };
 
 const budgetMktCatalog = {
@@ -2788,7 +2788,7 @@ const builtInRuleConditionOptions = [
   { group: "Account Status & Segment", fieldSetupId: "104", value: "104", label: "Check MMF account status", operators: ["Is"], values: ["Has account", "Has no account"] },
   { group: "Account Status & Segment", fieldSetupId: "81", value: "81", label: "Segment check" },
   { group: "Account Status & Segment", fieldSetupId: "95", value: "95", label: "Risk check" },
-  { group: "Usage", value: "counter-condition", backendField: "counter-condition", label: "Dynamic Counter", counterCondition: true, surfaces: ["ruleEngine"] },
+  { group: "Advance Counter", value: "counter-condition", backendField: "counter-condition", label: "Dynamic Counter", counterCondition: true, surfaces: ["ruleEngine"] },
   { group: "Usage counters", value: "10", label: "User counter", legacy: true },
   { group: "Usage counters", value: "86", label: "User counter per period", legacy: true }
 ];
@@ -3955,7 +3955,7 @@ function initRuleForm(payload = {}) {
     if (!await confirmRuleAction({ title: activeRuleForm.mode === "edit" ? "Save rule changes?" : "Save this rule?", message: activeRuleForm.mode === "edit" ? `Save the changes to “${name}”?` : `Create “${name}” with the selected checks?`, confirmLabel: activeRuleForm.mode === "edit" ? "Save changes" : "Save rule" })) return;
     const data = { name, team, registerDocument, description: document.getElementById("ruleDescription").value.trim(), conditions };
     if (activeRuleForm.mode === "edit" && rule) { Object.assign(rule, data); delete rule.countLimits; toast(`Rule ${rule.id} updated.`); }
-    else { const id = `RE-${nextRuleNumber++}`; ruleEngineRules.unshift({ id, ...data, owner: "kiettt8" }); toast(`Rule created. Rule ID: ${id}`); }
+    else { const id = String(nextRuleNumber++); ruleEngineRules.unshift({ id, ...data, owner: "kiettt8" }); toast(`Rule created. Rule ID: ${id}`); }
     route("rule-list");
   };
 }
