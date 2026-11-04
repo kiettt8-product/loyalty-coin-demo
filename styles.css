@@ -1635,19 +1635,20 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 }
 .rule-config-screen { font-family: -apple-system, "system-ui", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; font-size: 14px; }
 .rule-segment-form .rule-config-field { width: 100%; max-width: none; gap: 8px; font-size: 14px; line-height: 22px; }
-.rule-segment-form .rule-config-field > span { font-weight: 700; }
+.rule-segment-form .rule-config-field > span { font-weight: 500; }
 .rule-segment-form .rule-config-field > span small { color: #8c8c8c; font-size: 12px; font-weight: 400; }
 .rule-segment-form .rule-config-field input { width: 100%; max-width: none; }
 .rule-metadata-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: start; gap: 16px; }
 .rule-condition-section { display: grid; gap: 0; }
-.rule-segment-section-label { margin: 0 0 12px; color: #001f3e; font-size: 14px; font-weight: 600; line-height: 20px; }
+.rule-segment-section-label { margin: 0 0 12px; color: #001f3e; font-size: 14px; font-weight: 500; line-height: 20px; }
 .rule-segment-section-label b { color: #fb2c36; }
 .rule-condition-tree { gap: 8px; }
 .rule-condition-connector { min-height: 36px; padding-left: 4px; transform: translateY(-8px); }
 .rule-condition-connector-line { display: none; }
 .rule-condition-connector select { width: 104px; height: 32px; padding: 0 32px 0 11px; border-radius: 4px; background-color: #fff; background-position: right 12px center; font-family: inherit; font-size: 14px; line-height: 22px; }
 .rule-condition-group-card { gap: 12px; padding: 16px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .08); }
-.rule-condition-group-heading { min-height: 20px; color: #001f3e; font-weight: 600; }
+.rule-condition-group-heading { min-height: 20px; color: #001f3e; font-weight: 500; }
+.rule-condition-group-heading strong { font-weight: 500; }
 .rule-condition-group-heading small { display: none; }
 .rule-condition-group-actions { gap: 8px; }
 .rule-segment-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 4px; }
