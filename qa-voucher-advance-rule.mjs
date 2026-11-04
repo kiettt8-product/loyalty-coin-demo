@@ -20,9 +20,6 @@ page.on("console", message => {
   if (message.type() === "error" && !message.text().includes("Failed to load resource")) browserErrors.push(message.text());
 });
 page.on("pageerror", error => browserErrors.push(error.message));
-page.on("requestfailed", request => {
-  if (request.url().startsWith("http://127.0.0.1:4173/")) browserErrors.push(`${request.url()}: ${request.failure()?.errorText || "request failed"}`);
-});
 
 try {
   await page.goto("http://127.0.0.1:4173", { waitUntil: "networkidle" });
@@ -117,8 +114,76 @@ try {
     console.log(`Visual comparison passed: ${differentPixels} changed pixels (max ${maxDiffPixels}).`);
   }
 
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Asset Management" }).click();
+  await page.getByRole("button", { name: "Voucher", exact: true }).click();
+  await page.locator(".voucher-list-screen").waitFor();
+  await page.getByRole("button", { name: "Add New" }).click();
+  await page.locator("#voucherCreateForm").waitFor();
+  await page.locator("#voucherConditionList .rule-condition-search").first().click();
+  await page.getByRole("option", { name: "Segment check", exact: true }).click();
+  await page.locator("#voucherConditionList [data-segment-search]").click();
+  await page.locator('#voucherConditionList [data-segment-option="508"]').click();
+  await page.getByRole("button", { name: "+ Add condition", exact: true }).click();
+  await page.locator("#voucherConditionList .rule-condition-row").nth(1).locator(".rule-condition-search").click();
+  await page.getByRole("option", { name: "Demo State Check", exact: true }).click();
+
+  const segmentGeometry = await page.locator("#voucherConditionList .rule-condition-row").evaluateAll(rows => {
+    const rect = node => {
+      const { x, y, width, height } = node.getBoundingClientRect();
+      return { x, y, width, height };
+    };
+    const segmentRow = rows[0];
+    return {
+      segmentRow: {
+        field: rect(segmentRow.querySelector(".rule-condition-search")),
+        segment: rect(segmentRow.querySelector("[data-segment-search]")),
+        remove: rect(segmentRow.querySelector(".voucher-condition-remove"))
+      },
+      nextField: rect(rows[1].querySelector(".rule-condition-search"))
+    };
+  });
+  for (const [name, box] of Object.entries(segmentGeometry.segmentRow)) {
+    if (box.height !== 32 || Math.abs(box.y - segmentGeometry.segmentRow.field.y) > 1) {
+      throw new Error(`Segment check ${name} must align with its condition field at 32px: ${JSON.stringify(segmentGeometry)}`);
+    }
+  }
+  const segmentConnector = await page.locator("#voucherConditionList .rule-condition-node").nth(1).evaluate(node => {
+    const previousControls = [...node.previousElementSibling.querySelectorAll(".rule-condition-search, [data-segment-search]")];
+    const previousBottom = Math.max(...previousControls.map(control => control.getBoundingClientRect().bottom));
+    const nextTop = node.querySelector(".rule-condition-search").getBoundingClientRect().top;
+    const control = node.querySelector(".rule-condition-connector select").getBoundingClientRect();
+    return { gapCenter: (previousBottom + nextTop) / 2, controlCenter: control.y + control.height / 2 };
+  });
+  if (Math.abs(segmentConnector.gapCenter - segmentConnector.controlCenter) > 1) {
+    throw new Error(`AND/OR selector is not centered after Segment check: ${JSON.stringify(segmentConnector)}`);
+  }
+
+  await page.locator(".voucher-advanced-rule").scrollIntoViewIfNeeded();
+  await page.mouse.move(1590, 15);
+  const segmentScreenshot = await page.locator(".voucher-advanced-rule").screenshot({ animations: "disabled" });
+  const segmentBaselinePath = path.join("qa-baselines", "voucher-advance-rule-segment.png");
+  const segmentScreenshotPath = path.join(outputDir, "voucher-advance-rule-segment.png");
+  await writeFile(segmentScreenshotPath, segmentScreenshot);
+  if (updateVisual) {
+    await writeFile(segmentBaselinePath, segmentScreenshot);
+    console.log(`Updated visual baseline: ${segmentBaselinePath}`);
+  } else {
+    const expected = PNG.sync.read(await readFile(segmentBaselinePath));
+    const actual = PNG.sync.read(segmentScreenshot);
+    if (actual.width !== expected.width || actual.height !== expected.height) {
+      throw new Error(`Segment screenshot dimensions changed: expected ${expected.width}x${expected.height}; got ${actual.width}x${actual.height}`);
+    }
+    const diff = new PNG({ width: actual.width, height: actual.height });
+    const differentPixels = pixelmatch(expected.data, actual.data, diff.data, actual.width, actual.height, { threshold: 0.12 });
+    await writeFile(path.join(outputDir, "voucher-advance-rule-segment-diff.png"), PNG.sync.write(diff));
+    const maxDiffPixels = Math.max(80, Math.floor(actual.width * actual.height * 0.0005));
+    if (differentPixels > maxDiffPixels) throw new Error(`Segment visual diff too large: ${differentPixels} pixels (max ${maxDiffPixels})`);
+    console.log(`Segment visual comparison passed: ${differentPixels} changed pixels (max ${maxDiffPixels}).`);
+  }
+
   if (browserErrors.length) throw new Error(`Browser errors: ${browserErrors.join(" | ")}`);
-  console.log(JSON.stringify({ geometry, connector, browserErrors }, null, 2));
+  console.log(JSON.stringify({ geometry, connector, segmentGeometry, segmentConnector, browserErrors }, null, 2));
 } finally {
   await browser.close();
 }

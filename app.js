@@ -859,9 +859,9 @@ const ruleFieldBuiltinChecks = [
   { id: "nfc", category: "Check user profile", label: "Check NFC status", field: "profile.nfcStatus", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success", surfaces: ["voucher", "ruleEngine"] },
   { id: "ekyc", category: "Check user profile", label: "Check eKYC status", field: "profile.ekycStatus", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success", surfaces: ["voucher", "ruleEngine"] },
   { id: "account-level", category: "Check user profile", label: "Check Account level", field: "profile.accountLevel", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"], surfaces: ["voucher", "ruleEngine"] },
-  { id: "104", category: "Account & Segment", label: "MMF account status", field: "account.mmfStatus", surfaces: ["ruleEngine"], builtin: true },
-  { id: "81", category: "Account & Segment", label: "Segment check", field: "segmentId", surfaces: ["ruleEngine"], builtin: true },
-  { id: "95", category: "Account & Segment", label: "Risk check", field: "risk.userType", surfaces: ["ruleEngine"], builtin: true }
+  { id: "104", category: "Account & Segment", label: "MMF account status", field: "account.mmfStatus", surfaces: ["voucher", "ruleEngine"], builtin: true },
+  { id: "81", category: "Account & Segment", label: "Segment check", field: "segmentId", surfaces: ["voucher", "ruleEngine"], builtin: true },
+  { id: "95", category: "Account & Segment", label: "Risk check", field: "risk.userType", surfaces: ["voucher", "ruleEngine"], builtin: true }
 ];
 const RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES = ["Check user profile", "Account & Segment"];
 function loadRuleFieldCatalog() {
@@ -1284,12 +1284,19 @@ function initVoucherAdvanceRuleBuilder() {
     menu.hidden = true;
     input?.setAttribute("aria-expanded", "false");
   });
+  const closeSegmentPickers = except => rows.querySelectorAll("[data-rule-segment-picker]").forEach(picker => {
+    const input = picker.querySelector("[data-segment-search]");
+    if (input === except) return;
+    picker.querySelector("[data-segment-menu]").hidden = true;
+    input?.setAttribute("aria-expanded", "false");
+  });
   const openPicker = input => {
     const row = input.closest(".rule-condition-row");
     if (!row) return;
     const option = ruleConditionOptions.find(item => item.value === row.dataset.ruleType);
     const menu = row.querySelector(".rule-condition-menu");
     closePickers(input);
+    closeSegmentPickers(null);
     renderRuleConditionMenu(menu, input.value === option?.label ? "" : input.value, row.dataset.ruleType);
     menu.hidden = false;
     input.setAttribute("aria-expanded", "true");
@@ -1307,9 +1314,53 @@ function initVoucherAdvanceRuleBuilder() {
     if (input) openPicker(input);
   };
 
-  rows.addEventListener("focusin", event => { if (event.target.matches(".rule-condition-search")) openPicker(event.target); });
+  rows.addEventListener("focusin", event => {
+    if (event.target.matches(".rule-condition-search")) openPicker(event.target);
+    if (event.target.matches("[data-segment-search]")) {
+      const picker = event.target.closest("[data-rule-segment-picker]");
+      closePickers(null);
+      closeSegmentPickers(event.target);
+      if (event.target.value === (picker.dataset.selectedLabel || "")) event.target.value = "";
+      renderRuleSegmentOptions(picker);
+      picker.querySelector("[data-segment-menu]").hidden = false;
+      event.target.setAttribute("aria-expanded", "true");
+    }
+  });
   rows.addEventListener("click", event => {
     if (event.target.matches(".rule-condition-search")) openPicker(event.target);
+    if (event.target.matches("[data-segment-search]")) {
+      const picker = event.target.closest("[data-rule-segment-picker]");
+      closePickers(null);
+      closeSegmentPickers(event.target);
+      renderRuleSegmentOptions(picker);
+      picker.querySelector("[data-segment-menu]").hidden = false;
+      event.target.setAttribute("aria-expanded", "true");
+      return;
+    }
+    const segmentTab = event.target.closest("[data-segment-tab]");
+    if (segmentTab) {
+      const picker = segmentTab.closest("[data-rule-segment-picker]");
+      picker.dataset.segmentTab = segmentTab.dataset.segmentTab;
+      picker.querySelectorAll("[data-segment-tab]").forEach(tab => {
+        const active = tab === segmentTab;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", String(active));
+      });
+      renderRuleSegmentOptions(picker);
+      return;
+    }
+    const segmentOption = event.target.closest("[data-segment-option]");
+    if (segmentOption) {
+      const picker = segmentOption.closest("[data-rule-segment-picker]");
+      const segment = ruleSegments.find(item => item.id === segmentOption.dataset.segmentOption);
+      const input = picker.querySelector("[data-segment-search]");
+      input.value = `${segment.id} - ${segment.name}`;
+      picker.dataset.selectedLabel = input.value;
+      picker.querySelector("[data-segment-value]").value = segment.id;
+      picker.querySelector("[data-segment-menu]").hidden = true;
+      input.setAttribute("aria-expanded", "false");
+      return;
+    }
     const choice = event.target.closest(".voucher-condition-option[data-rule-type]");
     if (choice) {
       const row = choice.closest(".rule-condition-row");
@@ -1405,6 +1456,13 @@ function initVoucherAdvanceRuleBuilder() {
       const option = ruleConditionOptions.find(item => item.value === row.dataset.ruleType);
       if (option?.multiple) { renderRuleSimpleMultiValue(row, option); row.querySelector(".voucher-multi-select-menu").hidden = false; }
     }
+    if (event.target.matches("[data-segment-search]")) {
+      const picker = event.target.closest("[data-rule-segment-picker]");
+      if (event.target.value !== (picker.dataset.selectedLabel || "")) picker.querySelector("[data-segment-value]").value = "";
+      renderRuleSegmentOptions(picker);
+      picker.querySelector("[data-segment-menu]").hidden = false;
+      event.target.setAttribute("aria-expanded", "true");
+    }
   });
   rows.addEventListener("keydown", event => {
     if (event.target.matches(".rule-condition-search")) {
@@ -1416,12 +1474,23 @@ function initVoucherAdvanceRuleBuilder() {
       const option = event.target.closest(".voucher-condition-value").querySelector("[data-simple-value]");
       if (option) { event.preventDefault(); option.click(); }
     }
+    if (event.target.matches("[data-segment-search]")) {
+      if (event.key === "Escape") {
+        event.target.closest("[data-rule-segment-picker]").querySelector("[data-segment-menu]").hidden = true;
+        event.target.setAttribute("aria-expanded", "false");
+      }
+      if (event.key === "Enter") {
+        const option = event.target.closest("[data-rule-segment-picker]").querySelector("[data-segment-option]");
+        if (option) { event.preventDefault(); option.click(); }
+      }
+    }
   });
   document.getElementById("voucherAddRule").addEventListener("click", () => addNode("condition"));
   document.getElementById("voucherAddConditionGroup").addEventListener("click", () => addNode("group"));
   document.addEventListener("click", event => {
     if (rows.contains(event.target)) return;
     closePickers(null);
+    closeSegmentPickers(null);
     rows.querySelectorAll(".voucher-single-select-menu, .voucher-multi-select-menu").forEach(menu => menu.hidden = true);
   });
 }
@@ -3021,7 +3090,7 @@ function ruleConditionRow(condition = {}, readonly = false) {
     <div class="voucher-condition-operator">${voucherSingleSelectMarkup("Operator", [], "", true)}</div>
     <div class="voucher-condition-value">${voucherSingleSelectMarkup("Select value", [], "", true)}</div>
     <button type="button" class="voucher-condition-remove" aria-label="Remove rule" title="Remove rule" ${readonly || !condition.field ? "hidden" : ""}><img src="assets/action-delete.svg" alt="" aria-hidden="true"></button>
-    <div class="rule-configuration"></div>`;
+    <div class="rule-configuration" hidden></div>`;
   const selectedOption = condition.field
     ? ruleConditionOptions.find(item => item.value === (condition.conditionType || condition.ruleType))
       || ruleConditionOptions.find(item => item.backendField === condition.field && item.subtype === condition.subRule)
@@ -3038,6 +3107,7 @@ function ruleConditionRow(condition = {}, readonly = false) {
   else if (selectedOption && ["81", "95"].includes(selectedOption.value)) configureRuleSpecialCondition(row, selectedOption, condition, readonly);
   else if (condition.field) {
     row.classList.add("is-dynamic");
+    row.querySelector(".rule-configuration").hidden = false;
     row.querySelector(".voucher-condition-operator").hidden = true;
     row.querySelector(".voucher-condition-value").hidden = true;
     row.querySelector(".rule-configuration").innerHTML = renderRuleTypeFields(row.dataset.ruleField, condition, readonly, selectedOption?.label || "");
@@ -3086,7 +3156,7 @@ function configureRuleSimpleCondition(row, option, condition = {}, readonly = fa
     valueHost.innerHTML = voucherSingleSelectMarkup("Select value", option.values, configuredValue, readonly);
   }
   row.querySelector(".rule-configuration").innerHTML = "";
-  row.querySelector(".rule-configuration").hidden = false;
+  row.querySelector(".rule-configuration").hidden = true;
 }
 
 function configureRuleSpecialCondition(row, option, condition = {}, readonly = false) {

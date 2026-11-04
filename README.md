@@ -45,4 +45,4 @@ With the local demo server running, run:
 node qa-voucher-advance-rule.mjs
 ```
 
-This Playwright check verifies that condition fields share the same column positions and height, the AND/OR selector is centered, and the Advance Rule screenshot matches its baseline. To refresh the screenshot after an intentional design change, run `node qa-voucher-advance-rule.mjs --update-visual` and review `qa-baselines/voucher-advance-rule.png` before committing it.
+This Playwright check verifies that condition fields share the same column positions and height, the Segment picker aligns with its rule field, the AND/OR selector is centered, and both Advance Rule screenshots match their baselines. To refresh the screenshots after an intentional design change, run `node qa-voucher-advance-rule.mjs --update-visual` and review the images in `qa-baselines/` before committing them.
