@@ -860,34 +860,36 @@ function renderVoucherAssetRows(rows = voucherAssets) {
 }
 
 const RULE_FIELD_CATALOG_KEY = "crmRuleFieldCatalogV1";
+const RULE_FIELD_CATEGORIES = ["User Profile", "Account Status & Segment", "Advance Filter", "Advance Counter"];
+const RULE_FIELD_FILTER_CATEGORY = "Advance Filter";
+const RULE_FIELD_COUNTER_CATEGORY = "Advance Counter";
+const RULE_FIELD_SYSTEM_CATEGORIES = RULE_FIELD_CATEGORIES.slice(0, 2);
 const ruleFieldBuiltinChecks = [
-  { id: "kyc", category: "Check user profile", label: "Check KYC level", field: "profile.kycLevel", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"], surfaces: ["voucher", "ruleEngine"] },
-  { id: "nfc", category: "Check user profile", label: "Check NFC status", field: "profile.nfcStatus", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success", surfaces: ["voucher", "ruleEngine"] },
-  { id: "ekyc", category: "Check user profile", label: "Check eKYC status", field: "profile.ekycStatus", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success", surfaces: ["voucher", "ruleEngine"] },
-  { id: "account-level", category: "Check user profile", label: "Check Account level", field: "profile.accountLevel", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"], surfaces: ["voucher", "ruleEngine"] },
-  { id: "104", category: "Account & Segment", label: "MMF account status", field: "account.mmfStatus", surfaces: ["voucher", "ruleEngine"], builtin: true },
-  { id: "81", category: "Account & Segment", label: "Segment check", field: "segmentId", surfaces: ["voucher", "ruleEngine"], builtin: true },
-  { id: "95", category: "Account & Segment", label: "Risk check", field: "risk.userType", surfaces: ["voucher", "ruleEngine"], builtin: true }
+  { id: "kyc", category: "User Profile", label: "Check KYC level", field: "profile.kycLevel", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"], surfaces: ["voucher", "ruleEngine"] },
+  { id: "nfc", category: "User Profile", label: "Check NFC status", field: "profile.nfcStatus", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success", surfaces: ["voucher", "ruleEngine"] },
+  { id: "ekyc", category: "User Profile", label: "Check eKYC status", field: "profile.ekycStatus", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success", surfaces: ["voucher", "ruleEngine"] },
+  { id: "account-level", category: "User Profile", label: "Check Account level", field: "profile.accountLevel", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"], surfaces: ["voucher", "ruleEngine"] },
+  { id: "104", category: "Account Status & Segment", label: "MMF account status", field: "account.mmfStatus", surfaces: ["voucher", "ruleEngine"], builtin: true },
+  { id: "81", category: "Account Status & Segment", label: "Segment check", field: "segmentId", surfaces: ["voucher", "ruleEngine"], builtin: true },
+  { id: "95", category: "Account Status & Segment", label: "Risk check", field: "risk.userType", surfaces: ["voucher", "ruleEngine"], builtin: true }
 ];
-const RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES = ["Check user profile", "Account & Segment"];
 function loadRuleFieldCatalog() {
-  const defaults = { categories: [...RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES], systemCategories: [...RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES], checks: [], counterFields: [] };
+  const defaults = { categories: [...RULE_FIELD_CATEGORIES], systemCategories: [...RULE_FIELD_SYSTEM_CATEGORIES], checks: [], counterFields: [] };
   try {
     const saved = JSON.parse(localStorage.getItem(RULE_FIELD_CATALOG_KEY) || "null");
     if (!saved || !Array.isArray(saved.categories) || !Array.isArray(saved.checks)) return defaults;
     if (!Array.isArray(saved.counterFields)) saved.counterFields = [];
-    if (!Array.isArray(saved.systemCategories)) saved.systemCategories = [...RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES];
-    const oldDynamicCategories = new Set(["dynamic filter", "dynamic counter", "dynamic rules"]);
-    const renameOldCategory = category => oldDynamicCategories.has(String(category || "").trim().toLocaleLowerCase()) ? "Custom checks" : category;
-    saved.categories = [...new Set(saved.categories.map(renameOldCategory))];
-    saved.checks.forEach(check => { check.category = renameOldCategory(check.category); });
-    saved.systemCategories.forEach(name => { if (!saved.categories.includes(name)) saved.categories.unshift(name); });
+    saved.checks.forEach(check => {
+      check.category = RULE_FIELD_FILTER_CATEGORY;
+    });
+    saved.categories = [...RULE_FIELD_CATEGORIES];
+    saved.systemCategories = [...RULE_FIELD_SYSTEM_CATEGORIES];
     return saved;
   } catch { return defaults; }
 }
 let ruleFieldCatalog = loadRuleFieldCatalog();
 ruleFieldBuiltinChecks.forEach(check => {
-  const systemCategoryIndex = RULE_FIELD_DEFAULT_SYSTEM_CATEGORIES.indexOf(check.category);
+  const systemCategoryIndex = RULE_FIELD_SYSTEM_CATEGORIES.indexOf(check.category);
   if (systemCategoryIndex >= 0 && ruleFieldCatalog.systemCategories[systemCategoryIndex]) check.category = ruleFieldCatalog.systemCategories[systemCategoryIndex];
 });
 function saveRuleFieldCatalog() {
@@ -905,10 +907,10 @@ function getCustomRuleFieldOptions(surface) {
   });
 }
 const voucherAdvancedRuleOptions = [
-  { group: "Check user profile", id: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
-  { group: "Check user profile", id: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
-  { group: "Check user profile", id: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
-  { group: "Check user profile", id: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"] }
+  { group: "User Profile", id: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
+  { group: "User Profile", id: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
+  { group: "User Profile", id: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
+  { group: "User Profile", id: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"] }
 ];
 function getVoucherAdvancedRuleOptions() {
   return [...voucherAdvancedRuleOptions, ...getCustomRuleFieldOptions("voucher")];
@@ -2423,8 +2425,6 @@ function ruleUsesCounterField(rule, field) {
   return usesIn(rule.conditions) || (rule.countLimits || []).some(limit => (limit.keys || []).includes(field.path));
 }
 
-const ruleFieldSystemCategories = () => ruleFieldCatalog.systemCategories || [];
-
 function parseRuleSampleFields(sample) {
   const root = JSON.parse(sample);
   if (!root || typeof root !== "object") throw new Error("JSON must be an object or array.");
@@ -2476,45 +2476,35 @@ function renderRuleSampleFields(fields, query = "", selectedPath = "") {
 function renderRuleFieldSetup() {
   const holder = document.getElementById("ruleFieldCategories");
   if (!holder) return;
-  const categories = [...ruleFieldCatalog.categories];
   const checks = [
     ...ruleFieldBuiltinChecks.map(check => ({ ...check, builtin: true, surfaces: [...check.surfaces] })),
     ...ruleFieldCatalog.checks.map(check => ({ ...check, builtin: false }))
   ];
-  checks.forEach(check => { if (check.category && !categories.includes(check.category)) categories.push(check.category); });
-  if (checks.some(check => !check.category)) categories.push("Not assigned");
-  holder.innerHTML = categories.map(category => {
-    const categoryChecks = checks.filter(check => (check.category || "Not assigned") === category);
-    const rows = categoryChecks.map(check => `<tr>
-      <td>${escapeHtml(check.label || check.name)}${check.builtin ? '<span class="rule-field-system-badge">Built in</span>' : ""}</td>
-      <td><code>${escapeHtml(check.field || check.responseField)}</code></td>
-      <td>${ruleFieldSurfaceLabel(check)}</td>
-      <td class="rule-field-actions">${check.builtin ? '<span class="rule-field-system-note">System check</span>' : `<button type="button" class="asset-icon-button" data-edit-field="${escapeHtml(check.id)}" aria-label="Edit ${escapeHtml(check.name)}" title="Edit"><img src="assets/action-edit.svg" alt=""></button><button type="button" class="asset-icon-button" data-delete-field="${escapeHtml(check.id)}" aria-label="Delete ${escapeHtml(check.name)}" title="Delete"><img src="assets/action-delete.svg" alt=""></button>`}</td>
-    </tr>`).join("");
-    const isSystemCategory = ruleFieldSystemCategories().includes(category);
-    const categoryActions = isSystemCategory
-      ? `<div class="rule-category-actions"><button type="button" class="asset-icon-button" data-edit-category="${escapeHtml(category)}" aria-label="Edit category ${escapeHtml(category)}" title="Edit category"><img src="assets/action-edit.svg" alt=""></button><span class="rule-category-system-note">System category</span></div>`
-      : `<div class="rule-category-actions"><button type="button" class="asset-icon-button" data-edit-category="${escapeHtml(category)}" aria-label="Edit category ${escapeHtml(category)}" title="Edit category"><img src="assets/action-edit.svg" alt=""></button><button type="button" class="asset-icon-button" data-delete-category="${escapeHtml(category)}" aria-label="Delete category ${escapeHtml(category)}" title="Delete category"><img src="assets/action-delete.svg" alt=""></button></div>`;
-    return `<section class="rule-field-category"><h2><span class="rule-field-category-chevron" aria-hidden="true"></span><span class="rule-field-category-name">${escapeHtml(category)}</span><small>${categoryChecks.length} checks</small>${categoryActions}</h2>
-      <div class="rule-field-table-wrap"><table class="asset-table rule-field-table"><thead><tr><th>Rule name</th><th>Response field</th><th>Available in</th><th>Action</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="rule-field-empty">No checks in this category yet.</td></tr>'}</tbody></table></div>
-    </section>`;
-  }).join("");
   const counterFields = ruleFieldCatalog.counterFields || [];
-  const counterRows = counterFields.map(field => `<tr>
-    <td>${escapeHtml(field.name)}</td>
-    <td><code>${escapeHtml(field.path)}</code></td>
-    <td>${escapeHtml(ruleFieldTypeLabel(field.dataType))}</td>
+  const renderCategory = ({ category, items, kind, subtitle, headers, renderRow, empty }) => {
+    const rows = items.map(renderRow).join("");
+    return `<section class="rule-field-category ${kind === "system" ? "is-system" : "is-configurable"}">
+      <h2><span class="rule-field-category-chevron" aria-hidden="true"></span><span class="rule-field-category-name">${escapeHtml(category)}</span><small>${items.length} ${kind === "counter" ? (items.length === 1 ? "field" : "fields") : (items.length === 1 ? "rule" : "rules")}</small><span class="rule-field-category-note">${subtitle}</span></h2>
+      <div class="rule-field-table-wrap"><table class="asset-table rule-field-table"><thead><tr>${headers.map(header => `<th>${header}</th>`).join("")}</tr></thead><tbody>${rows || `<tr><td colspan="${headers.length}" class="rule-field-empty">${empty}</td></tr>`}</tbody></table></div>
+    </section>`;
+  };
+  const renderCheck = check => `<tr>
+    <td>${escapeHtml(check.label || check.name)}${check.builtin ? '<span class="rule-field-system-badge">Built in</span>' : ""}</td>
+    <td><code>${escapeHtml(check.field || check.responseField)}</code></td>
+    <td>${ruleFieldSurfaceLabel(check)}</td>
+    <td class="rule-field-actions">${check.builtin ? '<span class="rule-field-system-note">System check</span>' : `<button type="button" class="asset-icon-button" data-edit-field="${escapeHtml(check.id)}" aria-label="Edit ${escapeHtml(check.name)}" title="Edit"><img src="assets/action-edit.svg" alt=""></button><button type="button" class="asset-icon-button" data-delete-field="${escapeHtml(check.id)}" aria-label="Delete ${escapeHtml(check.name)}" title="Delete"><img src="assets/action-delete.svg" alt=""></button>`}</td>
+  </tr>`;
+  const renderCounterField = field => `<tr>
+    <td>${escapeHtml(field.name)}</td><td><code>${escapeHtml(field.path)}</code></td><td>${escapeHtml(ruleFieldTypeLabel(field.dataType))}</td>
     <td class="rule-field-actions"><button type="button" class="asset-icon-button" data-edit-counter-field="${escapeHtml(field.id)}" aria-label="Edit ${escapeHtml(field.name)}" title="Edit"><img src="assets/action-edit.svg" alt=""></button><button type="button" class="asset-icon-button" data-delete-counter-field="${escapeHtml(field.id)}" aria-label="Delete ${escapeHtml(field.name)}" title="Delete"><img src="assets/action-delete.svg" alt=""></button></td>
-  </tr>`).join("");
-  document.getElementById("ruleCounterFieldRows").innerHTML = counterRows || '<tr><td colspan="4" class="rule-field-empty">No request fields added yet.</td></tr>';
-  document.getElementById("ruleCounterFieldCount").textContent = `${counterFields.length} ${counterFields.length === 1 ? "field" : "fields"}`;
-}
-
-function populateRuleFieldCategories(selected = "") {
-  const select = document.getElementById("ruleFieldCategory");
-  if (!select) return;
-  select.innerHTML = `<option value="">Select a category</option>${ruleFieldCatalog.categories.map(category => `<option value="${escapeHtml(category)}" ${selected === category ? "selected" : ""}>${escapeHtml(category)}</option>`).join("")}`;
-  select.value = selected;
+  </tr>`;
+  const sections = [
+    renderCategory({ category: RULE_FIELD_CATEGORIES[0], items: checks.filter(check => check.category === RULE_FIELD_CATEGORIES[0]), kind: "system", subtitle: "System checks · Read only", headers: ["Rule name", "Response field", "Available in", "Action"], renderRow: renderCheck, empty: "No system checks." }),
+    renderCategory({ category: RULE_FIELD_CATEGORIES[1], items: checks.filter(check => check.category === RULE_FIELD_CATEGORIES[1]), kind: "system", subtitle: "System checks · Read only", headers: ["Rule name", "Response field", "Available in", "Action"], renderRow: renderCheck, empty: "No system checks." }),
+    renderCategory({ category: RULE_FIELD_FILTER_CATEGORY, items: ruleFieldCatalog.checks, kind: "filter", subtitle: "Filter rules from configured fields · Editable", headers: ["Rule name", "Response field", "Available in", "Action"], renderRow: renderCheck, empty: "No filter rules yet. Add a filter rule to get started." }),
+    renderCategory({ category: RULE_FIELD_COUNTER_CATEGORY, items: counterFields, kind: "counter", subtitle: "Request fields used for counting · Editable", headers: ["Field name", "Request field", "Type", "Action"], renderRow: renderCounterField, empty: "No counter fields yet. Add a field from a sample request." })
+  ];
+  holder.innerHTML = sections.join("");
 }
 
 function openRuleFieldForm(check = null) {
@@ -2524,74 +2514,10 @@ function openRuleFieldForm(check = null) {
 function initRuleFieldSetup() {
   refreshRuleConditionOptions();
   renderRuleFieldSetup();
-  const categoryDialog = document.getElementById("ruleCategoryDialog");
-  const categoryForm = document.getElementById("ruleCategoryForm");
-  const closeCategoryDialog = async () => {
-    const name = document.getElementById("ruleCategoryName").value.trim();
-    if (name !== (categoryForm.dataset.initialName || "") && !await confirmRuleAction({ title: "Discard changes?", message: "Your category changes will be lost.", confirmLabel: "Discard changes", cancelLabel: "Keep editing", danger: true })) return;
-    categoryDialog.close();
-  };
-  const openCategoryDialog = (category = "") => {
-    const editing = Boolean(category);
-    categoryForm.dataset.editCategory = category;
-    categoryForm.dataset.initialName = category;
-    document.getElementById("ruleCategoryTitle").textContent = editing ? "Edit category" : "Add category";
-    document.getElementById("ruleCategorySave").textContent = editing ? "Save changes" : "Save category";
-    document.getElementById("ruleCategoryName").value = category;
-    document.getElementById("ruleCategoryError").hidden = true;
-    categoryDialog.showModal();
-  };
-  document.getElementById("ruleAddCategory").onclick = () => {
-    openCategoryDialog();
-  };
-  document.getElementById("ruleCategoryClose").onclick = closeCategoryDialog;
-  document.getElementById("ruleCategoryCancel").onclick = closeCategoryDialog;
-  categoryDialog.addEventListener("cancel", event => { event.preventDefault(); closeCategoryDialog(); });
-  categoryForm.onsubmit = async event => {
-    event.preventDefault();
-    const name = document.getElementById("ruleCategoryName").value.trim();
-    const oldName = categoryForm.dataset.editCategory || "";
-    const error = document.getElementById("ruleCategoryError");
-    if (!name) { error.textContent = "Enter a category name."; error.hidden = false; return; }
-    if (ruleFieldCatalog.categories.some(category => category !== oldName && category.toLocaleLowerCase() === name.toLocaleLowerCase())) { error.textContent = "This category already exists."; error.hidden = false; return; }
-    if (!await confirmRuleAction({ title: oldName ? "Save category changes?" : "Add this category?", message: oldName ? `Save the new name “${name}”?` : `Add “${name}” to the Rule Engine categories?`, confirmLabel: oldName ? "Save changes" : "Add category" })) return;
-    if (oldName) {
-      ruleFieldCatalog.categories = ruleFieldCatalog.categories.map(category => category === oldName ? name : category);
-      ruleFieldCatalog.checks.forEach(check => { if (check.category === oldName) check.category = name; });
-      ruleFieldBuiltinChecks.forEach(check => { if (check.category === oldName) check.category = name; });
-      ruleFieldCatalog.systemCategories = ruleFieldCatalog.systemCategories.map(category => category === oldName ? name : category);
-    } else {
-      ruleFieldCatalog.categories.push(name);
-    }
-    saveRuleFieldCatalog();
-    refreshRuleConditionOptions();
-    renderRuleFieldSetup();
-    categoryDialog.close();
-    toast(oldName ? `Category renamed to “${name}”.` : `Category “${name}” added.`);
-  };
-
   document.getElementById("ruleAddField").onclick = () => openRuleFieldForm();
   document.getElementById("ruleAddCounterField").onclick = () => route("rule-counter-field-form");
 
   document.getElementById("ruleFieldCategories").onclick = async event => {
-    const editCategory = event.target.closest("[data-edit-category]");
-    if (editCategory) {
-      openCategoryDialog(editCategory.dataset.editCategory);
-      return;
-    }
-    const deleteCategory = event.target.closest("[data-delete-category]");
-    if (deleteCategory) {
-      const category = deleteCategory.dataset.deleteCategory;
-      const checksInCategory = ruleFieldCatalog.checks.filter(check => check.category === category);
-      if (checksInCategory.length) { toast("Move or delete the checks in this category before deleting it.", "error"); return; }
-      if (!await confirmRuleAction({ title: "Delete category?", message: `Delete “${category}”? This cannot be undone.`, confirmLabel: "Delete category", danger: true })) return;
-      ruleFieldCatalog.categories = ruleFieldCatalog.categories.filter(item => item !== category);
-      saveRuleFieldCatalog();
-      refreshRuleConditionOptions();
-      renderRuleFieldSetup();
-      toast(`Category “${category}” deleted.`);
-      return;
-    }
     const edit = event.target.closest("[data-edit-field]");
     if (edit) {
       const check = ruleFieldCatalog.checks.find(item => item.id === edit.dataset.editField);
@@ -2602,13 +2528,13 @@ function initRuleFieldSetup() {
     if (remove) {
       const check = ruleFieldCatalog.checks.find(item => item.id === remove.dataset.deleteField);
       if (!check) return;
-      if (ruleEngineRules.some(rule => ruleUsesConfiguredField(rule, check))) { toast("This check is used by a rule. Remove it from that rule before deleting.", "error"); return; }
-      if (!await confirmRuleAction({ title: "Delete check?", message: `Delete “${check.name}”? It will no longer be available in new rules.`, confirmLabel: "Delete check", danger: true })) return;
+      if (ruleEngineRules.some(rule => ruleUsesConfiguredField(rule, check))) { toast("This filter rule is used by a rule. Remove it from that rule before deleting.", "error"); return; }
+      if (!await confirmRuleAction({ title: "Delete filter rule?", message: `Delete “${check.name}”? It will no longer be available in new rules.`, confirmLabel: "Delete filter rule", danger: true })) return;
       ruleFieldCatalog.checks = ruleFieldCatalog.checks.filter(item => item.id !== check.id);
       saveRuleFieldCatalog();
       refreshRuleConditionOptions();
       renderRuleFieldSetup();
-      toast(`Check “${check.name}” deleted.`);
+      toast(`Filter rule “${check.name}” deleted.`);
     }
   };
   document.getElementById("ruleCounterFieldRows").onclick = async event => {
@@ -2635,7 +2561,7 @@ function initRuleFieldForm(payload = {}) {
   const form = document.getElementById("ruleFieldForm");
   const check = ruleFieldCatalog.checks.find(item => item.id === payload.checkId) || null;
   form.dataset.editId = check?.id || "";
-  const title = check ? "Edit check" : "Add check";
+  const title = check ? "Edit filter rule" : "Add filter rule";
   document.getElementById("ruleFieldPageTitle").textContent = title;
   document.getElementById("ruleFieldName").value = check?.name || "";
   document.getElementById("ruleFieldPath").value = check?.responseField || "";
@@ -2656,8 +2582,8 @@ function initRuleFieldForm(payload = {}) {
   document.getElementById("ruleFieldValues").value = (check?.values || []).join(", ");
   document.querySelector(".rule-known-values").hidden = check?.dataType === "array";
   document.getElementById("ruleFieldSampleHelp").textContent = check
-    ? "The sample is saved with this check. Edit it here to change the available fields."
-    : "Paste a sample JSON response. Choose a field from the fields found below. The sample is saved with this check.";
+    ? "The sample is saved with this rule. Edit it here to change the available fields."
+    : "Paste a sample JSON response. Choose a field from the fields found below. The sample is saved with this rule.";
   const valuesInput = document.getElementById("ruleFieldValues");
   const syncValuesHelp = () => {
     const hasValues = valuesInput.value.split(",").some(value => value.trim());
@@ -2674,40 +2600,9 @@ function initRuleFieldForm(payload = {}) {
   document.getElementById("ruleFieldExternal").checked = check?.surfaces.includes("ruleEngine") || false;
   document.getElementById("ruleFieldError").hidden = true;
   document.getElementById("ruleSampleTitle").innerHTML = check ? "Sample JSON response" : "Sample JSON response <b>*</b>";
-  populateRuleFieldCategories(check?.category || "");
-
-  const categoryDialog = document.getElementById("ruleFieldCategoryDialog");
-  const categoryForm = document.getElementById("ruleFieldCategoryForm");
-  const closeCategoryDialog = async () => {
-    const name = document.getElementById("ruleFieldCategoryName").value.trim();
-    if (name && !await confirmRuleAction({ title: "Discard category?", message: "This category will not be added to the check.", confirmLabel: "Discard category", cancelLabel: "Keep editing", danger: true })) return;
-    categoryDialog.close();
-  };
-  document.getElementById("ruleFieldAddCategory").onclick = () => {
-    document.getElementById("ruleFieldCategoryName").value = "";
-    document.getElementById("ruleFieldCategoryError").hidden = true;
-    categoryDialog.showModal();
-  };
-  document.getElementById("ruleFieldCategoryClose").onclick = closeCategoryDialog;
-  document.getElementById("ruleFieldCategoryCancel").onclick = closeCategoryDialog;
-  categoryDialog.addEventListener("cancel", event => { event.preventDefault(); closeCategoryDialog(); });
-  categoryForm.onsubmit = async event => {
-    event.preventDefault();
-    const name = document.getElementById("ruleFieldCategoryName").value.trim();
-    const error = document.getElementById("ruleFieldCategoryError");
-    if (!name) { error.textContent = "Enter a category name."; error.hidden = false; return; }
-    if (ruleFieldCatalog.categories.some(category => category.toLocaleLowerCase() === name.toLocaleLowerCase())) { error.textContent = "This category already exists."; error.hidden = false; return; }
-    if (!await confirmRuleAction({ title: "Add this category?", message: `Add “${name}” to the Rule Engine categories?`, confirmLabel: "Add category" })) return;
-    ruleFieldCatalog.categories.push(name);
-    saveRuleFieldCatalog();
-    refreshRuleConditionOptions();
-    populateRuleFieldCategories(name);
-    categoryDialog.close();
-    toast(`Category “${name}” added.`);
-  };
 
   document.getElementById("ruleFieldCancel").onclick = async () => {
-    if (!await confirmRuleAction({ title: "Discard check changes?", message: "Your unsaved check changes will be lost.", confirmLabel: "Discard changes", cancelLabel: "Keep editing", danger: true })) return;
+    if (!await confirmRuleAction({ title: "Discard filter rule changes?", message: "Your unsaved filter rule changes will be lost.", confirmLabel: "Discard changes", cancelLabel: "Keep editing", danger: true })) return;
     route("rule-field-setup");
   };
   const sampleInput = document.getElementById("ruleFieldSample");
@@ -2786,7 +2681,7 @@ function initRuleFieldForm(payload = {}) {
   form.onsubmit = async event => {
     event.preventDefault();
     const name = document.getElementById("ruleFieldName").value.trim();
-    const category = document.getElementById("ruleFieldCategory").value;
+    const category = RULE_FIELD_FILTER_CATEGORY;
     const responseField = document.getElementById("ruleFieldPath").value.trim();
     const dataType = document.getElementById("ruleFieldType").value;
     const jsonStringRoots = JSON.parse(document.getElementById("ruleFieldJsonRoots").value || "[]");
@@ -2798,14 +2693,14 @@ function initRuleFieldForm(payload = {}) {
     const current = ruleFieldCatalog.checks.find(item => item.id === editId);
     const error = document.getElementById("ruleFieldError");
     const duplicateName = ruleFieldCatalog.checks.some(item => item.id !== editId && item.category === category && item.name.toLocaleLowerCase() === name.toLocaleLowerCase());
-    const message = !name ? "Enter a rule name." : !category ? "Choose a category." : !responseField ? "Paste a valid sample response and choose a field." : !surfaces.length ? "Choose where this rule can be used." : duplicateName ? "This rule name already exists in the selected category." : "";
+    const message = !name ? "Enter a rule name." : !responseField ? "Paste a valid sample response and choose a field." : !surfaces.length ? "Choose where this rule can be used." : duplicateName ? "This rule name already exists in Advance Filter." : "";
     if (message) { error.textContent = message; error.hidden = false; return; }
     if (current?.surfaces.includes("ruleEngine") && !surfaces.includes("ruleEngine") && ruleEngineRules.some(rule => ruleUsesConfiguredField(rule, current))) {
-      error.textContent = "This field is used by a rule. Remove it from that rule before hiding it from Rule Engine.";
+      error.textContent = "This filter rule is used by a rule. Remove it from that rule before hiding it from Rule Engine.";
       error.hidden = false;
       return;
     }
-    if (!await confirmRuleAction({ title: current ? "Save check changes?" : "Save this check?", message: current ? `Save the changes to “${name}”?` : `Add “${name}” to the selected category and rule menus?`, confirmLabel: current ? "Save changes" : "Save check" })) return;
+    if (!await confirmRuleAction({ title: current ? "Save filter rule changes?" : "Add this filter rule?", message: current ? `Save the changes to “${name}”?` : `Add “${name}” to Advance Filter and make it available in the selected rule menus?`, confirmLabel: current ? "Save changes" : "Add filter rule" })) return;
     const sampleJson = sampleInput.value.trim() || current?.sampleJson || "";
     const nextCheck = { id: current?.id || `field-${Date.now()}`, name, category, responseField, dataType, jsonStringRoots, sampleJson, values, surfaces };
     if (current) Object.assign(current, nextCheck);
@@ -2813,7 +2708,7 @@ function initRuleFieldForm(payload = {}) {
     saveRuleFieldCatalog();
     refreshRuleConditionOptions();
     route("rule-field-setup");
-    toast(current ? `Check “${name}” updated.` : `Check “${name}” added.`);
+    toast(current ? `Filter rule “${name}” updated.` : `Filter rule “${name}” added.`);
   };
 }
 
@@ -2821,7 +2716,7 @@ function initRuleCounterFieldForm(payload = {}) {
   const form = document.getElementById("ruleCounterFieldForm");
   const field = ruleFieldCatalog.counterFields.find(item => item.id === payload.fieldId) || null;
   form.dataset.editId = field?.id || "";
-  document.getElementById("ruleCounterFieldTitle").textContent = field ? "Edit request field" : "Add request field";
+  document.getElementById("ruleCounterFieldTitle").textContent = field ? "Edit counter field" : "Add counter field";
   document.getElementById("ruleCounterFieldName").value = field?.name || "";
   document.getElementById("ruleCounterFieldSample").value = field?.sampleJson || "";
   document.getElementById("ruleCounterFieldPath").value = field?.path || "";
@@ -2924,14 +2819,14 @@ function ruleFieldTypeLabel(type) {
 // Configured response fields appear as checks. Request count is also a normal
 // condition in this tree, so it can use the same AND/OR connectors and groups.
 const builtInRuleConditionOptions = [
-  { group: "Check user profile", fieldSetupId: "kyc", value: "profile-kyc", backendField: "109", subtype: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
-  { group: "Check user profile", fieldSetupId: "nfc", value: "profile-nfc", backendField: "109", subtype: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
-  { group: "Check user profile", fieldSetupId: "ekyc", value: "profile-ekyc", backendField: "109", subtype: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
-  { group: "Check user profile", fieldSetupId: "account-level", value: "profile-account-level", backendField: "109", subtype: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"] },
-  { group: "Check user profile", value: "109", backendField: "109", label: "User profile check", legacy: true },
-  { group: "Account & Segment", fieldSetupId: "104", value: "104", label: "Check MMF account status", operators: ["Is"], values: ["Has account", "Has no account"] },
-  { group: "Account & Segment", fieldSetupId: "81", value: "81", label: "Segment check" },
-  { group: "Account & Segment", fieldSetupId: "95", value: "95", label: "Risk check" },
+  { group: "User Profile", fieldSetupId: "kyc", value: "profile-kyc", backendField: "109", subtype: "kyc", label: "Check KYC level", operators: ["IN", "NOT IN"], values: ["K0", "K1", "K2", "K3"], multiple: true, defaults: ["K3"] },
+  { group: "User Profile", fieldSetupId: "nfc", value: "profile-nfc", backendField: "109", subtype: "nfc", label: "Check NFC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
+  { group: "User Profile", fieldSetupId: "ekyc", value: "profile-ekyc", backendField: "109", subtype: "ekyc", label: "Check eKYC status", operators: ["IN", "NOT IN"], values: ["Success"], defaultValue: "Success" },
+  { group: "User Profile", fieldSetupId: "account-level", value: "profile-account-level", backendField: "109", subtype: "account-level", label: "Check Account level", operators: ["IN", "NOT IN"], values: ["L0: Guest mode", "L1: L0 + pin + phone", "L2: L1 + eKYC", "L3: L2 + NFC", "L4: L3 + map bank"], multiple: true, defaults: ["L4: L3 + map bank"] },
+  { group: "User Profile", value: "109", backendField: "109", label: "User profile check", legacy: true },
+  { group: "Account Status & Segment", fieldSetupId: "104", value: "104", label: "Check MMF account status", operators: ["Is"], values: ["Has account", "Has no account"] },
+  { group: "Account Status & Segment", fieldSetupId: "81", value: "81", label: "Segment check" },
+  { group: "Account Status & Segment", fieldSetupId: "95", value: "95", label: "Risk check" },
   { group: "Usage", value: "counter-condition", backendField: "counter-condition", label: "Dynamic Counter", counterCondition: true, surfaces: ["ruleEngine"] },
   { group: "Usage counters", value: "10", label: "User counter", legacy: true },
   { group: "Usage counters", value: "86", label: "User counter per period", legacy: true }

@@ -1135,6 +1135,10 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-field-category h2 { min-height: 48px; display: flex; align-items: center; gap: 10px; margin: 0; padding: 6px 16px; border-bottom: 1px solid #f0f0f0; background: #f9fafb; color: #001f3e; font-size: 15px; font-weight: 600; }
 .rule-field-category-name { min-width: 0; }
 .rule-field-category h2 small { color: #717182; font-size: 12px; font-weight: 400; }
+.rule-field-category-note { margin-left: auto; color: #99a1af; font-size: 12px; font-weight: 400; white-space: nowrap; }
+.rule-field-category.is-system .rule-field-category-note { color: #99a1af; }
+.rule-field-category.is-configurable .rule-field-category-note { color: #66798b; }
+.rule-fixed-category { display: flex; align-items: center; min-height: 34px; padding: 7px 10px; border: 1px solid #e5e7eb; border-radius: 4px; background: #f9fafb; color: #52677c; }
 .rule-field-category-chevron { position: relative; display: block; flex: 0 0 14px; width: 14px; height: 14px; color: #52677c; }
 .rule-field-category-chevron::before { content: ""; position: absolute; left: 3px; top: 2px; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); }
 .rule-category-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
@@ -1218,6 +1222,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
   .rule-field-categories { gap: 12px; padding: 12px; }
   .rule-field-category h2 { gap: 7px; padding: 6px 10px; }
   .rule-field-category h2 small { margin-left: auto; }
+  .rule-field-category-note { flex-basis: 100%; margin-left: 31px; white-space: normal; }
   .rule-category-actions, .rule-category-system-note { margin-left: 0; }
   .rule-field-category-name { overflow-wrap: anywhere; }
 }
