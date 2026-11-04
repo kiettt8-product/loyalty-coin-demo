@@ -1029,11 +1029,34 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .budget-approval-filter-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
 .budget-approval-filter-actions .asset-btn { min-width: 68px; }
 .budget-approval-table-card { min-width: 0; padding: 16px 24px; border-radius: 4px; background: #fff; }
+.topup-approval-card { padding-top: 20px; }
+.topup-approval-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.topup-approval-heading h2 { margin: 0; color: #001f3e; font-size: 16px; font-weight: 600; line-height: 24px; }
+.topup-approval-heading p { margin: 3px 0 0; color: #66798b; font-size: 13px; line-height: 19px; }
+.topup-demo-note { padding: 3px 8px; border-radius: 4px; background: #f5f5f5; color: #66798b; font-size: 11px; white-space: nowrap; }
 .budget-approval-toolbar { display: flex; justify-content: flex-end; gap: 16px; margin-bottom: 16px; }
 .budget-approval-toolbar .asset-btn { display: inline-flex; align-items: center; gap: 8px; }
 .budget-approval-toolbar img { width: 14px; height: 14px; object-fit: contain; }
 .budget-approval-table-scroll { min-width: 0; overflow-x: auto; }
 .budget-approval-table { width: 100%; min-width: 1200px; table-layout: fixed; border-collapse: collapse; color: rgba(0,31,62,.88); font-size: 14px; }
+.topup-approval-table { min-width: 1440px; }
+.topup-approval-table th:nth-child(1) { width: 12%; }
+.topup-approval-table th:nth-child(2) { width: 11%; }
+.topup-approval-table th:nth-child(3) { width: 20%; }
+.topup-approval-table th:nth-child(4), .topup-approval-table th:nth-child(5) { width: 10%; }
+.topup-approval-table th:nth-child(6) { width: 10%; }
+.topup-approval-table th:nth-child(7) { width: 11%; }
+.topup-approval-table th:nth-child(8) { width: 8%; }
+.topup-approval-table th:nth-child(9) { width: 8%; }
+.topup-wallet-cell { font-size: 12px; line-height: 17px !important; }
+.topup-row-actions { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.topup-action { min-height: 28px; padding: 3px 8px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; color: #364153; font: inherit; font-size: 12px; cursor: pointer; }
+.topup-action:hover { border-color: #1677ff; color: #1677ff; }
+.topup-action.approve { border-color: #1677ff; background: #1677ff; color: #fff; }
+.topup-action.approve:hover { border-color: #0958d9; background: #0958d9; }
+.topup-action.reject { border-color: #ffccc7; color: #cf1322; }
+.topup-action.reject:hover { border-color: #ff4d4f; color: #a8071a; }
+.budget-status-chip.is-rejected { border-color: #ffccc7; background: #fff2f0; color: #cf1322; }
 
 /* Rule Engine reuses the CRM asset list and form components. */
 .rule-engine-nav.active { color: #1677ff; }

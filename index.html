@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-      <link rel="stylesheet" href="styles.css?v=dynamic-counter-label-1">
+      <link rel="stylesheet" href="styles.css?v=topup-budget-approval-1">
 </head>
 <body>
   <header class="topbar">
@@ -576,6 +576,24 @@
           <label class="budget-page-size"><span class="sr-only">Rows per page</span><select id="budgetApprovalPageSize"><option value="10">10 / page</option><option value="20">20 / page</option></select></label>
         </nav>
       </section>
+
+      <section class="budget-approval-table-card topup-approval-card" aria-labelledby="topupApprovalTitle">
+        <div class="topup-approval-heading">
+          <div>
+            <h2 id="topupApprovalTitle">Top-up budget approval</h2>
+            <p>Coin to Direct Discount and Got It to Direct Discount</p>
+          </div>
+          <span class="topup-demo-note">Demo data</span>
+        </div>
+        <div class="budget-approval-table-scroll">
+          <table class="budget-approval-table topup-approval-table">
+            <thead><tr>
+              <th>Product</th><th>MKT Code</th><th>Source wallet</th><th class="budget-number">Remaining budget</th><th class="budget-number">Top-up requested</th><th>Requestor</th><th>Submitted at</th><th>Status</th><th>Action</th>
+            </tr></thead>
+            <tbody id="topupApprovalRows"></tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </template>
 
@@ -885,6 +903,6 @@
     </div>
   </template>
 
-      <script src="app.js?v=dynamic-counter-label-1"></script>
+      <script src="app.js?v=topup-budget-approval-1"></script>
 </body>
 </html>

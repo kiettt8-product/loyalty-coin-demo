@@ -5307,6 +5307,58 @@ function initBudgetApproval() {
   };
   document.getElementById("budgetApprovalImport").onclick = () => toast("File import is not connected in this UI draft.");
   search();
+  initTopupBudgetApproval();
+}
+
+const topupApprovalStorageKey = "budget-approval-topup-demo";
+const topupApprovalSeedRows = [
+  { id: "coin2dd", product: "Coin to Direct Discount", mktCode: "LYT_240815_003", wallet: "—", remaining: 820000000, amount: 100000000, requestor: "Business user", submittedAt: "04 Nov 2026 09:12", status: "Reviewing" },
+  { id: "gotit", product: "Got It to Direct Discount", mktCode: "DGS_240205_250", wallet: "[ZION] [210825003500004] ZMP2408_014", remaining: 120000000, amount: 50000000, requestor: "Business user", submittedAt: "04 Nov 2026 09:26", status: "Reviewing" }
+];
+
+function initTopupBudgetApproval() {
+  const body = document.getElementById("topupApprovalRows");
+  if (!body) return;
+  const readRows = () => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(topupApprovalStorageKey) || "null");
+      return Array.isArray(saved) && saved.length ? saved : topupApprovalSeedRows.map(row => ({ ...row }));
+    } catch {
+      return topupApprovalSeedRows.map(row => ({ ...row }));
+    }
+  };
+  let rows = readRows();
+  const render = () => {
+    body.innerHTML = rows.map(row => {
+      const statusClass = row.status === "Approved" ? "is-approved" : row.status === "Reviewing" ? "is-reviewing" : "is-rejected";
+      const pending = row.status === "Reviewing";
+      return `<tr>
+        <td>${escapeHtml(row.product)}</td>
+        <td><a class="budget-request-link" href="#">${escapeHtml(row.mktCode)}</a></td>
+        <td class="topup-wallet-cell">${escapeHtml(row.wallet)}</td>
+        <td class="budget-number">${Number(row.remaining).toLocaleString("en-US")} VND</td>
+        <td class="budget-number"><strong>${Number(row.amount).toLocaleString("en-US")} VND</strong></td>
+        <td>${escapeHtml(row.requestor)}</td><td>${escapeHtml(row.submittedAt)}</td>
+        <td><span class="budget-status-chip ${statusClass}">${escapeHtml(row.status)}</span></td>
+        <td><div class="topup-row-actions">${pending ? `<button type="button" class="topup-action approve" data-topup-action="approve" data-topup-id="${escapeHtml(row.id)}">Approve</button><button type="button" class="topup-action reject" data-topup-action="reject" data-topup-id="${escapeHtml(row.id)}">Reject</button>` : `<button type="button" class="topup-action" data-topup-action="review" data-topup-id="${escapeHtml(row.id)}">View</button>`}</div></td>
+      </tr>`;
+    }).join("");
+  };
+  body.onclick = event => {
+    const button = event.target.closest("[data-topup-action]");
+    if (!button) return;
+    const row = rows.find(item => item.id === button.dataset.topupId);
+    if (!row) return;
+    if (button.dataset.topupAction === "review") {
+      toast(`${row.product}: ${row.status}. Demo only; no budget has been changed.`);
+      return;
+    }
+    row.status = button.dataset.topupAction === "approve" ? "Approved" : "Rejected";
+    try { sessionStorage.setItem(topupApprovalStorageKey, JSON.stringify(rows)); } catch { /* demo remains usable without storage */ }
+    render();
+    toast(`${row.status} in demo. No budget has been changed.`);
+  };
+  render();
 }
 
 function initGotitDirectDiscount() {
