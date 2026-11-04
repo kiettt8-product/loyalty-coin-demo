@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-      <link rel="stylesheet" href="styles.css?v=topup-budget-v2-detail-2">
+      <link rel="stylesheet" href="styles.css?v=rule-field-unified-v1">
 </head>
 <body>
   <header class="topbar">
@@ -823,7 +823,7 @@
   <template id="ruleFieldSetupTemplate">
     <div class="screen asset-screen rule-engine-screen rule-field-setup-screen">
       <div class="rule-field-catalog-panel">
-        <div class="rule-field-setup-toolbar"><button type="button" class="asset-btn secondary" id="ruleAddCounterField"><span class="plus-mark" aria-hidden="true"></span>Add counter field</button><button type="button" class="asset-btn primary" id="ruleAddField"><span class="plus-mark" aria-hidden="true"></span>Add filter rule</button></div>
+        <div class="rule-field-setup-toolbar"><button type="button" class="asset-btn primary" id="ruleAddField"><span class="plus-mark" aria-hidden="true"></span>Add rule</button></div>
         <div id="ruleFieldCategories" class="rule-field-categories"></div>
       </div>
     </div>
@@ -833,61 +833,31 @@
     <div class="screen asset-screen rule-engine-screen rule-field-form-screen">
       <form id="ruleFieldForm" class="rule-field-form">
         <section class="other-section rule-config-card">
-          <h1 id="ruleFieldPageTitle">Add filter rule</h1>
+          <h1 id="ruleFieldPageTitle">Add rule</h1>
           <div class="rule-config-content rule-field-details-grid">
-            <label class="rule-config-field"><span>Rule name <b>*</b></span><input id="ruleFieldName" required maxlength="80" placeholder="For example: User status"><small>This name appears in the rule condition menu.</small></label>
-            <div class="rule-config-field"><span>Category</span><div class="rule-fixed-category">Advance Filter</div><small>Custom filter rules are grouped here automatically.</small></div>
-            <fieldset class="rule-field-surfaces"><legend>Available in <b>*</b></legend><small>Choose where people can use this check.</small><div class="rule-field-surface-options"><label><input id="ruleFieldVoucher" type="checkbox"> Voucher &gt; Advance Rule</label><label><input id="ruleFieldExternal" type="checkbox"> Rule Engine</label></div></fieldset>
+            <label class="rule-config-field"><span id="ruleFieldNameLabel">Rule name <b>*</b></span><input id="ruleFieldName" required maxlength="80" placeholder="For example: User status"><small id="ruleFieldNameHelp">This name appears in the rule condition menu.</small></label>
+            <label class="rule-config-field"><span>Category <b>*</b></span><select id="ruleFieldCategory"><option value="Advance Filter">Advance Filter</option><option value="Advance Counter">Advance Counter</option></select><small id="ruleFieldCategoryHelp">Choose where this rule belongs.</small></label>
+            <fieldset class="rule-field-surfaces" id="ruleFieldSurfaces"><legend>Available in <b>*</b></legend><small>Choose where people can use this check.</small><div class="rule-field-surface-options"><label><input id="ruleFieldVoucher" type="checkbox"> Voucher &gt; Advance Rule</label><label><input id="ruleFieldExternal" type="checkbox"> Rule Engine</label></div></fieldset>
           </div>
         </section>
         <section class="other-section rule-config-card">
-          <h1>Response field</h1>
+          <h1>Request field</h1>
           <div class="rule-config-content">
             <section class="rule-sample-section" aria-labelledby="ruleSampleTitle">
-              <div class="rule-sample-heading"><div><strong id="ruleSampleTitle">Sample JSON response <b>*</b></strong><small id="ruleFieldSampleHelp">Paste a sample JSON response. Choose a field from the fields found below. The sample is saved with this rule.</small></div></div>
-              <textarea id="ruleFieldSample" class="rule-sample-input" rows="8" placeholder="Paste JSON response here" spellcheck="false"></textarea>
+              <div class="rule-sample-heading"><div><strong id="ruleSampleTitle">Sample JSON request <b>*</b></strong><small id="ruleFieldSampleHelp">Paste a sample request. Fields are found automatically as you type.</small></div></div>
+              <textarea id="ruleFieldSample" class="rule-sample-input" rows="8" placeholder="Paste sample request JSON here" spellcheck="false"></textarea>
               <div class="rule-field-form-error" id="ruleFieldSampleError" hidden></div>
               <label class="rule-config-field rule-sample-search" id="ruleFieldSearchWrap" hidden><span>Search fields</span><input id="ruleFieldSearch" placeholder="Search by field name"></label>
               <div class="rule-config-field rule-field-choice-label" id="ruleFieldChoiceWrap" hidden><span>Choose a field <b>*</b></span></div>
               <div class="rule-sample-field-list" id="ruleFieldChoices" hidden></div>
-              <div class="rule-sample-selected"><span>Selected response field</span><code id="ruleFieldSelectedPath">Choose a field from the list</code><small id="ruleFieldSelectedType"></small></div>
+              <div class="rule-sample-selected"><span>Selected request field</span><code id="ruleFieldSelectedPath">Choose a field from the list</code><small id="ruleFieldSelectedType"></small></div>
               <input type="hidden" id="ruleFieldPath"><input type="hidden" id="ruleFieldType"><input type="hidden" id="ruleFieldJsonRoots">
             </section>
-            <label class="rule-config-field rule-known-values"><span>Selectable values <small>(optional)</small></span><input id="ruleFieldValues" placeholder="For example: Ready, Paused"><small id="ruleFieldValuesHelp">Leave blank to let rule creators enter a value.</small></label>
+            <label class="rule-config-field rule-known-values" id="ruleFieldValuesWrap"><span>Selectable values <small>(optional)</small></span><input id="ruleFieldValues" placeholder="For example: Ready, Paused"><small id="ruleFieldValuesHelp">Leave blank to let rule creators enter a value.</small></label>
           </div>
         </section>
         <div class="rule-field-form-error rule-field-page-error" id="ruleFieldError" hidden></div>
-        <div class="rule-form-actions"><button type="button" class="asset-btn secondary" id="ruleFieldCancel">Cancel</button><button type="submit" class="asset-btn primary" id="ruleFieldSave">Save filter rule</button></div>
-      </form>
-    </div>
-  </template>
-
-  <template id="ruleCounterFieldFormTemplate">
-    <div class="screen asset-screen rule-engine-screen rule-field-form-screen">
-      <form id="ruleCounterFieldForm" class="rule-field-form">
-        <section class="other-section rule-config-card">
-          <h1 id="ruleCounterFieldTitle">Add counter field</h1>
-          <div class="rule-config-content">
-            <label class="rule-config-field"><span>Field name <b>*</b></span><input id="ruleCounterFieldName" required maxlength="80" placeholder="For example: User ID"><small>This name appears when choosing fields to count by.</small></label>
-          </div>
-        </section>
-        <section class="other-section rule-config-card">
-          <h1>Request data</h1>
-          <div class="rule-config-content">
-            <section class="rule-sample-section">
-              <div class="rule-sample-heading"><div><strong>Sample JSON request <b>*</b></strong><small>Paste an example of the data a service sends to Rule Engine. Fields are found automatically as you type.</small></div></div>
-              <textarea id="ruleCounterFieldSample" class="rule-sample-input" rows="8" placeholder="Paste sample request JSON here" spellcheck="false"></textarea>
-              <div class="rule-field-form-error" id="ruleCounterSampleError" hidden></div>
-              <label class="rule-config-field rule-sample-search" id="ruleCounterFieldSearchWrap" hidden><span>Search fields</span><input id="ruleCounterFieldSearch" placeholder="Search by field name"></label>
-              <div class="rule-config-field rule-field-choice-label" id="ruleCounterFieldChoiceWrap" hidden><span>Choose a field <b>*</b></span></div>
-              <div class="rule-sample-field-list" id="ruleCounterFieldChoices" hidden></div>
-              <div class="rule-sample-selected"><span>Selected request field</span><code id="ruleCounterFieldSelectedPath">Choose a field from the list</code><small id="ruleCounterFieldSelectedType"></small></div>
-              <input type="hidden" id="ruleCounterFieldPath"><input type="hidden" id="ruleCounterFieldType">
-            </section>
-          </div>
-        </section>
-        <div class="rule-field-form-error rule-field-page-error" id="ruleCounterFieldError" hidden></div>
-        <div class="rule-form-actions"><button type="button" class="asset-btn secondary" id="ruleCounterFieldCancel">Cancel</button><button type="submit" class="asset-btn primary">Save field</button></div>
+        <div class="rule-form-actions"><button type="button" class="asset-btn secondary" id="ruleFieldCancel">Cancel</button><button type="submit" class="asset-btn primary" id="ruleFieldSave">Save rule</button></div>
       </form>
     </div>
   </template>
@@ -911,6 +881,6 @@
     </div>
   </template>
 
-      <script src="app.js?v=topup-budget-v2-detail-2"></script>
+      <script src="app.js?v=rule-field-unified-v1"></script>
 </body>
 </html>

@@ -1210,6 +1210,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-field-dialog-body input, .rule-field-dialog-body select { max-width: none; height: 32px; }
 .rule-field-dialog-body textarea { max-width: none; }
 .rule-field-setup-screen [hidden] { display: none !important; }
+.rule-field-form-screen [hidden] { display: none !important; }
 @media (max-width: 1000px) {
   .rule-field-setup-toolbar { flex-wrap: wrap; }
   .rule-field-form-screen { padding: 12px; }
