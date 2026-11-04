@@ -2537,7 +2537,7 @@ function initRuleFieldForm(payload = {}) {
   document.getElementById("ruleFieldValues").value = (check?.values || []).join(", ");
   document.getElementById("ruleFieldSampleHelp").textContent = check
     ? "Paste a new sample JSON response to choose another field. Leave blank to keep the current field. Sample values are not saved."
-    : "Paste a sample JSON response to find fields. Sample values are not saved.";
+    : "Paste a sample JSON response. Available fields will appear below. Sample values are not saved.";
   const valuesInput = document.getElementById("ruleFieldValues");
   const syncValuesHelp = () => {
     const hasValues = valuesInput.value.split(",").some(value => value.trim());
@@ -2593,26 +2593,40 @@ function initRuleFieldForm(payload = {}) {
   const sampleInput = document.getElementById("ruleFieldSample");
   const sampleError = document.getElementById("ruleFieldSampleError");
   const sampleChoices = document.getElementById("ruleFieldChoices");
-  document.getElementById("ruleFieldParse").onclick = () => {
+  let parseTimer;
+  const parseSample = ({ showError = false } = {}) => {
+    const rawSample = sampleInput.value.trim();
     sampleError.hidden = true;
+    if (!rawSample) {
+      sampleInput.dataset.parsedFields = "";
+      document.getElementById("ruleFieldSearchWrap").hidden = true;
+      document.getElementById("ruleFieldChoiceWrap").hidden = true;
+      sampleChoices.hidden = true;
+      return false;
+    }
     try {
-      const fields = parseRuleSampleFields(sampleInput.value.trim());
+      const fields = parseRuleSampleFields(rawSample);
       if (!fields.length) throw new Error("No fields to choose. Include at least one field with a value.");
       sampleInput.dataset.parsedFields = JSON.stringify(fields);
       document.getElementById("ruleFieldSearchWrap").hidden = false;
       document.getElementById("ruleFieldChoiceWrap").hidden = false;
       sampleChoices.hidden = false;
       renderRuleSampleFields(fields, document.getElementById("ruleFieldSearch").value, document.getElementById("ruleFieldPath").value);
+      return true;
     } catch (error) {
       sampleInput.dataset.parsedFields = "";
       document.getElementById("ruleFieldSearchWrap").hidden = true;
       document.getElementById("ruleFieldChoiceWrap").hidden = true;
       sampleChoices.hidden = true;
-      sampleError.textContent = error instanceof SyntaxError ? "Enter a valid JSON response." : error.message;
-      sampleError.hidden = false;
+      if (showError) {
+        sampleError.textContent = error instanceof SyntaxError ? "Enter a valid JSON response." : error.message;
+        sampleError.hidden = false;
+      }
+      return false;
     }
   };
   sampleInput.addEventListener("input", () => {
+    clearTimeout(parseTimer);
     sampleInput.dataset.parsedFields = "";
     document.getElementById("ruleFieldPath").value = "";
     document.getElementById("ruleFieldType").value = "";
@@ -2623,6 +2637,13 @@ function initRuleFieldForm(payload = {}) {
     document.getElementById("ruleFieldChoiceWrap").hidden = true;
     sampleChoices.hidden = true;
     sampleError.hidden = true;
+    if (sampleInput.value.trim()) {
+      parseTimer = setTimeout(() => parseSample({ showError: true }), 350);
+    }
+  });
+  sampleInput.addEventListener("blur", () => {
+    clearTimeout(parseTimer);
+    parseSample({ showError: true });
   });
   document.getElementById("ruleFieldSearch").addEventListener("input", event => {
     const fields = JSON.parse(sampleInput.dataset.parsedFields || "[]");
@@ -2653,7 +2674,7 @@ function initRuleFieldForm(payload = {}) {
     const current = ruleFieldCatalog.checks.find(item => item.id === editId);
     const error = document.getElementById("ruleFieldError");
     const duplicateName = ruleFieldCatalog.checks.some(item => item.id !== editId && item.category === category && item.name.toLocaleLowerCase() === name.toLocaleLowerCase());
-    const message = !name ? "Enter a rule name." : !category ? "Choose a category." : !responseField ? "Paste a sample response, find fields, and choose one." : !surfaces.length ? "Choose where this rule can be used." : duplicateName ? "This rule name already exists in the selected category." : "";
+    const message = !name ? "Enter a rule name." : !category ? "Choose a category." : !responseField ? "Paste a valid sample response and choose a field." : !surfaces.length ? "Choose where this rule can be used." : duplicateName ? "This rule name already exists in the selected category." : "";
     if (message) { error.textContent = message; error.hidden = false; return; }
     if (current?.surfaces.includes("ruleEngine") && !surfaces.includes("ruleEngine") && ruleEngineRules.some(rule => ruleUsesConfiguredField(rule, current))) {
       error.textContent = "This field is used by a rule. Remove it from that rule before hiding it from Rule Engine.";
