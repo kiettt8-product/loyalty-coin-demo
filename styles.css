@@ -1672,7 +1672,8 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-segment-section-label { margin: 0 0 12px; color: #001f3e; font-size: 14px; font-weight: 500; line-height: 20px; }
 .rule-segment-section-label b { color: #fb2c36; }
 .rule-condition-tree { gap: 8px; }
-.rule-condition-connector { min-height: 36px; padding-left: 4px; transform: translateY(-8px); }
+.rule-condition-node + .rule-condition-node { margin-top: 0; }
+.rule-condition-connector { height: 40px; min-height: 40px; box-sizing: border-box; padding-left: 4px; transform: none; }
 .rule-condition-connector-line { display: none; }
 .rule-condition-connector select { width: 104px; height: 32px; padding: 0 32px 0 11px; border-radius: 4px; background-color: #fff; background-position: right 12px center; font-family: inherit; font-size: 14px; line-height: 22px; }
 .rule-condition-group-card { gap: 12px; padding: 16px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .08); }
