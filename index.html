@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-      <link rel="stylesheet" href="styles.css?v=topup-budget-approval-2">
+      <link rel="stylesheet" href="styles.css?v=topup-budget-approval-3">
 </head>
 <body>
   <header class="topbar">
@@ -594,6 +594,11 @@
           </table>
         </div>
       </section>
+      <dialog class="topup-history-dialog" id="topupHistoryDialog" aria-labelledby="topupHistoryTitle">
+        <div class="topup-history-header"><div><h2 id="topupHistoryTitle">Top-up history</h2><p id="topupHistorySubtitle"></p></div><button type="button" id="closeTopupHistory" aria-label="Close">×</button></div>
+        <div class="topup-history-body" id="topupHistoryBody"></div>
+        <div class="topup-history-footer"><button type="button" class="asset-btn primary" id="closeTopupHistoryFooter">Close</button></div>
+      </dialog>
     </div>
   </template>
 
@@ -903,6 +908,6 @@
     </div>
   </template>
 
-      <script src="app.js?v=topup-budget-approval-2"></script>
+      <script src="app.js?v=topup-budget-approval-3"></script>
 </body>
 </html>

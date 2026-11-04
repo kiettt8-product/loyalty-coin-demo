@@ -5319,6 +5319,8 @@ const topupApprovalSeedRows = [
 function initTopupBudgetApproval() {
   const body = document.getElementById("topupApprovalRows");
   if (!body) return;
+  const historyDialog = document.getElementById("topupHistoryDialog");
+  const historyBody = document.getElementById("topupHistoryBody");
   const readRows = () => {
     try {
       const saved = JSON.parse(sessionStorage.getItem(topupApprovalStorageKey) || "null");
@@ -5340,21 +5342,58 @@ function initTopupBudgetApproval() {
         <td class="budget-number"><strong>${Number(row.amount).toLocaleString("en-US")} VND</strong></td>
         <td>${escapeHtml(row.requestor)}</td><td>${escapeHtml(row.submittedAt)}</td>
         <td><span class="budget-status-chip ${statusClass}">${escapeHtml(row.status)}</span></td>
-        <td><div class="topup-row-actions">${pending ? `<button type="button" class="topup-action approve" data-topup-action="approve" data-topup-id="${escapeHtml(row.id)}">Approve</button><button type="button" class="topup-action reject" data-topup-action="reject" data-topup-id="${escapeHtml(row.id)}">Reject</button>` : `<button type="button" class="topup-action" data-topup-action="review" data-topup-id="${escapeHtml(row.id)}">View</button>`}</div></td>
+        <td><div class="topup-row-actions"><button type="button" class="topup-action" data-topup-action="view" data-topup-id="${escapeHtml(row.id)}">View</button>${pending ? `<button type="button" class="topup-action approve" data-topup-action="approve" data-topup-id="${escapeHtml(row.id)}">Approve</button><button type="button" class="topup-action reject" data-topup-action="reject" data-topup-id="${escapeHtml(row.id)}">Reject</button>` : ""}</div></td>
       </tr>`;
     }).join("");
   };
-  body.onclick = event => {
+  const saveRows = () => {
+    try { sessionStorage.setItem(topupApprovalStorageKey, JSON.stringify(rows)); } catch { /* demo remains usable without storage */ }
+  };
+  const formatMoney = amount => `${Number(amount).toLocaleString("en-US")} VND`;
+  const openHistory = row => {
+    const events = [
+      { title: "Top-up request submitted", time: row.submittedAt, detail: `${row.requestor} requested ${formatMoney(row.amount)}.` },
+      ...(row.decidedAt ? [{ title: `Request ${row.status.toLowerCase()}`, time: row.decidedAt, detail: `Reviewed by ${row.reviewer || "FP&A reviewer"}.` }] : [])
+    ];
+    document.getElementById("topupHistorySubtitle").textContent = `${row.product} · ${row.mktCode}`;
+    historyBody.innerHTML = `
+      <dl class="topup-history-summary">
+        <div><dt>MKT Code</dt><dd>${escapeHtml(row.mktCode)}</dd></div>
+        <div><dt>Source wallet</dt><dd>${escapeHtml(row.wallet)}</dd></div>
+        <div><dt>Remaining budget at request</dt><dd>${formatMoney(row.remaining)}</dd></div>
+        <div><dt>Top-up requested</dt><dd>${formatMoney(row.amount)}</dd></div>
+        <div><dt>Current status</dt><dd><span class="budget-status-chip ${row.status === "Approved" ? "is-approved" : row.status === "Rejected" ? "is-rejected" : "is-reviewing"}">${escapeHtml(row.status)}</span></dd></div>
+      </dl>
+      <h3>Activity</h3>
+      <ol class="topup-history-timeline">${events.map(item => `<li><span class="topup-history-dot"></span><div><strong>${escapeHtml(item.title)}</strong><time>${escapeHtml(item.time)}</time><p>${escapeHtml(item.detail)}</p></div></li>`).join("")}</ol>
+      <p class="topup-history-demo-note">Demo history. No real budget transaction has been made.</p>`;
+    historyDialog.showModal();
+  };
+  document.getElementById("closeTopupHistory").onclick = () => historyDialog.close();
+  document.getElementById("closeTopupHistoryFooter").onclick = () => historyDialog.close();
+  historyDialog.addEventListener("click", event => { if (event.target === historyDialog) historyDialog.close(); });
+  body.onclick = async event => {
     const button = event.target.closest("[data-topup-action]");
     if (!button) return;
     const row = rows.find(item => item.id === button.dataset.topupId);
     if (!row) return;
-    if (button.dataset.topupAction === "review") {
-      toast(`${row.product}: ${row.status}. Demo only; no budget has been changed.`);
+    const action = button.dataset.topupAction;
+    if (action === "view") {
+      openHistory(row);
       return;
     }
-    row.status = button.dataset.topupAction === "approve" ? "Approved" : "Rejected";
-    try { sessionStorage.setItem(topupApprovalStorageKey, JSON.stringify(rows)); } catch { /* demo remains usable without storage */ }
+    const approving = action === "approve";
+    const approved = await confirmRuleAction({
+      title: approving ? "Confirm top-up approval" : "Confirm top-up rejection",
+      message: `${approving ? "Approve" : "Reject"} the ${formatMoney(row.amount)} top-up request for ${row.product} (${row.mktCode})? This is a demo action and will not change the actual budget.`,
+      confirmLabel: approving ? "Confirm approval" : "Confirm rejection",
+      danger: !approving
+    });
+    if (!approved) return;
+    row.status = approving ? "Approved" : "Rejected";
+    row.reviewer = "FP&A reviewer";
+    row.decidedAt = new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    saveRows();
     render();
     toast(`${row.status} in demo. No budget has been changed.`);
   };

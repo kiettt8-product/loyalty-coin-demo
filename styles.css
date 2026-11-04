@@ -1039,15 +1039,15 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .budget-approval-toolbar img { width: 14px; height: 14px; object-fit: contain; }
 .budget-approval-table-scroll { min-width: 0; overflow-x: auto; }
 .budget-approval-table { width: 100%; min-width: 1200px; table-layout: fixed; border-collapse: collapse; color: rgba(0,31,62,.88); font-size: 14px; }
-.topup-approval-table { min-width: 1440px; }
-.topup-approval-table th:nth-child(1) { width: 12%; }
-.topup-approval-table th:nth-child(2) { width: 11%; }
+.topup-approval-table { min-width: 1520px; }
+.topup-approval-table th:nth-child(1) { width: 11%; }
+.topup-approval-table th:nth-child(2) { width: 10%; }
 .topup-approval-table th:nth-child(3) { width: 20%; }
 .topup-approval-table th:nth-child(4), .topup-approval-table th:nth-child(5) { width: 10%; }
-.topup-approval-table th:nth-child(6) { width: 10%; }
-.topup-approval-table th:nth-child(7) { width: 11%; }
+.topup-approval-table th:nth-child(6) { width: 9%; }
+.topup-approval-table th:nth-child(7) { width: 10%; }
 .topup-approval-table th:nth-child(8) { width: 8%; }
-.topup-approval-table th:nth-child(9) { width: 8%; }
+.topup-approval-table th:nth-child(9) { width: 12%; }
 .topup-wallet-cell { font-size: 12px; line-height: 17px !important; }
 .topup-row-actions { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .topup-action { min-height: 28px; padding: 3px 8px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; color: #364153; font: inherit; font-size: 12px; cursor: pointer; }
@@ -1057,6 +1057,31 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .topup-action.reject { border-color: #ffccc7; color: #cf1322; }
 .topup-action.reject:hover { border-color: #ff4d4f; color: #a8071a; }
 .budget-status-chip.is-rejected { border-color: #ffccc7; background: #fff2f0; color: #cf1322; }
+.topup-history-dialog { width: min(680px, calc(100vw - 32px)); max-width: none; max-height: calc(100vh - 40px); overflow: auto; padding: 0; border: 0; border-radius: 4px; background: #fff; color: #001f3e; box-shadow: 0 8px 28px rgba(0,31,62,.2); }
+.topup-history-dialog::backdrop { background: rgba(0,0,0,.35); }
+.topup-history-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 16px 20px; border-bottom: 1px solid #f0f0f0; background: #f9fafb; }
+.topup-history-header h2 { margin: 0; font-size: 16px; font-weight: 600; line-height: 22px; }
+.topup-history-header p { margin: 4px 0 0; color: #66798b; font-size: 12px; line-height: 18px; }
+.topup-history-header > button { width: 28px; height: 28px; border: 0; background: transparent; color: #717182; font-size: 22px; cursor: pointer; }
+.topup-history-body { display: grid; gap: 16px; padding: 20px 24px; }
+.topup-history-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.topup-history-summary > div { display: grid; gap: 4px; min-width: 0; }
+.topup-history-summary dt { color: #66798b; font-size: 12px; }
+.topup-history-summary dd { margin: 0; overflow-wrap: anywhere; color: #001f3e; font-size: 14px; line-height: 20px; }
+.topup-history-body h3 { margin: 0; color: #001f3e; font-size: 14px; font-weight: 600; }
+.topup-history-timeline { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.topup-history-timeline li { position: relative; display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 10px; padding-bottom: 16px; }
+.topup-history-timeline li:not(:last-child)::before { position: absolute; top: 12px; bottom: 0; left: 5px; width: 1px; background: #d9e2ec; content: ""; }
+.topup-history-dot { z-index: 1; width: 11px; height: 11px; margin-top: 4px; border: 2px solid #1677ff; border-radius: 50%; background: #fff; }
+.topup-history-timeline li > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; }
+.topup-history-timeline strong { color: #001f3e; font-size: 13px; font-weight: 600; }
+.topup-history-timeline time { color: #66798b; font-size: 12px; white-space: nowrap; }
+.topup-history-timeline p { grid-column: 1 / -1; margin: 0; color: #52677c; font-size: 12px; line-height: 18px; }
+.topup-history-demo-note { margin: 0; padding: 10px 12px; border-radius: 4px; background: #f5f7fa; color: #66798b; font-size: 12px; line-height: 18px; }
+.topup-history-footer { display: flex; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid #f0f0f0; }
+.topup-history-dialog[open] { animation: topup-dialog-in .14s ease-out; }
+@keyframes topup-dialog-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 560px) { .topup-history-summary { grid-template-columns: 1fr; } .topup-history-timeline li > div { grid-template-columns: 1fr; } .topup-history-timeline time { grid-row: 2; } }
 
 /* Rule Engine reuses the CRM asset list and form components. */
 .rule-engine-nav.active { color: #1677ff; }
