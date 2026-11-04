@@ -5334,7 +5334,7 @@ function initTopupBudgetApproval() {
       const pending = row.status === "Reviewing";
       return `<tr>
         <td>${escapeHtml(row.product)}</td>
-        <td><a class="budget-request-link" href="#">${escapeHtml(row.mktCode)}</a></td>
+        <td><span class="budget-request-link">${escapeHtml(row.mktCode)}</span></td>
         <td class="topup-wallet-cell">${escapeHtml(row.wallet)}</td>
         <td class="budget-number">${Number(row.remaining).toLocaleString("en-US")} VND</td>
         <td class="budget-number"><strong>${Number(row.amount).toLocaleString("en-US")} VND</strong></td>
