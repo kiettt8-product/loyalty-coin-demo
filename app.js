@@ -48,10 +48,10 @@ const state = {
 };
 
 let ruleEngineRules = [
-  { id: "RE-10001", name: "KYC eligibility check", owner: "kiettt8", description: "Checks whether the user has an eligible KYC level.", conditions: [{ field: "109", subRule: "kyc", operator: "IN", values: ["K1", "K2", "K3"] }] },
-  { id: "RE-10002", name: "System risk check", owner: "nghiatn", description: "Checks the user's risk type.", conditions: [{ field: "95", config: { riskControl: "Đánh giá rủi ro toàn hệ thống", userTypes: ["Normal User", "Malicious"] } }] },
-  { id: "RE-10003", name: "Segment membership check", owner: "linhnt22", description: "Checks whether the user belongs to a selected segment.", conditions: [{ field: "81", config: { segmentId: "508" } }] },
-  { id: "RE-10004", name: "MMF account eligibility", owner: "kiettt8", description: "Checks whether the user has an MMF account.", conditions: [{ field: "104", operator: "Is", value: "Has no account" }] }
+  { id: "RE-10001", name: "KYC eligibility check", team: "Promotion", registerDocument: "", owner: "kiettt8", description: "Checks whether the user has an eligible KYC level.", conditions: [{ field: "109", subRule: "kyc", operator: "IN", values: ["K1", "K2", "K3"] }] },
+  { id: "RE-10002", name: "System risk check", team: "Risk", registerDocument: "", owner: "nghiatn", description: "Checks the user's risk type.", conditions: [{ field: "95", config: { riskControl: "Đánh giá rủi ro toàn hệ thống", userTypes: ["Normal User", "Malicious"] } }] },
+  { id: "RE-10003", name: "Segment membership check", team: "Growth", registerDocument: "", owner: "linhnt22", description: "Checks whether the user belongs to a selected segment.", conditions: [{ field: "81", config: { segmentId: "508" } }] },
+  { id: "RE-10004", name: "MMF account eligibility", team: "Promotion", registerDocument: "", owner: "kiettt8", description: "Checks whether the user has an MMF account.", conditions: [{ field: "104", operator: "Is", value: "Has no account" }] }
 ];
 let nextRuleNumber = 10005;
 let activeRuleForm = { mode: "create", id: null };
@@ -1501,6 +1501,16 @@ function initVoucherAdvanceRuleBuilder() {
       }
     }
   });
+  rows.addEventListener("change", event => {
+    if (!event.target.matches("[data-list-match-field]")) return;
+    const row = event.target.closest(".rule-condition-row");
+    const option = ruleConditionOptions.find(item => item.value === row?.dataset.ruleType);
+    if (!row || !option?.listCheck) return;
+    const match = collectRuleListMatch(row);
+    match.operator = "is";
+    match.value = "";
+    configureRuleListCheckValue(row, "Number of matching items", row.querySelector("[data-list-count]")?.value || "", option, match);
+  });
   document.getElementById("voucherAddRule").addEventListener("click", () => addNode("condition"));
   document.getElementById("voucherAddConditionGroup").addEventListener("click", () => addNode("group"));
   document.addEventListener("click", event => {
@@ -2237,7 +2247,7 @@ const roleModules = [
   ["Inventory Management", 21], ["Home Header Inventory", 22], ["Reminder Inventory", 23],
   ["Home Slider Inventory", 24], ["Product Page Banner Inventory", 25], ["Map Bank Page Banner", 26],
   ["Popup Inventory", 27], ["SKU Inventory", 28], ["Reward Inventory", 29], ["Task Inventory", 30],
-  ["Group Inventory", 31], ["Rule Engine", 32], ["Rule List", 33], ["Field Setup", 33],
+  ["Group Inventory", 31], ["Rule Management", 32], ["Rule Collections", 33], ["Condition Setup", 33],
   ["Budget Management", 34], ["Budget Approval", 35], ["Campaign Approval", 36],
   ["Assistant Management", 37], ["Configuration", 38], ["Others", 39], ["Coin to Direct Discount", 40]
 ];
@@ -2283,7 +2293,7 @@ function renderRoleRows(rows = filteredRoles) {
 function renderRolePermissionRows() {
   document.getElementById("rolesPermissionRows").innerHTML = roleModules.map(([name, group]) => {
     const enabled = roleEnabledActionIndexes[group] || [];
-    const child = ["User List", "Role List", "Label List", "Segment", "Merchant and Service Logo", "Notification", "ZMS", "Banner", "Reminder", "Popup", "SKU", "SKU Template", "Story", "Voucher", "ZBS Template", "Merchant Code", "Notification Campaign", "ZMS Campaign", "Promo Asset Campaign", "Promo Store Campaign", "Trigger Based Campaign", "Revoke Voucher", "Promotion Code", "Home Header Inventory", "Reminder Inventory", "Home Slider Inventory", "Product Page Banner Inventory", "Map Bank Page Banner", "Popup Inventory", "SKU Inventory", "Reward Inventory", "Task Inventory", "Group Inventory", "Rule List", "Field Setup", "Budget Approval", "Campaign Approval"].includes(name);
+    const child = ["User List", "Role List", "Label List", "Segment", "Merchant and Service Logo", "Notification", "ZMS", "Banner", "Reminder", "Popup", "SKU", "SKU Template", "Story", "Voucher", "ZBS Template", "Merchant Code", "Notification Campaign", "ZMS Campaign", "Promo Asset Campaign", "Promo Store Campaign", "Trigger Based Campaign", "Revoke Voucher", "Promotion Code", "Home Header Inventory", "Reminder Inventory", "Home Slider Inventory", "Product Page Banner Inventory", "Map Bank Page Banner", "Popup Inventory", "SKU Inventory", "Reward Inventory", "Task Inventory", "Group Inventory", "Rule Collections", "Condition Setup", "Budget Approval", "Campaign Approval"].includes(name);
     return `<tr class="${child ? "is-child" : ""}"><td>${escapeHtml(name)}</td>${roleActions.map((action, index) => {
       const key = `${name}:${action}`;
       const disabled = !enabled.includes(index);
@@ -2364,6 +2374,8 @@ function renderRuleRows(rules = ruleEngineRules) {
   body.innerHTML = rules.map(rule => `<tr>
     <td class="rule-id-cell">${escapeHtml(rule.id)}</td>
     <td>${escapeHtml(rule.name)}</td>
+    <td>${escapeHtml(rule.team || "—")}</td>
+    <td>${rule.registerDocument ? `<a class="rule-register-link" href="${escapeHtml(rule.registerDocument)}" target="_blank" rel="noopener noreferrer">Open document</a>` : '<span class="rule-register-empty">—</span>'}</td>
     <td>${escapeHtml(rule.owner)}</td>
     <td><div class="rule-row-actions">${actionIcon("view", "View", rule.id)}${actionIcon("edit", "Edit", rule.id)}${actionIcon("delete", "Delete", rule.id)}</div></td>
   </tr>`).join("");
@@ -2372,13 +2384,17 @@ function renderRuleRows(rules = ruleEngineRules) {
 }
 
 function initRuleList() {
+  const team = document.getElementById("ruleTeam");
   const owner = document.getElementById("ruleCreatedBy");
+  [...new Set(ruleEngineRules.map(rule => rule.team).filter(Boolean))].sort().forEach(name => team.add(new Option(name, name)));
   [...new Set(ruleEngineRules.map(rule => rule.owner))].sort().forEach(name => owner.add(new Option(name, name)));
   const search = () => {
     const query = document.getElementById("ruleSearch").value.trim().toLocaleLowerCase();
     const createdBy = owner.value;
+    const selectedTeam = team.value;
     renderRuleRows(ruleEngineRules.filter(rule =>
-      (!query || rule.id.toLocaleLowerCase().includes(query) || rule.name.toLocaleLowerCase().includes(query))
+      (!query || rule.id.toLocaleLowerCase().includes(query) || rule.name.toLocaleLowerCase().includes(query) || (rule.team || "").toLocaleLowerCase().includes(query))
+      && (!selectedTeam || rule.team === selectedTeam)
       && (!createdBy || rule.owner === createdBy)
     ));
   };
@@ -2387,6 +2403,7 @@ function initRuleList() {
   document.getElementById("ruleSearch").onkeydown = event => { if (event.key === "Enter") search(); };
   document.getElementById("ruleReset").onclick = () => {
     document.getElementById("ruleSearch").value = "";
+    team.value = "";
     owner.value = "";
     search();
   };
@@ -2940,7 +2957,7 @@ function ruleCountConditionMarkup(limit = {}, readonly = false) {
   }).join("");
   const dimensionsMarkup = dimensions.length
     ? `<details class="rule-multi-select rule-count-dimensions" data-count-dimensions><summary aria-label="Choose fields to count by"><span class="rule-multi-selected">${chips}</span><span class="rule-multi-placeholder" ${selectedKeys.length ? "hidden" : ""}>All matching requests</span><span class="rule-multi-chevron" aria-hidden="true">⌄</span></summary><div class="rule-multi-options">${dimensionOptions}</div></details><small class="rule-count-help">Select fields for separate counts by value. Leave blank to count all matching requests together.</small>`
-    : '<div class="rule-count-empty-dimension"><input type="text" value="" placeholder="No fields available" aria-label="Count by request field" disabled><small>Add a request field in Field Setup to count by a field.</small></div>';
+    : '<div class="rule-count-empty-dimension"><input type="text" value="" placeholder="No fields available" aria-label="Count by request field" disabled><small>Add a request field in Condition Setup to count by a field.</small></div>';
   return `<div class="rule-count-condition-config" data-counter-condition>
     <div class="rule-count-limit-grid">
       <label><span>Maximum allowed requests</span><input type="number" min="1" step="1" data-count-limit-field="maximum" value="${escapeHtml(limit.maximum || "")}" placeholder="Enter a number" ${readonly ? "disabled" : ""}></label>
@@ -3113,7 +3130,7 @@ function ruleKeyMultiSelectMarkup(selected = [], readonly = false, ariaLabel = "
 }
 
 function dynamicFilterMarkup(filter = {}, readonly = false, title = "Dynamic filter") {
-  return `<div class="rule-builder rule-dynamic-filter-builder"><p class="rule-field-help">Choose fields from the categories and response fields set up in Field Setup.</p><label class="rule-config-field"><span>Message when checks fail</span><input data-filter-error value="${escapeHtml(filter.errorMessage || "")}" placeholder="Enter a message" ${readonly ? "disabled" : ""}></label>${ruleFilterGroupMarkup(filter, readonly)}</div>`;
+  return `<div class="rule-builder rule-dynamic-filter-builder"><p class="rule-field-help">Choose fields from the categories and response fields set up in Condition Setup.</p><label class="rule-config-field"><span>Message when checks fail</span><input data-filter-error value="${escapeHtml(filter.errorMessage || "")}" placeholder="Enter a message" ${readonly ? "disabled" : ""}></label>${ruleFilterGroupMarkup(filter, readonly)}</div>`;
 }
 
 function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
@@ -3134,7 +3151,7 @@ function dynamicCounterRowMarkup(counter = {}, readonly = false, index = 0) {
 
 function dynamicCounterMarkup(counters = [], readonly = false, title = "Dynamic counter") {
   const rows = counters.length ? counters : [{}];
-  return `<div class="rule-builder rule-dynamic-counter-builder"><p class="rule-field-help">Set a limit and when it resets. Fields marked “Count by field” in Field Setup are available here.</p><div class="rule-counter-list">${rows.map((counter, index) => dynamicCounterRowMarkup(counter, readonly, index)).join("")}</div>${readonly ? "" : '<button type="button" class="asset-btn secondary" data-add-counter>+ Add counter</button>'}</div>`;
+  return `<div class="rule-builder rule-dynamic-counter-builder"><p class="rule-field-help">Set a limit and when it resets. Fields marked “Count by field” in Condition Setup are available here.</p><div class="rule-counter-list">${rows.map((counter, index) => dynamicCounterRowMarkup(counter, readonly, index)).join("")}</div>${readonly ? "" : '<button type="button" class="asset-btn secondary" data-add-counter>+ Add counter</button>'}</div>`;
 }
 
 function renderRuleTypeFields(field, config = {}, readonly = false, typeLabel = "") {
@@ -3245,14 +3262,25 @@ const ruleListCountOperators = [
   { value: "at least", label: "at least" }, { value: "less than", label: "less than" },
   { value: "at most", label: "at most" }
 ];
+function ruleListItemOperators(field) {
+  return field?.dataType === "number"
+    ? [{ value: "is", label: "is" }, { value: "is not", label: "is not" }, { value: "greater than", label: "greater than" }, { value: "at least", label: "at least" }, { value: "less than", label: "less than" }, { value: "at most", label: "at most" }]
+    : [{ value: "is", label: "is" }, { value: "is not", label: "is not" }];
+}
 function ruleListMatchMarkup(option, match = {}, readonly = false) {
-  const fields = option.listItemFields?.length ? option.listItemFields : [{ value: "", label: "Item value" }];
+  const fields = option.listItemFields || [];
+  if (!fields.length) return `<div class="rule-list-match-config rule-list-match-empty"><div class="rule-list-match-title">Count items that match</div><p>Add at least one example item to this list in Condition Setup so the matching fields can be found.</p></div>`;
+  const selectedField = fields.find(field => field.value === (match.field ?? fields[0].value)) || fields[0];
   const primitive = fields.length === 1 && fields[0].value === "";
+  const operators = ruleListItemOperators(selectedField);
+  const valueControl = selectedField.dataType === "boolean"
+    ? `<select data-list-match-value aria-label="Item value" ${readonly ? "disabled" : ""}>${ruleSelectOptions(["true", "false"], match.value || "", "Choose a value")}</select>`
+    : `<input data-list-match-value aria-label="Item value" type="${selectedField.dataType === "number" ? "number" : "text"}" value="${escapeHtml(match.value || "")}" placeholder="Enter a value" ${readonly ? "disabled" : ""}>`;
   return `<div class="rule-list-match-config">
     <div class="rule-list-match-title">Count items that match</div>
-    ${primitive ? '<span class="rule-list-item-field-label">Item value</span>' : `<select data-list-match-field aria-label="Item field" ${readonly ? "disabled" : ""}>${fields.map(field => `<option value="${escapeHtml(field.value)}" ${field.value === (match.field ?? fields[0].value) ? "selected" : ""}>${escapeHtml(field.label)}</option>`).join("")}</select>`}
-    <select data-list-match-operator aria-label="Item condition" ${readonly ? "disabled" : ""}><option value="is" ${(match.operator || "is") === "is" ? "selected" : ""}>is</option><option value="is not" ${(match.operator || "is") === "is not" ? "selected" : ""}>is not</option></select>
-    <input data-list-match-value aria-label="Item value" value="${escapeHtml(match.value || "")}" placeholder="Enter a value" ${readonly ? "disabled" : ""}>
+    ${primitive ? '<span class="rule-list-item-field-label">Item value</span>' : `<select data-list-match-field aria-label="Item field" ${readonly ? "disabled" : ""}>${fields.map(field => `<option value="${escapeHtml(field.value)}" ${field.value === selectedField.value ? "selected" : ""}>${escapeHtml(field.label)}</option>`).join("")}</select>`}
+    <select data-list-match-operator aria-label="Item condition" ${readonly ? "disabled" : ""}>${operators.map(operator => `<option value="${operator.value}" ${(match.operator || "is") === operator.value ? "selected" : ""}>${operator.label}</option>`).join("")}</select>
+    ${valueControl}
   </div>`;
 }
 function collectRuleListMatch(row) {
@@ -3484,7 +3512,12 @@ function ruleConditionTreeIsComplete(conditions) {
       if (option.listCheck) {
         if (["Has any items", "Is empty"].includes(condition.operator)) return true;
         if (!condition.value || Number(condition.value) < 0) return false;
-        if (condition.operator === "Number of matching items") return Boolean(condition.listMatch && condition.listMatch.operator && condition.listMatch.value);
+        if (condition.operator === "Number of matching items") {
+          const itemFields = option.listItemFields || [];
+          const primitiveList = itemFields.length === 1 && itemFields[0].value === "";
+          const selectedItemFieldExists = primitiveList || itemFields.some(field => field.value === condition.listMatch?.field);
+          return Boolean(itemFields.length && selectedItemFieldExists && condition.listMatch?.operator && condition.listMatch.value !== "");
+        }
         return condition.operator === "Number of items";
       }
       return Boolean(condition.operator && (option.multiple ? condition.values?.length : condition.value));
@@ -3503,9 +3536,13 @@ function initRuleForm(payload = {}) {
   const readonly = payload.mode === "view";
   activeRuleForm = { mode: payload.mode || "create", id: payload.id || null };
   document.getElementById("ruleName").value = rule?.name || "";
+  document.getElementById("ruleTeamName").value = rule?.team || "";
   document.getElementById("ruleDescription").value = rule?.description || "";
+  document.getElementById("ruleRegisterDocument").value = rule?.registerDocument || "";
   document.getElementById("ruleName").readOnly = readonly;
+  document.getElementById("ruleTeamName").readOnly = readonly;
   document.getElementById("ruleDescription").readOnly = readonly;
+  document.getElementById("ruleRegisterDocument").readOnly = readonly;
   const rows = document.getElementById("ruleConditionRows");
   const savedConditions = [...(rule?.conditions || [])];
   (rule?.countLimits || []).forEach(limit => savedConditions.push({ field: "counter-condition", conditionType: "counter-condition", config: limit }));
@@ -3622,6 +3659,15 @@ function initRuleForm(payload = {}) {
   };
   rows.onchange = event => {
     const row = event.target.closest(".rule-condition-row");
+    if (event.target.matches("[data-list-match-field]")) {
+      const option = ruleConditionOptions.find(item => item.value === row?.dataset.ruleType);
+      if (row && option?.listCheck) {
+        const match = collectRuleListMatch(row);
+        match.operator = "is";
+        match.value = "";
+        configureRuleListCheckValue(row, "Number of matching items", row.querySelector("[data-list-count]")?.value || "", option, match, readonly);
+      }
+    }
     if (event.target.matches('[data-count-limit-field="resetMode"]')) {
       const config = event.target.closest("[data-counter-condition]");
       config.querySelector("[data-count-period-fields]").hidden = event.target.value !== "period";
@@ -3892,9 +3938,22 @@ function initRuleForm(payload = {}) {
     const valid = ruleConditionTreeIsComplete(conditions);
     if (!valid) { toast("Complete the rule settings.", "error"); return; }
     const name = document.getElementById("ruleName").value.trim();
+    const team = document.getElementById("ruleTeamName").value.trim();
+    const registerDocument = document.getElementById("ruleRegisterDocument").value.trim();
     if (!name) return;
+    if (!team) { document.getElementById("ruleTeamName").focus(); toast("Enter the team using this rule.", "error"); return; }
+    if (registerDocument) {
+      try {
+        const documentUrl = new URL(registerDocument);
+        if (documentUrl.protocol !== "https:" || documentUrl.hostname !== "confluence.zalopay.vn") throw new Error("Invalid Confluence link");
+      } catch {
+        document.getElementById("ruleRegisterDocument").focus();
+        toast("Enter a valid Confluence link, or leave the field empty.", "error");
+        return;
+      }
+    }
     if (!await confirmRuleAction({ title: activeRuleForm.mode === "edit" ? "Save rule changes?" : "Save this rule?", message: activeRuleForm.mode === "edit" ? `Save the changes to “${name}”?` : `Create “${name}” with the selected checks?`, confirmLabel: activeRuleForm.mode === "edit" ? "Save changes" : "Save rule" })) return;
-    const data = { name, description: document.getElementById("ruleDescription").value.trim(), conditions };
+    const data = { name, team, registerDocument, description: document.getElementById("ruleDescription").value.trim(), conditions };
     if (activeRuleForm.mode === "edit" && rule) { Object.assign(rule, data); delete rule.countLimits; toast(`Rule ${rule.id} updated.`); }
     else { const id = `RE-${nextRuleNumber++}`; ruleEngineRules.unshift({ id, ...data, owner: "kiettt8" }); toast(`Rule created. Rule ID: ${id}`); }
     route("rule-list");

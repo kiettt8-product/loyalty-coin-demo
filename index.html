@@ -46,8 +46,8 @@
         <button data-route="promotion-list">Promotion Code</button>
         <button>Revoke Voucher</button>
       </div>
-      <button class="nav-parent rule-engine-nav" data-nav-target="ruleEngineMenu" aria-expanded="false"><img class="nav-icon" src="assets/nav-rule.svg" alt="">Rule Engine<span>⌄</span></button>
-      <div class="nav-sub single" id="ruleEngineMenu" hidden><button data-route="rule-list">Rule List</button><button data-route="rule-field-setup">Field Setup</button></div>
+      <button class="nav-parent rule-engine-nav" data-nav-target="ruleEngineMenu" aria-expanded="false"><img class="nav-icon" src="assets/nav-rule.svg" alt="">Rule Management<span>⌄</span></button>
+      <div class="nav-sub single" id="ruleEngineMenu" hidden><button data-route="rule-list">Rule Collections</button><button data-route="rule-field-setup">Condition Setup</button></div>
       <button class="nav-parent" aria-expanded="false"><img class="nav-icon" src="assets/nav-inventory.svg" alt="">Inventory Management<span>⌄</span></button>
       <button class="nav-parent" data-nav-target="budgetManagementMenu" aria-expanded="false"><img class="nav-icon" src="assets/nav-budget.svg" alt="">Budget Management<span>⌄</span></button>
       <div class="nav-sub budget-menu" id="budgetManagementMenu" hidden>
@@ -819,7 +819,8 @@
     <div class="screen asset-screen rule-engine-screen">
       <section class="asset-filter-panel" aria-label="Search and filter rules">
         <div class="asset-filter-grid rule-filter-grid">
-          <input id="ruleSearch" type="search" aria-label="Search Rule ID or Rule Name" placeholder="Rule ID / Rule Name">
+          <input id="ruleSearch" type="search" aria-label="Search Rule ID, Rule Name, or Team" placeholder="Rule ID / Rule Name / Team">
+          <select id="ruleTeam" aria-label="Team"><option value="">Team</option></select>
           <select id="ruleCreatedBy" aria-label="Created by"><option value="">Created by</option></select>
           <div class="asset-filter-actions rule-filter-actions"><button class="asset-btn secondary" id="ruleReset">Reset</button><button class="asset-btn primary" id="ruleSearchButton">Search</button><button class="asset-collapse" id="ruleCollapseFilter">Collapse <span>⌃</span></button></div>
         </div>
@@ -827,7 +828,7 @@
       <section class="asset-list-panel rule-list-panel">
         <div class="asset-list-toolbar"><button class="asset-btn primary" id="ruleAddNew"><span class="plus-mark" aria-hidden="true"></span>Add new</button></div>
         <div class="asset-table-wrap rule-table-wrap">
-          <table class="asset-table rule-table"><thead><tr><th>Rule ID</th><th>Rule Name</th><th>Created by</th><th>Action</th></tr></thead><tbody id="ruleRows"></tbody></table>
+          <table class="asset-table rule-table"><thead><tr><th>Rule ID</th><th>Rule Name</th><th>Team</th><th>Register document</th><th>Created by</th><th>Action</th></tr></thead><tbody id="ruleRows"></tbody></table>
           <div class="rule-empty-state" id="ruleEmptyState" hidden>No matching rules found.</div>
         </div>
         <div class="asset-pagination"><span id="ruleCount"></span><button aria-label="Previous page" disabled>‹</button><button class="active">1</button><button aria-label="Next page" disabled>›</button><select aria-label="Items per page"><option>10 / page</option></select></div>
@@ -882,7 +883,9 @@
       <form id="ruleConfigForm" class="rule-segment-form">
           <div class="rule-metadata-grid">
             <label class="rule-config-field"><span>Rule name <b>*</b></span><input id="ruleName" required maxlength="120" placeholder="Enter rule name"></label>
+            <label class="rule-config-field"><span>Team <b>*</b></span><input id="ruleTeamName" required maxlength="80" placeholder="Enter the team using this rule"><small>Helps identify which team uses this rule.</small></label>
             <label class="rule-config-field"><span>Description <small>(optional)</small></span><input id="ruleDescription" maxlength="255" placeholder="Add a short description"></label>
+            <label class="rule-config-field"><span>Register document <small>(optional)</small></span><input id="ruleRegisterDocument" type="url" maxlength="500" placeholder="Paste Confluence link"><small>Add the Confluence page used to register or track this rule.</small></label>
           </div>
           <section class="rule-condition-section">
             <div class="rule-segment-section-label"><b>*</b> Condition</div>
