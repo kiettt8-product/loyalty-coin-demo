@@ -2943,6 +2943,56 @@ const dynamicCounterTypes = [
   { value: "LIMIT_COUNTER_BY_MULTIPLE_KEY", label: "Count by selected fields" },
   { value: "LIMIT_COUNTER_BY_MULTIPLE_KEY_PERIOD", label: "Count by selected fields per period" }
 ];
+// Keep business-facing labels simple. These two request fields are verified in
+// the old counter UI / Rule Usage examples; Tech should confirm the full catalog.
+const ruleCountDimensions = [
+  { value: "requestInfo.userId", label: "User ID" },
+  { value: "requestInfo.first6CardNo", label: "First 6 card digits" }
+];
+function ruleCountLimitMarkup(limit = {}, readonly = false, index = 0) {
+  const selectedKeys = limit.keys || [];
+  const resetMode = limit.resetMode || (limit.periodUnit ? "period" : "never");
+  const dimensionOptions = ruleCountDimensions.map(field => `<label><input type="checkbox" data-count-dimension value="${escapeHtml(field.value)}" ${selectedKeys.includes(field.value) ? "checked" : ""} ${readonly ? "disabled" : ""}><span>${escapeHtml(field.label)}</span></label>`).join("");
+  const chips = selectedKeys.map(key => {
+    const field = ruleCountDimensions.find(item => item.value === key);
+    return field ? `<span class="rule-multi-chip">${escapeHtml(field.label)}${readonly ? "" : `<button type="button" data-remove-count-dimension="${escapeHtml(key)}" aria-label="Remove ${escapeHtml(field.label)}">×</button>`}</span>` : "";
+  }).join("");
+  return `<section class="rule-count-limit" data-count-limit>
+    <div class="rule-count-limit-head"><strong>Limit ${index + 1}</strong>${readonly ? "" : '<button type="button" class="rule-item-remove" data-remove-count-limit aria-label="Remove count limit">×</button>'}</div>
+    <div class="rule-count-limit-grid">
+      <label><span>Maximum count</span><input type="number" min="1" step="1" data-count-limit-field="maximum" value="${escapeHtml(limit.maximum || "")}" placeholder="Enter a number" ${readonly ? "disabled" : ""}></label>
+      <div class="rule-count-dimension-field"><span>Count separately by <small>(optional)</small></span><details class="rule-multi-select rule-count-dimensions" data-count-dimensions><summary aria-label="Choose fields to count by"><span class="rule-multi-selected">${chips}</span><span class="rule-multi-placeholder" ${selectedKeys.length ? "hidden" : ""}>All matching requests</span><span class="rule-multi-chevron" aria-hidden="true">⌄</span></summary><div class="rule-multi-options">${dimensionOptions}</div></details><small class="rule-count-help">No fields uses one shared limit. Selected fields keep a separate count for each value combination.</small></div>
+      <label><span>Reset count</span><select data-count-limit-field="resetMode" ${readonly ? "disabled" : ""}><option value="never" ${resetMode === "never" ? "selected" : ""}>No reset</option><option value="period" ${resetMode === "period" ? "selected" : ""}>After a period</option></select></label>
+      <div class="rule-count-period-fields" data-count-period-fields ${resetMode === "period" ? "" : "hidden"}><span>Reset every</span><div><input type="number" min="1" step="1" data-count-limit-field="periodLength" value="${escapeHtml(limit.periodLength || "1")}" aria-label="Period length" ${readonly ? "disabled" : ""}><select data-count-limit-field="periodUnit" aria-label="Period unit" ${readonly ? "disabled" : ""}>${ruleSelectOptions(ruleTimeUnits, limit.periodUnit || "DAY")}</select></div></div>
+    </div>
+  </section>`;
+}
+function collectRuleCountLimits(holder) {
+  return [...holder.querySelectorAll(":scope > [data-count-limit]")].map(card => {
+    const read = name => card.querySelector(`[data-count-limit-field="${name}"]`)?.value || "";
+    const resetMode = read("resetMode") || "never";
+    const keys = [...card.querySelectorAll("[data-count-dimension]:checked")].map(input => input.value);
+    const periodLength = read("periodLength");
+    const periodUnit = read("periodUnit");
+    let type = keys.length > 1 ? "LIMIT_COUNTER_BY_MULTIPLE_KEY" : keys.length === 1 ? "LIMIT_COUNTER_BY_KEY" : "LIMIT_COUNTER";
+    if (resetMode === "period") type += "_PERIOD";
+    return { maximum: read("maximum"), keys, resetMode, ...(resetMode === "period" ? { periodLength, periodUnit } : {}), type };
+  });
+}
+function syncRuleCountDimensions(card) {
+  if (!card) return;
+  const summary = card.querySelector(".rule-multi-selected");
+  const placeholder = card.querySelector(".rule-multi-placeholder");
+  const selected = [...card.querySelectorAll("[data-count-dimension]:checked")];
+  placeholder.hidden = selected.length > 0;
+  summary.innerHTML = selected.map(input => {
+    const label = ruleCountDimensions.find(field => field.value === input.value)?.label || input.value;
+    return `<span class="rule-multi-chip">${escapeHtml(label)}${input.disabled ? "" : `<button type="button" data-remove-count-dimension="${escapeHtml(input.value)}" aria-label="Remove ${escapeHtml(label)}">×</button>`}</span>`;
+  }).join("");
+}
+function ruleCountLimitsAreComplete(limits) {
+  return limits.every(limit => Number.isInteger(Number(limit.maximum)) && Number(limit.maximum) > 0 && (limit.resetMode !== "period" || (Number.isInteger(Number(limit.periodLength)) && Number(limit.periodLength) > 0 && Boolean(limit.periodUnit))));
+}
 const dynamicFilterMethods = [
   { value: "checkSegment", label: "Check segment", code: "checkSegment" },
   { value: "counter", label: "Count records", code: "counter" },
@@ -3457,6 +3507,37 @@ function initRuleForm(payload = {}) {
   document.getElementById("ruleDescription").readOnly = readonly;
   const rows = document.getElementById("ruleConditionRows");
   rows.innerHTML = ruleConditionGroupMarkup(rule?.conditions?.length ? rule.conditions : [{}], readonly);
+  const countLimits = document.getElementById("ruleCountLimits");
+  countLimits.innerHTML = (rule?.countLimits || []).map((limit, index) => ruleCountLimitMarkup(limit, readonly, index)).join("");
+  countLimits.querySelectorAll("[data-count-limit]").forEach(syncRuleCountDimensions);
+  const addCountLimit = document.getElementById("ruleAddCountLimit");
+  addCountLimit.hidden = readonly;
+  addCountLimit.onclick = () => {
+    countLimits.insertAdjacentHTML("beforeend", ruleCountLimitMarkup({}, false, countLimits.querySelectorAll("[data-count-limit]").length));
+    const added = countLimits.querySelector(":scope > [data-count-limit]:last-child");
+    syncRuleCountDimensions(added);
+    added?.querySelector('[data-count-limit-field="maximum"]')?.focus();
+  };
+  countLimits.onclick = event => {
+    const removeDimension = event.target.closest("[data-remove-count-dimension]");
+    if (removeDimension) {
+      const card = removeDimension.closest("[data-count-limit]");
+      const checkbox = [...card.querySelectorAll("[data-count-dimension]")].find(input => input.value === removeDimension.dataset.removeCountDimension);
+      if (checkbox) checkbox.checked = false;
+      syncRuleCountDimensions(card);
+      return;
+    }
+    const removeLimit = event.target.closest("[data-remove-count-limit]");
+    if (removeLimit) {
+      removeLimit.closest("[data-count-limit]").remove();
+      countLimits.querySelectorAll(":scope > [data-count-limit]").forEach((card, index) => { card.querySelector(".rule-count-limit-head strong").textContent = `Limit ${index + 1}`; });
+    }
+  };
+  countLimits.onchange = event => {
+    const card = event.target.closest("[data-count-limit]");
+    if (event.target.matches('[data-count-limit-field="resetMode"]')) card.querySelector("[data-count-period-fields]").hidden = event.target.value !== "period";
+    if (event.target.matches("[data-count-dimension]")) syncRuleCountDimensions(card);
+  };
   document.getElementById("ruleAddCondition").hidden = readonly;
   document.getElementById("ruleAddConditionGroup").hidden = readonly;
   form.querySelector('[type="submit"]').hidden = readonly;
@@ -3822,12 +3903,14 @@ function initRuleForm(payload = {}) {
   form.onsubmit = async event => {
     event.preventDefault();
     const conditions = collectRuleConditionGroup(rows.querySelector(":scope > .rule-condition-tree"));
+    const countLimits = collectRuleCountLimits(document.getElementById("ruleCountLimits"));
     const valid = ruleConditionTreeIsComplete(conditions);
     if (!valid) { toast("Complete the rule settings.", "error"); return; }
+    if (!ruleCountLimitsAreComplete(countLimits)) { toast("Enter a whole number above zero for each count limit and reset period.", "error"); return; }
     const name = document.getElementById("ruleName").value.trim();
     if (!name) return;
     if (!await confirmRuleAction({ title: activeRuleForm.mode === "edit" ? "Save rule changes?" : "Save this rule?", message: activeRuleForm.mode === "edit" ? `Save the changes to “${name}”?` : `Create “${name}” with the selected checks?`, confirmLabel: activeRuleForm.mode === "edit" ? "Save changes" : "Save rule" })) return;
-    const data = { name, description: document.getElementById("ruleDescription").value.trim(), conditions };
+    const data = { name, description: document.getElementById("ruleDescription").value.trim(), conditions, countLimits };
     if (activeRuleForm.mode === "edit" && rule) { Object.assign(rule, data); toast(`Rule ${rule.id} updated.`); }
     else { const id = `RE-${nextRuleNumber++}`; ruleEngineRules.unshift({ id, ...data, owner: "kiettt8" }); toast(`Rule created. Rule ID: ${id}`); }
     route("rule-list");

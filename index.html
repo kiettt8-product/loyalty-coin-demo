@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-      <link rel="stylesheet" href="styles.css?v=rule-connector-spacing-2">
+      <link rel="stylesheet" href="styles.css?v=rule-count-limits-1">
 </head>
 <body>
   <header class="topbar">
@@ -842,6 +842,11 @@
             <div class="rule-segment-section-label"><b>*</b> Condition</div>
             <div id="ruleConditionRows" class="rule-condition-rows"></div>
           </section>
+          <section class="rule-count-section" aria-labelledby="ruleCountHeading">
+            <div class="rule-count-section-head"><div><div class="rule-segment-section-label" id="ruleCountHeading">Count limits <small>(optional)</small></div><p>Limit matching requests. If you add more than one limit, all of them must pass.</p></div></div>
+            <div id="ruleCountLimits" class="rule-count-limit-list"></div>
+            <button type="button" class="asset-btn secondary" id="ruleAddCountLimit">+ Add count limit</button>
+          </section>
           <div class="rule-segment-footer">
             <div class="rule-condition-actions"><button type="button" class="asset-btn primary" id="ruleAddCondition">+ Add more condition</button><button type="button" class="asset-btn secondary" id="ruleAddConditionGroup">+ Add condition group</button></div>
             <div class="rule-form-actions"><button type="button" class="asset-btn secondary" id="ruleCancel">Cancel</button><button type="submit" class="asset-btn primary">Save rule</button></div>
@@ -850,6 +855,6 @@
     </div>
   </template>
 
-      <script src="app.js?v=segment-check-layout-2"></script>
+      <script src="app.js?v=rule-count-limits-1"></script>
 </body>
 </html>
