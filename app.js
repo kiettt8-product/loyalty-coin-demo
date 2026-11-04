@@ -3098,7 +3098,7 @@ function ruleCountConditionMarkup(limit = {}, readonly = false) {
   }).join("");
   const dimensionsMarkup = dimensions.length
     ? `<details class="rule-multi-select rule-count-dimensions" data-count-dimensions><summary aria-label="Choose fields to count by"><span class="rule-multi-selected">${chips}</span><span class="rule-multi-placeholder" ${selectedKeys.length ? "hidden" : ""}>All matching requests</span><span class="rule-multi-chevron" aria-hidden="true">⌄</span></summary><div class="rule-multi-options">${dimensionOptions}</div></details><small class="rule-count-help">Select fields for separate counts by value. Leave blank to count all matching requests together.</small>`
-    : '<div class="rule-count-no-fields">To count separately by a field, add one in Rule Engine → Field Setup.</div>';
+    : '<div class="rule-count-empty-dimension"><input type="text" value="" placeholder="No fields available" aria-label="Count by request field" disabled><small>Add a request field in Field Setup to count by a field.</small></div>';
   return `<div class="rule-count-condition-config" data-counter-condition>
     <div class="rule-count-limit-grid">
       <label><span>Maximum count</span><input type="number" min="1" step="1" data-count-limit-field="maximum" value="${escapeHtml(limit.maximum || "")}" placeholder="Enter a number" ${readonly ? "disabled" : ""}></label>
@@ -3123,6 +3123,7 @@ function syncRuleCountDimensions(config) {
   if (!config) return;
   const summary = config.querySelector(".rule-multi-selected");
   const placeholder = config.querySelector(".rule-multi-placeholder");
+  if (!summary || !placeholder) return;
   const selected = [...config.querySelectorAll("[data-count-dimension]:checked")];
   placeholder.hidden = selected.length > 0;
   summary.innerHTML = selected.map(input => {

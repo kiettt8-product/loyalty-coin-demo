@@ -1692,17 +1692,20 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .rule-condition-row.is-counter-condition .rule-type-picker { grid-column: 1; grid-row: 1; }
 .rule-condition-row.is-counter-condition > .rule-condition-remove { grid-column: 2; grid-row: 1; }
 .rule-condition-row.is-counter-condition .rule-configuration { grid-column: 1 / -1; grid-row: 2; }
-.rule-count-condition-config { display: grid; gap: 10px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 4px; background: #fafbfc; }
+.rule-count-condition-config { display: grid; gap: 10px; padding: 12px 0 0; border: 0; border-top: 1px solid #f0f0f0; border-radius: 0; background: transparent; }
 .rule-segment-section-label small { color: #8c8c8c; font-size: 12px; font-weight: 400; }
 .rule-count-limit-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px 16px; align-items: start; }
-.rule-count-limit-grid > label, .rule-count-dimension-field, .rule-count-period-fields { display: grid; min-width: 0; gap: 8px; color: #001f3e; font-size: 14px; line-height: 22px; }
+.rule-count-limit-grid > label, .rule-count-dimension-field, .rule-count-period-fields { display: grid; min-width: 0; gap: 6px; color: #001f3e; font-size: 14px; line-height: 20px; }
 .rule-count-limit-grid > label > span, .rule-count-dimension-field > span, .rule-count-period-fields > span { font-weight: 500; }
 .rule-count-limit-grid > label > span small, .rule-count-dimension-field > span small { color: #8c8c8c; font-size: 12px; font-weight: 400; }
 .rule-count-dimension-field > .rule-count-help { color: #718096; font-size: 12px; line-height: 18px; }
-.rule-count-limit-grid input, .rule-count-limit-grid select { width: 100%; min-width: 0; height: 36px; }
-.rule-count-dimensions > summary { min-height: 36px; }
+.rule-count-limit-grid input, .rule-count-limit-grid select { width: 100%; min-width: 0; height: 32px; }
+.rule-count-dimensions > summary { min-height: 32px; }
 .rule-count-dimensions .rule-multi-options { z-index: 30; }
-.rule-count-no-fields { display: flex; min-height: 36px; align-items: center; color: #66798b; font-size: 13px; line-height: 18px; }
+.rule-count-empty-dimension { display: grid; gap: 4px; }
+.rule-count-empty-dimension > input { background: #f5f5f5; color: #66798b; cursor: not-allowed; }
+.rule-count-empty-dimension > input::placeholder { color: #b8c3ce; }
+.rule-count-empty-dimension > small { color: #718096; font-size: 12px; line-height: 18px; }
 .rule-count-period-fields { grid-column: 3; }
 .rule-count-period-fields[hidden] { display: none; }
 .rule-count-period-fields > div { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); gap: 8px; }
