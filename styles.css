@@ -1515,6 +1515,17 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
   width: 100%;
   max-width: none;
 }
+.rule-config-screen .rule-condition-row.is-segment-check .rule-inline-condition-field > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 .rule-condition-row.is-segment-check:has(.rule-compact-config) .rule-segment-input-wrap > input {
   height: 32px;
 }
