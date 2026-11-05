@@ -891,6 +891,39 @@ function loadRuleFieldCatalog() {
   } catch { return defaults; }
 }
 let ruleFieldCatalog = loadRuleFieldCatalog();
+const ARRAY_COUNT_DEMO_RULE_ID = "demo-merchant-list-item-count";
+const ARRAY_COUNT_DEMO_PATH = "merchantInfo.providedList";
+const ARRAY_COUNT_DEMO_JSON = JSON.stringify({
+  merchantInfo: {
+    providedList: [
+      { merchantId: "merchant_001", status: "active" },
+      { merchantId: "merchant_002", status: "active" },
+      { merchantId: "merchant_003", status: "inactive" }
+    ]
+  }
+}, null, 2);
+function seedArrayCountDemoRule() {
+  const seedKey = "crmRuleArrayCountDemoSeededV2";
+  if (localStorage.getItem(seedKey)) return;
+  const demoRule = {
+    id: ARRAY_COUNT_DEMO_RULE_ID,
+    name: "Merchant list item count",
+    category: RULE_FIELD_FILTER_CATEGORY,
+    responseField: ARRAY_COUNT_DEMO_PATH,
+    dataType: "array",
+    jsonStringRoots: [],
+    sampleJson: ARRAY_COUNT_DEMO_JSON,
+    values: [],
+    surfaces: ["voucher", "ruleEngine"],
+    demo: true
+  };
+  const existingIndex = ruleFieldCatalog.checks.findIndex(check => check.id === ARRAY_COUNT_DEMO_RULE_ID);
+  if (existingIndex >= 0) ruleFieldCatalog.checks[existingIndex] = demoRule;
+  else ruleFieldCatalog.checks.push(demoRule);
+  saveRuleFieldCatalog();
+  localStorage.setItem(seedKey, "1");
+}
+seedArrayCountDemoRule();
 ruleFieldBuiltinChecks.forEach(check => {
   const systemCategoryIndex = RULE_FIELD_SYSTEM_CATEGORIES.indexOf(check.category);
   if (systemCategoryIndex >= 0 && ruleFieldCatalog.systemCategories[systemCategoryIndex]) check.category = ruleFieldCatalog.systemCategories[systemCategoryIndex];
@@ -898,6 +931,12 @@ ruleFieldBuiltinChecks.forEach(check => {
 function saveRuleFieldCatalog() {
   localStorage.setItem(RULE_FIELD_CATALOG_KEY, JSON.stringify(ruleFieldCatalog));
 }
+window.addEventListener("storage", event => {
+  if (event.key !== RULE_FIELD_CATALOG_KEY) return;
+  ruleFieldCatalog = loadRuleFieldCatalog();
+  refreshRuleConditionOptions();
+  if (document.getElementById("ruleFieldCategories")) renderRuleFieldSetup();
+});
 function getCustomRuleFieldOptions(surface) {
   return ruleFieldCatalog.checks.filter(check => check.category && check.surfaces.includes(surface)).map(check => {
     const values = check.values?.length ? check.values : check.dataType === "boolean" ? ["true", "false"] : [];
@@ -1288,7 +1327,7 @@ function initVoucherAssetCreate() {
 function initVoucherAdvanceRuleBuilder() {
   const rows = document.getElementById("voucherConditionList");
   if (!rows) return;
-  rows.innerHTML = ruleConditionGroupMarkup([{ kind: "condition" }]);
+  rows.innerHTML = ruleConditionGroupMarkup([{ kind: "condition" }], false, 0, "voucher");
 
   const closePickers = except => rows.querySelectorAll(".rule-condition-menu").forEach(menu => {
     const input = menu.closest(".rule-type-picker")?.querySelector(".rule-condition-search");
@@ -1406,7 +1445,7 @@ function initVoucherAdvanceRuleBuilder() {
       if (!node || !group) return;
       node.remove();
       const depth = Number(group.dataset.groupDepth || 0);
-      group.outerHTML = ruleConditionGroupMarkup(collectRuleConditionGroup(group), false, depth);
+      group.outerHTML = ruleConditionGroupMarkup(collectRuleConditionGroup(group), false, depth, group.dataset.ruleSurface || "voucher");
       return;
     }
     const simpleValue = event.target.closest("[data-simple-value]");
@@ -2604,7 +2643,9 @@ function initRuleFieldForm(payload = {}) {
   document.getElementById("ruleFieldChoices").hidden = true;
   document.getElementById("ruleFieldChoices").replaceChildren();
   document.getElementById("ruleFieldSelectedPath").textContent = check?.responseField || counterField?.path || "Choose a field from the list";
-  document.getElementById("ruleFieldSelectedType").textContent = editing?.dataType ? `Field type: ${ruleFieldTypeLabel(editing.dataType)}` : "";
+  document.getElementById("ruleFieldSelectedType").textContent = editing?.dataType
+    ? `Field type: ${ruleFieldTypeLabel(editing.dataType)}${editing.dataType === "array" && !counterField ? " · You can check whether the list has items or compare its item count." : ""}`
+    : "";
   document.getElementById("ruleFieldValues").value = (check?.values || []).join(", ");
   document.getElementById("ruleFieldVoucher").checked = check?.surfaces.includes("voucher") || false;
   document.getElementById("ruleFieldExternal").checked = check?.surfaces.includes("ruleEngine") || false;
@@ -2718,7 +2759,7 @@ function initRuleFieldForm(payload = {}) {
     document.getElementById("ruleFieldType").value = selected.dataset.fieldType;
     document.getElementById("ruleFieldJsonRoots").value = selected.dataset.jsonRoots || "[]";
     document.getElementById("ruleFieldSelectedPath").textContent = selected.value;
-    document.getElementById("ruleFieldSelectedType").textContent = `Field type: ${ruleFieldTypeLabel(selected.dataset.fieldType)}`;
+    document.getElementById("ruleFieldSelectedType").textContent = `Field type: ${ruleFieldTypeLabel(selected.dataset.fieldType)}${selected.dataset.fieldType === "array" && !categoryIsCounter() ? " · You can check whether the list has items or compare its item count." : ""}`;
     updateCategoryUI();
   });
   categorySelect.addEventListener("change", () => updateCategoryUI({ clearSelection: true }));
@@ -3219,18 +3260,18 @@ function normalizeRuleConditionNodes(nodes = []) {
     : { ...(node?.condition || node || {}), kind: "condition" });
 }
 
-function ruleConditionGroupMarkup(nodes = [], readonly = false, depth = 0) {
+function ruleConditionGroupMarkup(nodes = [], readonly = false, depth = 0, surface = "ruleEngine") {
   const items = normalizeRuleConditionNodes(nodes);
   if (!items.length) items.push({ kind: "condition" });
   const content = items.map((item, index) => {
     const connector = index ? `<div class="rule-condition-connector"><span class="rule-condition-connector-line" aria-hidden="true"></span><select data-condition-connective aria-label="Join condition ${index + 1}" ${readonly ? "disabled" : ""}><option value="all" ${(item.connective || "all") === "all" ? "selected" : ""}>AND</option><option value="any" ${(item.connective || "all") === "any" ? "selected" : ""}>OR</option></select></div>` : "";
     const body = item.kind === "group"
-      ? `<section class="rule-condition-group-card"><div class="rule-condition-group-heading"><div><strong>Condition group</strong><small>Set up separate AND/OR logic for these checks.</small></div>${readonly ? "" : '<button type="button" class="rule-condition-delete" data-remove-condition-group aria-label="Remove condition group" title="Remove group"><img src="assets/action-delete.svg" alt=""></button>'}</div>${ruleConditionGroupMarkup(item.conditions, readonly, depth + 1)}</section>`
+      ? `<section class="rule-condition-group-card"><div class="rule-condition-group-heading"><div><strong>Condition group</strong><small>Set up separate AND/OR logic for these checks.</small></div>${readonly ? "" : '<button type="button" class="rule-condition-delete" data-remove-condition-group aria-label="Remove condition group" title="Remove group"><img src="assets/action-delete.svg" alt=""></button>'}</div>${ruleConditionGroupMarkup(item.conditions, readonly, depth + 1, surface)}</section>`
       : ruleConditionRow(item, readonly).outerHTML;
     return `<div class="rule-condition-node" data-condition-node>${connector}<div class="rule-condition-node-body">${body}</div></div>`;
   }).join("");
   const actions = readonly || depth === 0 ? "" : `<div class="rule-condition-group-actions"><button type="button" class="asset-btn secondary" data-add-condition-node="condition">+ Add condition</button></div>`;
-  return `<div class="rule-condition-tree${depth ? " is-nested" : ""}" data-rule-group data-group-depth="${depth}"><div class="rule-condition-nodes">${content}</div>${actions}</div>`;
+  return `<div class="rule-condition-tree${depth ? " is-nested" : ""}" data-rule-group data-rule-surface="${escapeHtml(surface)}" data-group-depth="${depth}"><div class="rule-condition-nodes">${content}</div>${actions}</div>`;
 }
 
 function configureRuleSimpleCondition(row, option, condition = {}, readonly = false) {
@@ -3460,6 +3501,7 @@ function collectRuleCondition(row) {
       conditionType: option.value,
       ...(row.dataset.ruleSubtype ? { subRule: row.dataset.ruleSubtype } : {}),
       ...(option.custom ? { fieldId: option.fieldId, responseField: option.responseField, category: option.category } : {}),
+      ...(option.listCheck ? { method: "jmesFilterSize" } : {}),
       operator,
       ...(option.multiple ? { values } : { value }),
       ...(option.listCheck && operator === "Number of matching items" ? { listMatch } : option.listCheck ? { listMatch: { countOperator: listMatch.countOperator } } : {})
@@ -3495,7 +3537,8 @@ function appendRuleConditionNode(group, kind, readonly = false) {
   const parent = group.parentElement;
   const groupIndex = [...parent.querySelectorAll(":scope > .rule-condition-tree")].indexOf(group);
   const depth = Number(group.dataset.groupDepth || 0);
-  group.outerHTML = ruleConditionGroupMarkup(conditions, readonly, depth);
+  const surface = group.dataset.ruleSurface || "ruleEngine";
+  group.outerHTML = ruleConditionGroupMarkup(conditions, readonly, depth, surface);
   const updatedGroup = parent.querySelectorAll(":scope > .rule-condition-tree")[groupIndex];
   const lastNode = updatedGroup?.querySelector(":scope > .rule-condition-nodes > .rule-condition-node:last-child");
   return lastNode?.querySelector(".rule-condition-search") || null;
@@ -3513,14 +3556,15 @@ function ruleConditionTreeIsComplete(conditions) {
     if (option?.operators) {
       if (option.listCheck) {
         if (["Has any items", "Is empty"].includes(condition.operator)) return true;
-        if (!condition.value || Number(condition.value) < 0) return false;
+        const validCount = condition.value !== undefined && condition.value !== "" && Number.isInteger(Number(condition.value)) && Number(condition.value) >= 0;
+        if (!validCount) return false;
         if (condition.operator === "Number of matching items") {
           const itemFields = option.listItemFields || [];
           const primitiveList = itemFields.length === 1 && itemFields[0].value === "";
           const selectedItemFieldExists = primitiveList || itemFields.some(field => field.value === condition.listMatch?.field);
           return Boolean(itemFields.length && selectedItemFieldExists && condition.listMatch?.operator && condition.listMatch.value !== "");
         }
-        return condition.operator === "Number of items";
+        return condition.operator === "Number of items" && Boolean(condition.listMatch?.countOperator);
       }
       return Boolean(condition.operator && (option.multiple ? condition.values?.length : condition.value));
     }
@@ -3727,7 +3771,7 @@ function initRuleForm(payload = {}) {
       if (node && group) {
         node.remove();
         const updated = collectRuleConditionGroup(group);
-        group.outerHTML = ruleConditionGroupMarkup(updated, readonly, Number(group.dataset.groupDepth || 0));
+        group.outerHTML = ruleConditionGroupMarkup(updated, readonly, Number(group.dataset.groupDepth || 0), group.dataset.ruleSurface || "ruleEngine");
       }
       return;
     }
