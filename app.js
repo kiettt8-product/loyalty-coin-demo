@@ -1893,7 +1893,10 @@ function populateCoinMktCodeOptions(promotionType = "Coin") {
     .join("");
   select.innerHTML = `<option value="">Select MKT Code</option>${options}`;
   const hint = document.querySelector(".mkt-type-hint");
-  if (hint) hint.textContent = `Chỉ hiển thị MKT Code có Promotion type = ${promotionType}.`;
+  if (hint) {
+    hint.hidden = promotionType === "Cashback";
+    hint.textContent = `Chỉ hiển thị MKT Code có Promotion type = ${promotionType}.`;
+  }
 }
 
 function renderPackages() {
