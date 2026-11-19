@@ -1923,7 +1923,7 @@ function renderPackages() {
           <div class="coin-history-preview cashback-history-preview" aria-label="Preview nội dung lịch sử Cashback trên Zalopay app">
             <div class="coin-history-preview-head"><strong>Preview on Zalopay app</strong><span>Giao dịch</span></div>
             <div class="cashback-transaction">
-              <div class="cashback-wallet-icon" aria-hidden="true"><strong>Zalo</strong><span>Pay</span></div>
+              <div class="cashback-wallet-mark"><img src="assets/figma-voucher/zalopay-header.png" alt="ZaloPay"></div>
               <span class="cashback-transaction-copy"><strong class="pkg-history-preview ${historyContent ? "" : "is-placeholder"}">${escapeHtml(historyContent || "Tiền hoàn từ chương trình ABC")}</strong><small>16:13 - 27/08/2026</small><small>Số dư ví: *******</small></span>
               <span class="cashback-transaction-amount"><strong>+99.999đ</strong><small>Thành công</small><span>Ví Zalopay</span></span>
             </div>
