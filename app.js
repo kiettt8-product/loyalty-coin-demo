@@ -1917,6 +1917,10 @@ function renderPackages() {
     const users = perUserReward ? Math.floor(packageBudget / perUserReward) : 0;
     const historyContent = pkg.historyContent.trim();
     const previewContent = historyContent || "Nội dung lịch sử nhận xu sẽ hiển thị tại đây";
+    const cashbackMethod = pkg.cashbackMethod || "cashback";
+    const cashbackPreviewAmount = cashbackMethod === "cashback-percent"
+      ? `${escapeHtml(pkg.cashbackPercent || "0")}%`
+      : cashbackMethod === "direct-cashback" ? "+99.999đ" : `+${money(pkg.cashback)}đ`;
     const historyExperience = isCashback
       ? `<div class="package-experience cashback-experience">
           <label class="field required coin-history-field"><span>Cashback History Content</span><textarea class="pkg-history-content" maxlength="100" rows="3" ${editable ? "" : "disabled"} placeholder="Ví dụ: Tiền hoàn từ chương trình ABC">${escapeHtml(pkg.historyContent)}</textarea><small><span>Hiển thị tại lịch sử giao dịch trên Zalopay app</span><span class="pkg-history-count">${pkg.historyContent.length} / 100</span></small></label>
@@ -1925,7 +1929,7 @@ function renderPackages() {
             <div class="cashback-transaction">
               <div class="cashback-wallet-mark"><img src="assets/figma-voucher/zalopay-app-icon.jpg" alt="ZaloPay"></div>
               <span class="cashback-transaction-copy"><strong class="pkg-history-preview ${historyContent ? "" : "is-placeholder"}">${escapeHtml(historyContent || "Tiền hoàn từ chương trình ABC")}</strong><small>16:13 - 27/08/2026</small><small>Số dư ví: *******</small></span>
-              <span class="cashback-transaction-amount"><strong class="pkg-cashback-preview">+${money(pkg.cashback)}đ</strong><small>Thành công</small><span>Ví Zalopay</span></span>
+              <span class="cashback-transaction-amount"><strong class="pkg-cashback-preview">${cashbackPreviewAmount}</strong><small>Thành công</small><span>Ví Zalopay</span></span>
             </div>
           </div>
         </div>`
@@ -1941,7 +1945,6 @@ function renderPackages() {
             </div>
           </div>
         </div>`;
-    const cashbackMethod = pkg.cashbackMethod || "cashback";
     const cashbackMethodOptions = [
       ["cashback", "Cashback"],
       ["cashback-percent", "Cashback Percent"],
