@@ -1591,6 +1591,7 @@ function initAssetList() {
     const choice = dialog.querySelector('input[name="distributionChoice"]:checked')?.value;
     if (choice === "massive") route("asset-massive");
     else if (choice === "coin-trigger") route("asset-coin-create");
+    else if (choice === "cashback-trigger") toast("Đã chọn Distribute Cashback based on action trigger.");
     else toast("Demo hiện tại tập trung flow Distribute Massive.");
   });
   document.getElementById("assetCollapseFilter").onclick = event => {
