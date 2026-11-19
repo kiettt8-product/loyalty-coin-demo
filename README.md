@@ -25,7 +25,7 @@ http://127.0.0.1:4173
 5. Promo Asset Campaign: Campaign List → Add new → chọn Distribute coin based on action trigger → Create Loyalty Coin Campaign.
    Tại Create page có thể đổi `Distribution Type` qua lại giữa Coin và Massive.
    Tại Create page có thể đổi `Distribution Type` qua lại giữa Coin và Massive.
-6. Promo Asset Campaign: Campaign List → Add new → chọn Distribute Cashback based on action trigger → Create Cashback Campaign; cấu hình MKT, budget, Cashback Per User, package và Budget Alert.
+6. Promo Asset Campaign: Campaign List → Add new → chọn Distribute Cashback based on action trigger → Create Cashback Campaign; cấu hình MKT, budget, Cashback Per User, cashback history content với preview realtime và Budget Alert.
 7. Loyalty Coin Campaign List: Search, Reset, Collapse, View và Edit.
 8. Create Loyalty Coin Campaign: Shared/Non-shared budget, Control by Campaign/Package.
 9. Distribution Package: By Budget, Add/Remove, max 10 package và tự tính budget.

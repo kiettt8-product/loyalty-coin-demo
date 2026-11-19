@@ -1917,6 +1917,30 @@ function renderPackages() {
     const users = perUserReward ? Math.floor(packageBudget / perUserReward) : 0;
     const historyContent = pkg.historyContent.trim();
     const previewContent = historyContent || "Nội dung lịch sử nhận xu sẽ hiển thị tại đây";
+    const historyExperience = isCashback
+      ? `<div class="package-experience cashback-experience">
+          <label class="field required coin-history-field"><span>Cashback History Content</span><textarea class="pkg-history-content" maxlength="100" rows="3" ${editable ? "" : "disabled"} placeholder="Ví dụ: Tiền hoàn từ chương trình ABC">${escapeHtml(pkg.historyContent)}</textarea><small><span>Hiển thị tại lịch sử giao dịch trên Zalopay app</span><span class="pkg-history-count">${pkg.historyContent.length} / 100</span></small></label>
+          <div class="coin-history-preview cashback-history-preview" aria-label="Preview nội dung lịch sử Cashback trên Zalopay app">
+            <div class="coin-history-preview-head"><strong>Preview on Zalopay app</strong><span>Giao dịch</span></div>
+            <div class="cashback-transaction">
+              <div class="cashback-wallet-icon" aria-hidden="true"><strong>Zalo</strong><span>Pay</span></div>
+              <span class="cashback-transaction-copy"><strong class="pkg-history-preview ${historyContent ? "" : "is-placeholder"}">${escapeHtml(historyContent || "Tiền hoàn từ chương trình ABC")}</strong><small>16:13 - 27/08/2026</small><small>Số dư ví: *******</small></span>
+              <span class="cashback-transaction-amount"><strong>+99.999đ</strong><small>Thành công</small><span>Ví Zalopay</span></span>
+            </div>
+          </div>
+        </div>`
+      : `<div class="package-experience">
+          <label class="field required coin-history-field"><span>Coin History Content</span><textarea class="pkg-history-content" maxlength="100" rows="3" ${editable ? "" : "disabled"} placeholder="Nhập nội dung hiển thị trong lịch sử nhận xu">${escapeHtml(pkg.historyContent)}</textarea><small><span>Hiển thị tại màn Tích xu trên Zalopay app</span><span class="pkg-history-count">${pkg.historyContent.length} / 100</span></small></label>
+          <div class="coin-history-preview" aria-label="Preview nội dung lịch sử nhận xu">
+            <div class="coin-history-preview-head"><strong>Preview on Zalopay app</strong><span>Tích xu</span></div>
+            <div class="coin-history-month"><strong>Tháng 08/2026</strong><span>Tổng: 4.844 xu</span></div>
+            <div class="coin-history-row">
+              <img class="coin-history-icon" src="assets/loyalty-coin.svg" alt="">
+              <span class="coin-history-copy"><strong class="pkg-history-preview ${historyContent ? "" : "is-placeholder"}">${escapeHtml(previewContent)}</strong><small>10:09 - 12/08/2026</small></span>
+              <strong class="pkg-coin-preview">+${money(pkg.coin)} xu</strong>
+            </div>
+          </div>
+        </div>`;
     const cashbackFields = `<label class="field required"><span>Cashback Distribution Method</span><select class="pkg-method" disabled><option value="budget" selected>By Budget</option></select></label>
         <label class="field required"><span>Cashback Per User</span><input class="pkg-cashback" inputmode="numeric" value="${formattedNumber(pkg.cashback)}" ${editable ? "" : "disabled"}></label>
         <label class="field"><span>Estimated Users</span><input class="pkg-users" value="${money(users)}" disabled></label>`;
@@ -1931,18 +1955,7 @@ function renderPackages() {
         <label class="field"><span>Estimated Users</span><input class="pkg-users" value="${money(users)}" disabled></label>`}
         ${showPackageId ? `<label class="field"><span>Package ID</span><input class="pkg-package-id" value="${pkg.packageId}" disabled></label>` : ""}
       </div>
-      ${isCashback ? "" : `<div class="package-experience">
-        <label class="field required coin-history-field"><span>Coin History Content</span><textarea class="pkg-history-content" maxlength="100" rows="3" ${editable ? "" : "disabled"} placeholder="Nhập nội dung hiển thị trong lịch sử nhận xu">${escapeHtml(pkg.historyContent)}</textarea><small><span>Hiển thị tại màn Tích xu trên Zalopay app</span><span class="pkg-history-count">${pkg.historyContent.length} / 100</span></small></label>
-        <div class="coin-history-preview" aria-label="Preview nội dung lịch sử nhận xu">
-          <div class="coin-history-preview-head"><strong>Preview on Zalopay app</strong><span>Tích xu</span></div>
-          <div class="coin-history-month"><strong>Tháng 08/2026</strong><span>Tổng: 4.844 xu</span></div>
-          <div class="coin-history-row">
-            <img class="coin-history-icon" src="assets/loyalty-coin.svg" alt="">
-            <span class="coin-history-copy"><strong class="pkg-history-preview ${historyContent ? "" : "is-placeholder"}">${escapeHtml(previewContent)}</strong><small>10:09 - 12/08/2026</small></span>
-            <strong class="pkg-coin-preview">+${money(pkg.coin)} xu</strong>
-          </div>
-        </div>
-      </div>`}</div>
+      ${historyExperience}</div>
     </section>`;
   }).join("");
   if (editable || limitedBudgetEdit) holder.querySelectorAll(".package-block").forEach(bindPackage);
@@ -1988,7 +2001,7 @@ function updatePackage(block, pkg) {
   const preview = block.querySelector(".pkg-history-preview");
   const historyContent = pkg.historyContent.trim();
   if (preview) {
-    preview.textContent = historyContent || "Nội dung lịch sử nhận xu sẽ hiển thị tại đây";
+    preview.textContent = historyContent || (isCashback ? "Tiền hoàn từ chương trình ABC" : "Nội dung lịch sử nhận xu sẽ hiển thị tại đây");
     preview.classList.toggle("is-placeholder", !historyContent);
   }
   if (block.querySelector(".pkg-coin-preview")) block.querySelector(".pkg-coin-preview").textContent = `+${money(pkg.coin)} xu`;
@@ -2141,7 +2154,7 @@ function validateCampaign() {
     const rules = [
       [state.route === "asset-cashback-create" ? ".pkg-cashback" : ".pkg-coin", !number(state.route === "asset-cashback-create" ? pkg.cashback : pkg.coin), state.route === "asset-cashback-create" ? "Cashback Per User is required" : "Coin Per User is required"],
       [".pkg-budget", control === "package" && !number(pkg.budget), "Budget is required"],
-      [".pkg-history-content", state.route === "asset-coin-create" && !pkg.historyContent.trim(), "Coin History Content is required"]
+      [".pkg-history-content", !pkg.historyContent.trim(), state.route === "asset-cashback-create" ? "Cashback History Content is required" : "Coin History Content is required"]
     ];
     rules.forEach(([selector, invalid, message]) => {
       const input = block?.querySelector(selector);

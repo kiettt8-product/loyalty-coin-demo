@@ -267,6 +267,18 @@ body.asset-mode .time-field { grid-column: auto; }
 .coin-history-copy strong.is-placeholder { color: #99a1af; }
 .coin-history-copy small { color: #8da0b3; font-size: 11px; }
 .pkg-coin-preview { align-self: center; color: #00b958; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.cashback-transaction { min-height: 86px; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 14px; }
+.cashback-wallet-icon { width: 34px; height: 34px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #edf1f5; border-radius: 7px; color: #0a73dc; background: #fff; font-size: 9px; line-height: 9px; }
+.cashback-wallet-icon strong { font-weight: 700; }
+.cashback-wallet-icon span { color: #16a36a; font-weight: 600; }
+.cashback-transaction-copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.cashback-transaction-copy strong { overflow-wrap: anywhere; color: #001f3e; font-size: 13px; line-height: 17px; font-weight: 600; }
+.cashback-transaction-copy strong.is-placeholder { color: #99a1af; font-weight: 400; }
+.cashback-transaction-copy small { color: #66798b; font-size: 11px; line-height: 14px; }
+.cashback-transaction-amount { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; white-space: nowrap; }
+.cashback-transaction-amount strong { color: #001f3e; font-size: 14px; font-weight: 700; }
+.cashback-transaction-amount small { color: #00a85a; font-size: 11px; }
+.cashback-transaction-amount span { color: #66798b; font-size: 11px; }
 .remove-package { position: absolute; top: 12px; right: 16px; width: 28px; height: 28px; border: 1px solid #ffc8cd; color: var(--danger); background: white; border-radius: 3px; }
 .add-package { width: auto; margin: 0 0 20px 6px; }
 .alert-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -1353,6 +1365,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .promotion-type-coin { color: #087443; background: #e8f7ef; }
 .promotion-type-voucher { color: #8a5300; background: #fff4db; }
 .mkt-type-hint { display: block; margin-top: 4px; color: #66798b; font-size: 12px; line-height: 16px; }
+.mkt-type-hint[hidden] { display: none; }
 .budget-approval-table input[type="checkbox"] { width: 16px; height: 16px; margin: 0; padding: 0; accent-color: var(--primary); vertical-align: middle; }
 .budget-request-link { color: var(--primary); text-decoration: none; }
 .budget-request-link:hover { color: var(--primary-link); text-decoration: underline; }
