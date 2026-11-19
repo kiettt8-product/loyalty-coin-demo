@@ -1797,3 +1797,6 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
   .rule-count-limit-grid { grid-template-columns: minmax(0, 1fr); }
   .rule-count-period-fields { grid-column: 1; }
 }
+.cashback-direct-note { min-height: 66px; padding: 8px 10px; border: 1px solid #d9d9d9; border-radius: 3px; background: #f8fafc; }
+.cashback-direct-note small { color: #66798b; line-height: 16px; }
+.cashback-estimate-hint { color: #66798b; font-size: 12px; line-height: 16px; }
