@@ -1352,7 +1352,7 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .promotion-type-chip { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .promotion-type-coin { color: #087443; background: #e8f7ef; }
 .promotion-type-voucher { color: #8a5300; background: #fff4db; }
-.mkt-coin-hint { display: block; margin-top: 4px; color: #66798b; font-size: 12px; line-height: 16px; }
+.mkt-type-hint { display: block; margin-top: 4px; color: #66798b; font-size: 12px; line-height: 16px; }
 .budget-approval-table input[type="checkbox"] { width: 16px; height: 16px; margin: 0; padding: 0; accent-color: var(--primary); vertical-align: middle; }
 .budget-request-link { color: var(--primary); text-decoration: none; }
 .budget-request-link:hover { color: var(--primary-link); text-decoration: underline; }

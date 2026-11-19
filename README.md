@@ -24,16 +24,18 @@ http://127.0.0.1:4173
 4. Promo Asset Campaign: Campaign List → Add new → chọn Distribute Massive → Massive form.
 5. Promo Asset Campaign: Campaign List → Add new → chọn Distribute coin based on action trigger → Create Loyalty Coin Campaign.
    Tại Create page có thể đổi `Distribution Type` qua lại giữa Coin và Massive.
-6. Loyalty Coin Campaign List: Search, Reset, Collapse, View và Edit.
-7. Create Loyalty Coin Campaign: Shared/Non-shared budget, Control by Campaign/Package.
-8. Distribution Package: By Budget, Add/Remove, max 10 package và tự tính budget.
-9. Budget Alert: nhập username/email và threshold bằng phím Enter.
-10. Submit: Auto Approved hoặc FA Review theo Coin Per User.
-11. Generate Package ID: mô phỏng all package thành công sau Auto Approved.
-12. Trigger Based Campaign: chọn Campaign trước, sau đó Package ID mới được enable và load đúng package.
-13. Others: mở submenu `AI Generate Banner` (placeholder) và `Coin to Direct Discount`.
-14. Coin to Direct Discount: xem Total/Spent/Remaining Budget, cấu hình conversion rate, chọn Applicable/Non-Applicable App ID bằng searchable multi-select và bật/tắt future configuration khi demo.
-15. Got it to Direct Discount: cùng Budget Overview và App ID selector như Coin to Direct Discount nhưng không có conversion rate.
+   Tại Create page có thể đổi `Distribution Type` qua lại giữa Coin và Massive.
+6. Promo Asset Campaign: Campaign List → Add new → chọn Distribute Cashback based on action trigger → Create Cashback Campaign; cấu hình MKT, budget, Cashback Per User, package và Budget Alert.
+7. Loyalty Coin Campaign List: Search, Reset, Collapse, View và Edit.
+8. Create Loyalty Coin Campaign: Shared/Non-shared budget, Control by Campaign/Package.
+9. Distribution Package: By Budget, Add/Remove, max 10 package và tự tính budget.
+10. Budget Alert: nhập username/email và threshold bằng phím Enter.
+11. Submit: Auto Approved hoặc FA Review theo Coin Per User.
+12. Generate Package ID: mô phỏng all package thành công sau Auto Approved.
+13. Trigger Based Campaign: chọn Campaign trước, sau đó Package ID mới được enable và load đúng package.
+14. Others: mở submenu `AI Generate Banner` (placeholder) và `Coin to Direct Discount`.
+15. Coin to Direct Discount: xem Total/Spent/Remaining Budget, cấu hình conversion rate, chọn Applicable/Non-Applicable App ID bằng searchable multi-select và bật/tắt future configuration khi demo.
+16. Got it to Direct Discount: cùng Budget Overview và App ID selector như Coin to Direct Discount nhưng không có conversion rate.
 
 `qa-promotion.mjs` kiểm tra Promotion Code flow. `qa.mjs` kiểm tra Loyalty Coin flow. `qa-asset.mjs` kiểm tra Promo Asset Massive và Coin Create flow.
 

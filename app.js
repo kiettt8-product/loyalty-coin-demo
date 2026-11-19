@@ -4,7 +4,7 @@ function formattedNumber(value) { return number(value) ? money(number(value)) : 
 function statusClass(value) { return value.toLowerCase().replaceAll(" ", "-"); }
 function packageKey() { return `pkg-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function escapeHtml(value) { return String(value || "").replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }
-function newPackage() { return { id: packageKey(), method: "budget", budget: "", originalBudget: "", consumedBudget: "0", coin: "", historyContent: "" }; }
+function newPackage() { return { id: packageKey(), method: "budget", budget: "", originalBudget: "", consumedBudget: "0", coin: "", cashback: "", historyContent: "" }; }
 function clonePackages(packages) {
   return packages.map(pkg => ({
     ...pkg,
@@ -76,6 +76,13 @@ const budgetMktCatalog = {
     promotionType: "Voucher",
     name: "Voucher_Discount_721",
     allocatedBudget: 200000,
+    budgetMethods: ["campaign", "package"]
+  },
+  cashback: {
+    code: "CB_060426_001",
+    promotionType: "Cashback",
+    name: "CB_060426_001_campaign",
+    allocatedBudget: 5000000,
     budgetMethods: ["campaign", "package"]
   }
 };
@@ -641,6 +648,7 @@ const templates = {
   "asset-list": document.getElementById("assetListTemplate"),
   "asset-massive": document.getElementById("assetMassiveTemplate"),
   "asset-coin-create": document.getElementById("formTemplate"),
+  "asset-cashback-create": document.getElementById("formTemplate"),
   "voucher-assets": document.getElementById("voucherAssetListTemplate"),
   "voucher-create": document.getElementById("voucherAssetCreateTemplate"),
   "promotion-list": document.getElementById("promotionListTemplate"),
@@ -752,7 +760,7 @@ function route(name, payload = {}) {
   document.querySelectorAll("[data-route]").forEach(button => button.classList.toggle("active",
     button.dataset.route === name
     || (name === "form" && button.dataset.route === "list")
-    || (["asset-massive", "asset-coin-create"].includes(name) && button.dataset.route === "asset-list")
+    || (["asset-massive", "asset-coin-create", "asset-cashback-create"].includes(name) && button.dataset.route === "asset-list")
     || (name === "voucher-create" && button.dataset.route === "voucher-assets")
     || (name.startsWith("promotion-") && button.dataset.route === "promotion-list")
     || (name === "budget-topup-detail" && button.dataset.route === "budget-approval")
@@ -767,6 +775,7 @@ function route(name, payload = {}) {
   if (name === "asset-list") initAssetList();
   if (name === "asset-massive") initAssetMassive();
   if (name === "asset-coin-create") initForm({ mode: "create", returnRoute: "asset-list" });
+  if (name === "asset-cashback-create") initForm({ mode: "create", returnRoute: "asset-list" });
   if (name === "voucher-assets") initVoucherAssetList();
   if (name === "voucher-create") initVoucherAssetCreate();
   if (name === "promotion-list") initPromotionList();
@@ -1591,7 +1600,7 @@ function initAssetList() {
     const choice = dialog.querySelector('input[name="distributionChoice"]:checked')?.value;
     if (choice === "massive") route("asset-massive");
     else if (choice === "coin-trigger") route("asset-coin-create");
-    else if (choice === "cashback-trigger") toast("Đã chọn Distribute Cashback based on action trigger.");
+    else if (choice === "cashback-trigger") route("asset-cashback-create");
     else toast("Demo hiện tại tập trung flow Distribute Massive.");
   });
   document.getElementById("assetCollapseFilter").onclick = event => {
@@ -1749,16 +1758,23 @@ function initForm(options = {}) {
   const campaign = getEditingCampaign();
   if (state.formMode !== "create" && !campaign) return route("list");
 
-  const distributionTypeField = document.getElementById("coinDistributionTypeField");
+  const distributionTypeField = document.getElementById("assetDistributionTypeField");
   const isAssetCoinCreate = state.route === "asset-coin-create";
-  distributionTypeField.hidden = !isAssetCoinCreate;
-  if (isAssetCoinCreate) {
-    document.getElementById("coinDistributionType").onchange = event => {
-      if (event.target.value === "massive") route("asset-massive");
+  const isAssetCashbackCreate = state.route === "asset-cashback-create";
+  const isAssetActionCreate = isAssetCoinCreate || isAssetCashbackCreate;
+  distributionTypeField.hidden = !isAssetActionCreate;
+  if (isAssetActionCreate) {
+    const distributionType = document.getElementById("assetDistributionType");
+    distributionType.value = isAssetCashbackCreate ? "cashback-trigger" : "coin-trigger";
+    distributionType.onchange = event => {
+      const routes = { massive: "asset-massive", "coin-trigger": "asset-coin-create", "cashback-trigger": "asset-cashback-create" };
+      if (event.target.value === "trigger") return route("trigger");
+      if (routes[event.target.value]) route(routes[event.target.value]);
+      else toast("Flow này chưa có màn cấu hình trong demo.");
     };
   }
 
-  populateCoinMktCodeOptions();
+  populateCoinMktCodeOptions(isAssetCashbackCreate ? "Cashback" : "Coin");
 
   state.packages = campaign ? clonePackages(campaign.packages) : [newPackage()];
   state.emails = campaign ? [...campaign.emails] : [];
@@ -1830,8 +1846,9 @@ function renderFormActions(campaign) {
   }
   document.getElementById("cancelForm").onclick = () => route(state.formReturnRoute);
   if (state.formMode === "create") {
-    document.getElementById("saveDraft").onclick = () => submitCampaign(true);
-    document.getElementById("campaignForm").onsubmit = event => { event.preventDefault(); submitCampaign(false); };
+    const submit = draft => state.route === "asset-cashback-create" ? submitCashbackCampaign(draft) : submitCampaign(draft);
+    document.getElementById("saveDraft").onclick = () => submit(true);
+    document.getElementById("campaignForm").onsubmit = event => { event.preventDefault(); submit(false); };
   } else {
     document.getElementById("campaignForm").onsubmit = event => event.preventDefault();
     document.getElementById("saveChanges")?.addEventListener("click", () => saveCampaignEdit(campaign));
@@ -1846,7 +1863,8 @@ function changeMkt() {
   name.disabled = !type;
   method.disabled = !type || type === "shared";
   const selected = budgetMktCatalog[type];
-  name.innerHTML = selected && selected.promotionType === "Coin"
+  const expectedPromotionType = state.route === "asset-cashback-create" ? "Cashback" : "Coin";
+  name.innerHTML = selected && selected.promotionType === expectedPromotionType
     ? `<option value="${escapeHtml(selected.name)}">${escapeHtml(selected.name)}</option>`
     : '<option value="">Select MKT Name</option>';
   if (!type) {
@@ -1857,7 +1875,7 @@ function changeMkt() {
     method.innerHTML = "<option value='campaign'>Control budget by campaign</option>";
     method.value = "campaign";
     allocated.value = money(30000000);
-  } else if (selected?.promotionType === "Coin") {
+  } else if (selected?.promotionType === expectedPromotionType) {
     method.innerHTML = "<option value='campaign'>Control budget by campaign</option><option value='package'>Control budget by package</option>";
     method.value = "campaign";
     allocated.value = money(5000000);
@@ -1866,17 +1884,20 @@ function changeMkt() {
   renderPackages();
 }
 
-function populateCoinMktCodeOptions() {
+function populateCoinMktCodeOptions(promotionType = "Coin") {
   const select = document.getElementById("mktCode");
   if (!select) return;
   const options = Object.entries(budgetMktCatalog)
-    .filter(([, item]) => item.promotionType === "Coin")
+    .filter(([, item]) => item.promotionType === promotionType)
     .map(([key, item]) => `<option value="${escapeHtml(key)}">${escapeHtml(item.code)}</option>`)
     .join("");
   select.innerHTML = `<option value="">Select MKT Code</option>${options}`;
+  const hint = document.querySelector(".mkt-type-hint");
+  if (hint) hint.textContent = `Chỉ hiển thị MKT Code có Promotion type = ${promotionType}.`;
 }
 
 function renderPackages() {
+  const isCashback = state.route === "asset-cashback-create";
   const control = document.getElementById("budgetMethod")?.value || "";
   const hasMkt = Boolean(document.getElementById("mktCode")?.value);
   const editable = canEditAll();
@@ -1889,21 +1910,25 @@ function renderPackages() {
   holder.innerHTML = state.packages.map(pkg => {
     const packageBudgetEnabled = hasMkt && control === "package" && (editable || limitedBudgetEdit);
     const { budget: packageBudget, consumedBudget, remainingBudget } = budgetSnapshot(control, pkg);
-    const users = number(pkg.coin) ? Math.floor(packageBudget / number(pkg.coin)) : 0;
+    const perUserReward = number(isCashback ? pkg.cashback : pkg.coin);
+    const users = perUserReward ? Math.floor(packageBudget / perUserReward) : 0;
     const historyContent = pkg.historyContent.trim();
     const previewContent = historyContent || "Nội dung lịch sử nhận xu sẽ hiển thị tại đây";
+    const cashbackFields = `<label class="field required"><span>Cashback Distribution Method</span><select class="pkg-method" disabled><option value="budget" selected>By Budget</option></select></label>
+        <label class="field required"><span>Cashback Per User</span><input class="pkg-cashback" inputmode="numeric" value="${formattedNumber(pkg.cashback)}" ${editable ? "" : "disabled"}></label>
+        <label class="field"><span>Estimated Users</span><input class="pkg-users" value="${money(users)}" disabled></label>`;
     return `<section class="crm-section package-block" data-id="${pkg.id}">
-      <h1>Distribute Loyalty Coin</h1>${editable && state.packages.length > 1 ? "<button type='button' class='remove-package'>×</button>" : ""}
+      <h1>Distribute ${isCashback ? "Cashback" : "Loyalty Coin"}</h1>${editable && state.packages.length > 1 ? "<button type='button' class='remove-package'>×</button>" : ""}
       <div class="package-inner"><div class="package-fields ${packageLayout}">
         <label class="field package-budget ${control === "package" ? "required" : ""}"><span>Package Budget</span><div class="suffix-input"><input class="pkg-budget" inputmode="numeric" value="${formattedNumber(packageBudget)}" ${packageBudgetEnabled ? "" : "disabled"} placeholder="Package Budget"><b>VND</b></div></label>
         ${showConsumption ? `<label class="field"><span>Consumed Budget</span><div class="suffix-input"><input class="pkg-consumed" value="${money(consumedBudget)}" disabled><b>VND</b></div></label>
         <label class="field"><span>Remaining Budget</span><div class="suffix-input"><input class="pkg-remaining" value="${money(remainingBudget)}" disabled><b>VND</b></div></label>` : ""}
-        <label class="field required"><span>Coin Distribution Method</span><select class="pkg-method" disabled><option value="budget" selected>By Budget</option></select></label>
+        ${isCashback ? cashbackFields : `<label class="field required"><span>Coin Distribution Method</span><select class="pkg-method" disabled><option value="budget" selected>By Budget</option></select></label>
         <label class="field required"><span>Coin Per User</span><input class="pkg-coin" inputmode="numeric" value="${formattedNumber(pkg.coin)}" ${editable ? "" : "disabled"}></label>
-        <label class="field"><span>Estimated Users</span><input class="pkg-users" value="${money(users)}" disabled></label>
+        <label class="field"><span>Estimated Users</span><input class="pkg-users" value="${money(users)}" disabled></label>`}
         ${showPackageId ? `<label class="field"><span>Package ID</span><input class="pkg-package-id" value="${pkg.packageId}" disabled></label>` : ""}
       </div>
-      <div class="package-experience">
+      ${isCashback ? "" : `<div class="package-experience">
         <label class="field required coin-history-field"><span>Coin History Content</span><textarea class="pkg-history-content" maxlength="100" rows="3" ${editable ? "" : "disabled"} placeholder="Nhập nội dung hiển thị trong lịch sử nhận xu">${escapeHtml(pkg.historyContent)}</textarea><small><span>Hiển thị tại màn Tích xu trên Zalopay app</span><span class="pkg-history-count">${pkg.historyContent.length} / 100</span></small></label>
         <div class="coin-history-preview" aria-label="Preview nội dung lịch sử nhận xu">
           <div class="coin-history-preview-head"><strong>Preview on Zalopay app</strong><span>Tích xu</span></div>
@@ -1914,7 +1939,7 @@ function renderPackages() {
             <strong class="pkg-coin-preview">+${money(pkg.coin)} xu</strong>
           </div>
         </div>
-      </div></div>
+      </div>`}</div>
     </section>`;
   }).join("");
   if (editable || limitedBudgetEdit) holder.querySelectorAll(".package-block").forEach(bindPackage);
@@ -1935,6 +1960,13 @@ function bindPackage(block) {
     }
     updatePackage(block, pkg);
   }));
+  block.querySelector(".pkg-cashback")?.addEventListener("input", event => {
+    const numericValue = number(event.target.value);
+    pkg.cashback = numericValue ? String(numericValue) : "";
+    event.target.value = formattedNumber(pkg.cashback);
+    if (numericValue) clearFieldError(event.target);
+    updatePackage(block, pkg);
+  });
   block.querySelector(".pkg-history-content")?.addEventListener("input", event => {
     pkg.historyContent = event.target.value;
     if (pkg.historyContent.trim()) clearFieldError(event.target);
@@ -1943,9 +1975,11 @@ function bindPackage(block) {
 }
 
 function updatePackage(block, pkg) {
+  const isCashback = state.route === "asset-cashback-create";
   const control = document.getElementById("budgetMethod")?.value;
   const { budget, remainingBudget } = budgetSnapshot(control, pkg);
-  const users = number(pkg.coin) ? Math.floor(budget / number(pkg.coin)) : 0;
+  const perUserReward = number(isCashback ? pkg.cashback : pkg.coin);
+  const users = perUserReward ? Math.floor(budget / perUserReward) : 0;
   if (block.querySelector(".pkg-users")) block.querySelector(".pkg-users").value = money(users);
   if (block.querySelector(".pkg-remaining")) block.querySelector(".pkg-remaining").value = money(remainingBudget);
   const preview = block.querySelector(".pkg-history-preview");
@@ -2102,9 +2136,9 @@ function validateCampaign() {
   state.packages.forEach(pkg => {
     const block = document.querySelector(`.package-block[data-id="${pkg.id}"]`);
     const rules = [
-      [".pkg-coin", !number(pkg.coin), "Coin Per User is required"],
+      [state.route === "asset-cashback-create" ? ".pkg-cashback" : ".pkg-coin", !number(state.route === "asset-cashback-create" ? pkg.cashback : pkg.coin), state.route === "asset-cashback-create" ? "Cashback Per User is required" : "Coin Per User is required"],
       [".pkg-budget", control === "package" && !number(pkg.budget), "Budget is required"],
-      [".pkg-history-content", !pkg.historyContent.trim(), "Coin History Content is required"]
+      [".pkg-history-content", state.route === "asset-coin-create" && !pkg.historyContent.trim(), "Coin History Content is required"]
     ];
     rules.forEach(([selector, invalid, message]) => {
       const input = block?.querySelector(selector);
@@ -2154,6 +2188,34 @@ function submitCampaign(draft) {
   if (packageIds.length) data.packages = data.packages.map((pkg, index) => ({ ...pkg, packageId: packageIds[index] }));
   state.campaigns.unshift({ ...data, id, packageIds, status, owner: "kiettt8" });
   toast(draft ? `Campaign ${id} đã Save Draft.` : `Campaign ${id}: ${status}${status === "Auto Approved" ? ", Package ID đã generate." : "."}`);
+  setTimeout(() => route(state.formReturnRoute), 500);
+}
+
+function submitCashbackCampaign(draft) {
+  if (!validateCampaign()) return;
+  const mktCode = document.getElementById("mktCode");
+  const budgetMethod = document.getElementById("budgetMethod").value;
+  const allocatedBudget = number(document.getElementById("allocatedBudget").value);
+  const packageBudgets = state.packages.map(pkg => budgetMethod === "package" ? number(pkg.budget) : allocatedBudget);
+  const budget = budgetMethod === "package" ? packageBudgets.reduce((sum, value) => sum + value, 0) : allocatedBudget;
+  const id = Math.max(...assetCampaigns.map(item => item.id)) + 1;
+  assetCampaigns.unshift({
+    id,
+    name: document.getElementById("mktName").value,
+    code: mktCode.selectedOptions[0].text,
+    budget,
+    rewards: "",
+    packageIds: "",
+    type: "Cashback",
+    time: isoToDisplay(document.getElementById("endTime").value),
+    target: "Trigger Campaign",
+    status: draft ? "Draft" : "FA Review",
+    label: document.getElementById("campaignLabel").value,
+    owner: "kiettt8",
+    emails: state.emails.length ? [...state.emails] : ["kiettt8@vng.com.vn"],
+    thresholds: state.thresholds.length ? [...state.thresholds] : [10]
+  });
+  toast(draft ? `Cashback Campaign ${id} đã Save Draft.` : `Cashback Campaign ${id} đã gửi FA Review.`);
   setTimeout(() => route(state.formReturnRoute), 500);
 }
 

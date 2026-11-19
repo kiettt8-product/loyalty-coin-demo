@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-      <link rel="stylesheet" href="styles.css?v=rule-field-unified-v1">
+      <link rel="stylesheet" href="styles.css?v=cashback-action-form-v1">
 </head>
 <body>
   <header class="topbar">
@@ -142,7 +142,7 @@
         <div class="asset-filter-grid" id="assetFilterGrid">
           <input id="assetFilterId" aria-label="Campaign ID, Reward ID hoặc Package ID" placeholder="Campaign ID/Reward/Package ID">
           <input id="assetFilterMkt" aria-label="MKT Name hoặc MKT Code" placeholder="MKT Name/MKT Code">
-          <select id="assetFilterType" aria-label="Distribution Type"><option value="">Distribution Type</option><option>Massive</option><option>Trigger Base</option><option>Direct Discount</option><option>Loyalty Coin</option></select>
+          <select id="assetFilterType" aria-label="Distribution Type"><option value="">Distribution Type</option><option>Massive</option><option>Trigger Base</option><option>Direct Discount</option><option>Loyalty Coin</option><option>Cashback</option></select>
           <div class="asset-date-range" aria-label="Distribute time"><input id="assetFilterFrom" placeholder="From" aria-label="From"><span>→</span><input id="assetFilterTo" placeholder="To" aria-label="To"><span class="calendar-mark" aria-hidden="true"></span></div>
           <select id="assetFilterStatus" aria-label="Status"><option value="">Status</option><option>Draft</option><option>Approved</option><option>Auto Approved</option></select>
           <select id="assetFilterLabel" aria-label="Label"><option value="">Label</option><option>ZPO</option><option>BAU</option><option>Growth</option></select>
@@ -335,8 +335,8 @@
       <section class="crm-section">
         <h1 class="section-title-row"><span id="formTitle">Basic Information</span><span id="formStatus"></span></h1>
         <div class="section-content basic-fields">
-          <label class="field required" id="coinDistributionTypeField" hidden><span>Distribution Type</span><select id="coinDistributionType"><option value="coin-trigger">Distribute coin based on action trigger</option><option value="massive">Distribute Massive</option></select></label>
-          <label class="field required"><span>Select MKT Code</span><select id="mktCode"><option value="">Select MKT Code</option></select><small class="mkt-coin-hint">Chỉ hiển thị MKT Code có Promotion type = Coin.</small></label>
+          <label class="field required" id="assetDistributionTypeField" hidden><span>Distribution Type</span><select id="assetDistributionType"><option value="massive">Distribute Massive</option><option value="trigger">Distribute based on action trigger</option><option value="coin-trigger">Distribute coin based on action trigger</option><option value="cashback-trigger">Distribute Cashback based on action trigger</option><option value="direct-discount">Direct Discount</option></select></label>
+          <label class="field required"><span>Select MKT Code</span><select id="mktCode"><option value="">Select MKT Code</option></select><small class="mkt-type-hint">Chỉ hiển thị MKT Code phù hợp với loại campaign.</small></label>
           <label class="field required"><span>Select MKT Name</span><select id="mktName" disabled><option>Select MKT Name</option></select></label>
           <label class="field required"><span>Budget Control Method</span><select id="budgetMethod" disabled><option value="">Select Budget Control Method</option></select></label>
           <label class="field"><span>Allocated Budget</span><div class="suffix-input"><input id="allocatedBudget" placeholder="Allocated Budget" disabled><b>VND</b></div></label>
@@ -899,6 +899,6 @@
     </div>
   </template>
 
-      <script src="app.js?v=rule-field-unified-v1"></script>
+      <script src="app.js?v=cashback-action-form-v1"></script>
 </body>
 </html>
