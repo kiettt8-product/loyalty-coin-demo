@@ -1797,8 +1797,9 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
   .rule-count-limit-grid { grid-template-columns: minmax(0, 1fr); }
   .rule-count-period-fields { grid-column: 1; }
 }
-.cashback-direct-note { min-height: 66px; padding: 8px 10px; border: 1px solid #d9d9d9; border-radius: 3px; background: #f8fafc; }
-.cashback-direct-note small { color: #66798b; line-height: 16px; }
-.cashback-estimate-hint { color: #66798b; font-size: 12px; line-height: 16px; }
 .cashback-value-wide { grid-column: span 2; }
 @media (max-width: 600px) { .cashback-value-wide { grid-column: 1 / -1; } }
+
+.cashback-direct-info { display: flex; align-items: center; gap: 9px; margin: 4px 0 18px; padding: 8px 12px; border-left: 3px solid #4a83f6; border-radius: 2px; background: #f3f7ff; color: #52677f; font-size: 12px; line-height: 17px; }
+.cashback-direct-info strong { color: #17365d; font-weight: 600; }
+.cashback-direct-info-icon { display: grid; place-items: center; flex: 0 0 17px; width: 17px; height: 17px; border-radius: 50%; background: #e1ebff; color: #315fc4; font-size: 11px; font-weight: 700; }

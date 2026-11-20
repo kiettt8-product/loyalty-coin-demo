@@ -1954,7 +1954,7 @@ function renderPackages() {
       ? `<label class="field required cashback-value-wide"><span>Cashback Per User</span><div class="suffix-input"><input class="pkg-cashback" inputmode="numeric" value="${formattedNumber(pkg.cashback)}" ${editable ? "" : "disabled"} placeholder="Cashback Per User"><b>VND</b></div></label>`
       : cashbackMethod === "cashback-percent"
         ? `<label class="field required"><span>Cashback Percent</span><div class="suffix-input"><input class="pkg-cashback-percent" inputmode="decimal" value="${escapeHtml(pkg.cashbackPercent || "")}" ${editable ? "" : "disabled"} placeholder="Cashback Percent"><b>%</b></div></label>`
-        : `<div class="field cashback-direct-note cashback-value-wide"><span>Direct Cashback</span><small>External API provides the cashback amount. Use this Package ID to issue the cashback.</small></div>`;
+        : "";
     const cashbackLimitField = cashbackMethod === "cashback-percent"
       ? `<label class="field required"><span>Maximum Cashback Amount</span><div class="suffix-input"><input class="pkg-cashback-max" inputmode="numeric" value="${formattedNumber(pkg.cashbackMaxAmount)}" ${editable ? "" : "disabled"} placeholder="Maximum Cashback Amount"><b>VND</b></div></label>`
       : "";
@@ -1971,6 +1971,7 @@ function renderPackages() {
         <label class="field"><span>Estimated Users</span><input class="pkg-users" value="${money(users)}" disabled></label>`}
         ${showPackageId ? `<label class="field"><span>Package ID</span><input class="pkg-package-id" value="${pkg.packageId}" disabled></label>` : ""}
       </div>
+      ${isCashback && cashbackMethod === "direct-cashback" ? `<div class="cashback-direct-info"><span class="cashback-direct-info-icon" aria-hidden="true">i</span><span><strong>Amount comes from the external request.</strong> Include this Package ID to issue the cashback.</span></div>` : ""}
       ${historyExperience}</div>
     </section>`;
   }).join("");
