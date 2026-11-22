@@ -367,7 +367,7 @@
   <template id="triggerTemplate">
     <form class="screen trigger-screen" id="triggerForm" novalidate>
       <section class="trigger-general">
-        <label class="field required"><span>Tên Campaign</span><input placeholder="Tên Campaign" value="Trigger Loyalty Coin - New User"></label>
+        <label class="field required"><span>Tên Campaign</span><input placeholder="Tên Campaign" value="Trigger Based Campaign - New User"></label>
         <label class="field required"><span>Thời gian diễn ra campaign</span><div class="range-field"><input value="01/08/2026 00:00"><span>→</span><input value="31/12/2026 23:59"></div></label>
         <label class="field trigger-description"><span>Mô tả campaign:</span><input placeholder="Mô tả campaign"></label>
       </section>
@@ -391,10 +391,10 @@
 
             <h2>Hành động</h2>
             <div class="action-config-grid">
-              <label class="field required"><span>Hành động:</span><select><option>Phát xu</option></select></label>
+              <label class="field required"><span>Hành động:</span><select id="triggerActionType"><option value="coin">Phát xu</option><option value="cashback">Phát Cashback</option></select></label>
               <label class="field required"><span>Số lần tối đa user nhận được hành động</span><div class="limit-control"><input value="1"><select><option>per calendar day</option></select></div></label>
-              <label class="field required"><span>Campaign ID / MKT name</span><select id="triggerCampaign"><option value="">Chọn Loyalty Coin Campaign trong Promo Asset Campaign</option></select><small>Bạn cần tạo Loyalty Coin Campaign tại Promo Asset Campaign và được FA approve trước.</small></label>
-              <label class="field required"><span>Package ID - Số xu phát</span><select id="triggerPackage" disabled><option>Chọn Package ID - Số xu phát đã cấu hình</option></select></label>
+              <label class="field required"><span id="triggerCampaignLabel">Campaign ID / MKT name</span><select id="triggerCampaign"><option value="">Chọn Loyalty Coin Campaign trong Promo Asset Campaign</option></select><small id="triggerCampaignHint">Bạn cần tạo Loyalty Coin Campaign tại Promo Asset Campaign và được FA approve trước.</small></label>
+              <label class="field required"><span id="triggerPackageLabel">Package ID - Số xu phát</span><select id="triggerPackage" disabled><option>Chọn Package ID - Số xu phát đã cấu hình</option></select><small id="triggerDirectHint" hidden>Direct Cashback nhận amount từ request runtime; action cần có amount hợp lệ.</small></label>
             </div>
 
             <h2>Áp dụng cho nhóm người dùng (Segment)</h2>

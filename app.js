@@ -97,7 +97,12 @@ const assetCampaigns = [
   { id: 1017, name: "Voucher_Discount_721", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1007", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Auto Approved", label: "", owner: "nghiatn" },
   { id: 1018, name: "Voucher_Discount_703", code: "quantm6_Voucher_discount7", budget: 200000, rewards: "1108", type: "Massive", time: "01/02/2027 00:00", target: "503", status: "Approved", label: "", owner: "nghiatn" },
   { id: 2893, name: "[28/05/2026][DLS_260528_563][BAU]", code: "DLS_260528_563", budget: 30000000, packageIds: "20535, 20711", type: "Loyalty Coin", time: "15/05/2027 00:00", target: "Trigger Campaign", status: "Auto Approved", label: "BAU", owner: "kiettt8" },
-  { id: 998, name: "New_User_Coin", code: "ZPI_290426_118", budget: 18000000, packageIds: "19882", type: "Loyalty Coin", time: "31/12/2026 23:59", target: "Trigger Campaign", status: "In Use", label: "Growth", owner: "linhnt22" }
+  { id: 998, name: "New_User_Coin", code: "ZPI_290426_118", budget: 18000000, packageIds: "19882", type: "Loyalty Coin", time: "31/12/2026 23:59", target: "Trigger Campaign", status: "In Use", label: "Growth", owner: "linhnt22" },
+  { id: 1411, name: "Cashback_Approved_Demo", code: "CB_060426_001", budget: 5000000, packageIds: "31001, 31002, 31003", packages: [
+    { packageId: 31001, method: "cashback", cashback: 50000 },
+    { packageId: 31002, method: "cashback-percent", cashbackPercent: 2, cashbackMaxAmount: 50000 },
+    { packageId: 31003, method: "direct-cashback" }
+  ], type: "Cashback", time: "31/12/2026 23:59", target: "Trigger Campaign", status: "Approved", label: "ZPO", owner: "kiettt8" }
 ];
 
 const voucherAssets = [
@@ -2311,19 +2316,70 @@ function saveCampaignEdit(campaign) {
 }
 
 function initTrigger() {
+  const actionSelect = document.getElementById("triggerActionType");
   const campaignSelect = document.getElementById("triggerCampaign");
   const packageSelect = document.getElementById("triggerPackage");
-  const eligible = state.campaigns.filter(item => ["Approved", "Auto Approved", "In Use"].includes(item.status) && item.packageIds.length);
-  campaignSelect.innerHTML += eligible.map(item => `<option value="${item.id}">${item.id} - ${item.name}</option>`).join("");
+  const cashbackHint = document.getElementById("triggerDirectHint");
+  const eligibleCoins = state.campaigns.filter(item => ["Approved", "Auto Approved", "In Use"].includes(item.status) && item.packageIds.length);
+  const eligibleCashbacks = assetCampaigns.filter(item => item.type === "Cashback" && ["Approved", "In Use"].includes(item.status) && item.packages?.length && item.packageIds);
+  const campaignData = () => actionSelect.value === "cashback" ? eligibleCashbacks : eligibleCoins;
+  const methodSummary = pkg => {
+    if (pkg.method === "cashback-percent") return `${pkg.cashbackPercent}% · tối đa ${money(pkg.cashbackMaxAmount)} VND/user`;
+    if (pkg.method === "direct-cashback") return "Direct Cashback · amount từ request";
+    return `${money(pkg.cashback)} VND/user`;
+  };
+  const renderCampaignOptions = () => {
+    const isCashback = actionSelect.value === "cashback";
+    const choices = campaignData();
+    campaignSelect.value = "";
+    packageSelect.value = "";
+    packageSelect.disabled = true;
+    cashbackHint.hidden = true;
+    document.getElementById("triggerCampaignHint").textContent = isCashback
+      ? "Chỉ campaign Cashback đã được FA approve và có Package ID sẵn sàng mới dùng được."
+      : "Bạn cần tạo Loyalty Coin Campaign tại Promo Asset Campaign và được FA approve trước.";
+    campaignSelect.innerHTML = `<option value="">${isCashback ? "Chọn Cashback Campaign trong Promo Asset Campaign" : "Chọn Loyalty Coin Campaign trong Promo Asset Campaign"}</option>${choices.map(item => `<option value="${isCashback ? "cashback" : "coin"}:${item.id}">${item.id} - ${escapeHtml(item.name)}</option>`).join("")}`;
+    document.getElementById("triggerPackageLabel").textContent = isCashback ? "Package ID - Cashback" : "Package ID - Số xu phát";
+    packageSelect.innerHTML = `<option value="">${isCashback ? "Chọn Package ID - Cashback đã cấu hình" : "Chọn Package ID - Số xu phát đã cấu hình"}</option>`;
+  };
+  renderCampaignOptions();
+  actionSelect.onchange = () => {
+    clearFieldError(actionSelect);
+    clearFieldError(campaignSelect);
+    clearFieldError(packageSelect);
+    renderCampaignOptions();
+  };
   campaignSelect.onchange = () => {
-    const campaign = eligible.find(item => item.id === Number(campaignSelect.value));
+    clearFieldError(campaignSelect);
+    clearFieldError(packageSelect);
+    const [kind, rawId] = campaignSelect.value.split(":");
+    const campaign = campaignData().find(item => item.id === Number(rawId));
+    const isCashback = kind === "cashback" && Boolean(campaign);
     packageSelect.disabled = !campaign;
-    packageSelect.innerHTML = campaign ? `<option value="">Chọn Package ID - Số xu phát</option>${campaign.packageIds.map((id, index) => `<option value="${id}">ID ${id} - ${money(campaign.coins[index])} coin per user</option>`).join("")}` : "<option>Chọn Package ID - Số xu phát đã cấu hình</option>";
+    cashbackHint.hidden = true;
+    packageSelect.innerHTML = campaign ? `<option value="">${isCashback ? "Chọn Package ID - Cashback đã cấu hình" : "Chọn Package ID - Số xu phát"}</option>${isCashback
+      ? campaign.packages.map(pkg => `<option value="${pkg.packageId}" data-method="${pkg.method}">ID ${pkg.packageId} - ${methodSummary(pkg)}</option>`).join("")
+      : campaign.packageIds.map((id, index) => `<option value="${id}">ID ${id} - ${money(campaign.coins[index])} coin per user</option>`).join("")}` : `<option value="">${actionSelect.value === "cashback" ? "Chọn Package ID - Cashback đã cấu hình" : "Chọn Package ID - Số xu phát đã cấu hình"}</option>`;
+    packageSelect.onchange = () => {
+      clearFieldError(packageSelect);
+      const selected = campaign?.packages?.find(pkg => String(pkg.packageId) === packageSelect.value);
+      cashbackHint.hidden = !selected || selected.method !== "direct-cashback";
+    };
   };
   document.getElementById("triggerForm").onsubmit = event => {
     event.preventDefault();
-    if (!campaignSelect.value || !packageSelect.value) return toast("Chọn Campaign trước, sau đó chọn Package ID.", "error");
-    toast("Trigger Based Campaign đã được approve và distribute.");
+    resetValidation();
+    let valid = true;
+    if (!campaignSelect.value) {
+      setFieldError(campaignSelect, actionSelect.value === "cashback" ? "Cashback Campaign is required." : "Loyalty Coin Campaign is required.");
+      valid = false;
+    }
+    if (!packageSelect.value) {
+      setFieldError(packageSelect, "Package ID is required.");
+      valid = false;
+    }
+    if (!valid) return;
+    toast(actionSelect.value === "cashback" ? "Trigger Based Campaign đã được cấu hình để phát Cashback." : "Trigger Based Campaign đã được approve và distribute.");
   };
   document.querySelectorAll("[data-route]").forEach(button => button.onclick = () => route(button.dataset.route));
 }
