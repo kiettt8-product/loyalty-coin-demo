@@ -1979,8 +1979,8 @@ function renderPackages() {
       </div>
       ${isCashback ? `<div class="cashback-destination">
         <span class="cashback-destination-title">Cashback Destination</span>
-        <label class="cashback-destination-choice"><input class="pkg-is-mmf" type="checkbox" ${pkg.isMmf ? "checked" : ""} ${editable ? "" : "disabled"}><span>Credit cashback to MMF account</span></label>
-        <small>Uncheck to credit cashback to ZaloPay Wallet.</small>
+        <label class="cashback-destination-choice"><input class="pkg-is-mmf" type="checkbox" ${pkg.isMmf ? "checked" : ""} ${editable ? "" : "disabled"}><span>Send cashback to MMF account</span></label>
+        <small>Uncheck to send cashback to ZaloPay Wallet.</small>
       </div>` : ""}
       ${isCashback && cashbackMethod === "direct-cashback" ? `<div class="cashback-direct-info"><span class="cashback-direct-info-icon" aria-hidden="true">i</span><span><strong>Amount comes from the external request.</strong> Include this Package ID to issue the cashback.</span></div>` : ""}
       ${historyExperience}</div>
