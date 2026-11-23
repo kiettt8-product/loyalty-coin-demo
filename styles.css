@@ -1800,6 +1800,14 @@ fieldset.voucher-field { display: block; margin: 0; padding: 0; border: 0; }
 .cashback-value-wide { grid-column: span 2; }
 @media (max-width: 600px) { .cashback-value-wide { grid-column: 1 / -1; } }
 
+.cashback-destination { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 4px 12px; align-items: center; margin-top: 18px; padding: 12px 14px; border: 1px solid #e5eaf1; border-radius: 4px; background: #f8faff; }
+.cashback-destination-title { color: #001f3e; font-size: 13px; font-weight: 600; }
+.cashback-destination-choice { display: inline-flex; align-items: center; gap: 9px; width: fit-content; color: #001f3e; font-size: 13px; cursor: pointer; }
+.cashback-destination-choice input { width: 16px; height: 16px; margin: 0; accent-color: #0033c9; cursor: pointer; }
+.cashback-destination-choice input:disabled { cursor: not-allowed; }
+.cashback-destination small { grid-column: 2; color: #66798b; font-size: 11px; line-height: 16px; }
+@media (max-width: 600px) { .cashback-destination { grid-template-columns: 1fr; } .cashback-destination small { grid-column: 1; } }
+
 .cashback-direct-info { display: flex; align-items: center; gap: 9px; margin: 4px 0 18px; padding: 8px 12px; border-left: 3px solid #4a83f6; border-radius: 2px; background: #f3f7ff; color: #52677f; font-size: 12px; line-height: 17px; }
 .cashback-direct-info strong { color: #17365d; font-weight: 600; }
 .cashback-direct-info-icon { display: grid; place-items: center; flex: 0 0 17px; width: 17px; height: 17px; border-radius: 50%; background: #e1ebff; color: #315fc4; font-size: 11px; font-weight: 700; }

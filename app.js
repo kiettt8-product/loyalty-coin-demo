@@ -4,13 +4,14 @@ function formattedNumber(value) { return number(value) ? money(number(value)) : 
 function statusClass(value) { return value.toLowerCase().replaceAll(" ", "-"); }
 function packageKey() { return `pkg-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function escapeHtml(value) { return String(value || "").replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }
-function newPackage() { return { id: packageKey(), method: "budget", budget: "", originalBudget: "", consumedBudget: "0", coin: "", cashbackMethod: "cashback", cashback: "", cashbackPercent: "", cashbackMaxAmount: "", historyContent: "" }; }
+function newPackage() { return { id: packageKey(), method: "budget", budget: "", originalBudget: "", consumedBudget: "0", coin: "", cashbackMethod: "cashback", cashback: "", cashbackPercent: "", cashbackMaxAmount: "", isMmf: true, historyContent: "" }; }
 function clonePackages(packages) {
   return packages.map(pkg => ({
     ...pkg,
     id: packageKey(),
     originalBudget: String(pkg.budget || pkg.originalBudget || ""),
     consumedBudget: String(pkg.consumedBudget || 0),
+    isMmf: Boolean(pkg.isMmf),
     historyContent: String(pkg.historyContent || "")
   }));
 }
@@ -1933,8 +1934,8 @@ function renderPackages() {
             <div class="coin-history-preview-head"><strong>Preview on Zalopay app</strong><span>Giao dịch</span></div>
             <div class="cashback-transaction">
               <div class="cashback-wallet-mark"><img src="assets/figma-voucher/zalopay-app-icon.jpg" alt="ZaloPay"></div>
-              <span class="cashback-transaction-copy"><strong class="pkg-history-preview ${historyContent ? "" : "is-placeholder"}">${escapeHtml(historyContent || "Tiền hoàn từ chương trình ABC")}</strong><small>16:13 - 27/08/2026</small><small>Số dư ví: *******</small></span>
-              <span class="cashback-transaction-amount"><strong class="pkg-cashback-preview">${cashbackPreviewAmount}</strong><small>Thành công</small><span>Ví Zalopay</span></span>
+              <span class="cashback-transaction-copy"><strong class="pkg-history-preview ${historyContent ? "" : "is-placeholder"}">${escapeHtml(historyContent || "Tiền hoàn từ chương trình ABC")}</strong><small>16:13 - 27/08/2026</small><small class="pkg-cashback-balance-preview">${pkg.isMmf ? "Số dư MMF" : "Số dư ví"}: *******</small></span>
+              <span class="cashback-transaction-amount"><strong class="pkg-cashback-preview">${cashbackPreviewAmount}</strong><small>Thành công</small><span class="pkg-cashback-destination-preview">${pkg.isMmf ? "Tài khoản MMF" : "Ví ZaloPay"}</span></span>
             </div>
           </div>
         </div>`
@@ -1976,6 +1977,11 @@ function renderPackages() {
         <label class="field"><span>Estimated Users</span><input class="pkg-users" value="${money(users)}" disabled></label>`}
         ${showPackageId ? `<label class="field"><span>Package ID</span><input class="pkg-package-id" value="${pkg.packageId}" disabled></label>` : ""}
       </div>
+      ${isCashback ? `<div class="cashback-destination">
+        <span class="cashback-destination-title">Cashback Destination</span>
+        <label class="cashback-destination-choice"><input class="pkg-is-mmf" type="checkbox" ${pkg.isMmf ? "checked" : ""} ${editable ? "" : "disabled"}><span>Hoàn vào tài khoản MMF</span></label>
+        <small>Mặc định: MMF. Bỏ chọn để hoàn vào Ví ZaloPay. Áp dụng cho mọi lần phát từ package này.</small>
+      </div>` : ""}
       ${isCashback && cashbackMethod === "direct-cashback" ? `<div class="cashback-direct-info"><span class="cashback-direct-info-icon" aria-hidden="true">i</span><span><strong>Amount comes from the external request.</strong> Include this Package ID to issue the cashback.</span></div>` : ""}
       ${historyExperience}</div>
     </section>`;
@@ -1992,6 +1998,10 @@ function bindPackage(block) {
   block.querySelector(".pkg-cashback-method")?.addEventListener("change", event => {
     pkg.cashbackMethod = event.target.value;
     renderPackages();
+  });
+  block.querySelector(".pkg-is-mmf")?.addEventListener("change", event => {
+    pkg.isMmf = event.target.checked;
+    updatePackage(block, pkg);
   });
   [[".pkg-budget", "budget"], [".pkg-coin", "coin"]].forEach(([selector, key]) => block.querySelector(selector)?.addEventListener("input", event => {
     const numericValue = number(event.target.value);
@@ -2043,6 +2053,10 @@ function updatePackage(block, pkg) {
   if (block.querySelector(".pkg-cashback-preview")) {
     const preview = pkg.cashbackMethod === "cashback-percent" ? `${pkg.cashbackPercent || "0"}%` : pkg.cashbackMethod === "direct-cashback" ? "+99.999đ" : `+${money(pkg.cashback || 0)}đ`;
     block.querySelector(".pkg-cashback-preview").textContent = preview;
+  }
+  if (block.querySelector(".pkg-cashback-destination-preview")) {
+    block.querySelector(".pkg-cashback-destination-preview").textContent = pkg.isMmf ? "Tài khoản MMF" : "Ví ZaloPay";
+    block.querySelector(".pkg-cashback-balance-preview").textContent = `${pkg.isMmf ? "Số dư MMF" : "Số dư ví"}: *******`;
   }
   if (block.querySelector(".pkg-remaining")) block.querySelector(".pkg-remaining").value = money(remainingBudget);
   const preview = block.querySelector(".pkg-history-preview");
@@ -2278,6 +2292,7 @@ function submitCashbackCampaign(draft) {
     budget,
     rewards: "",
     packageIds: "",
+    packages: state.packages.map(pkg => ({ ...pkg, method: pkg.cashbackMethod, isMmf: Boolean(pkg.isMmf) })),
     type: "Cashback",
     time: isoToDisplay(document.getElementById("endTime").value),
     target: "Trigger Campaign",
