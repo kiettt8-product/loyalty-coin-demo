@@ -2336,7 +2336,7 @@ function initTrigger() {
   const packageSelect = document.getElementById("triggerPackage");
   const cashbackHint = document.getElementById("triggerDirectHint");
   const eligibleCoins = state.campaigns.filter(item => ["Approved", "Auto Approved", "In Use"].includes(item.status) && item.packageIds.length);
-  const eligibleCashbacks = assetCampaigns.filter(item => item.type === "Cashback" && ["Approved", "In Use"].includes(item.status) && item.packages?.length && item.packageIds);
+  const eligibleCashbacks = assetCampaigns.filter(item => item.type === "Cashback" && ["Approved", "Auto Approved", "In Use"].includes(item.status) && item.packages?.some(pkg => pkg.packageId && pkg.method !== "direct-cashback") && item.packageIds);
   const campaignData = () => actionSelect.value === "cashback" ? eligibleCashbacks : eligibleCoins;
   const methodSummary = pkg => {
     if (pkg.method === "cashback-percent") return `${pkg.cashbackPercent}% · tối đa ${money(pkg.cashbackMaxAmount)} VND/user`;
@@ -2351,7 +2351,7 @@ function initTrigger() {
     packageSelect.disabled = true;
     cashbackHint.hidden = true;
     document.getElementById("triggerCampaignHint").textContent = isCashback
-      ? "Chỉ campaign Cashback đã được FA approve và có Package ID sẵn sàng mới dùng được."
+      ? "Chỉ campaign đã được duyệt và có Package ID Cashback hoặc Cashback Percent sẵn sàng mới dùng được."
       : "Bạn cần tạo Loyalty Coin Campaign tại Promo Asset Campaign và được FA approve trước.";
     campaignSelect.innerHTML = `<option value="">${isCashback ? "Chọn Cashback Campaign trong Promo Asset Campaign" : "Chọn Loyalty Coin Campaign trong Promo Asset Campaign"}</option>${choices.map(item => `<option value="${isCashback ? "cashback" : "coin"}:${item.id}">${item.id} - ${escapeHtml(item.name)}</option>`).join("")}`;
     document.getElementById("triggerPackageLabel").textContent = isCashback ? "Package ID - Cashback" : "Package ID - Số xu phát";
@@ -2373,7 +2373,7 @@ function initTrigger() {
     packageSelect.disabled = !campaign;
     cashbackHint.hidden = true;
     packageSelect.innerHTML = campaign ? `<option value="">${isCashback ? "Chọn Package ID - Cashback đã cấu hình" : "Chọn Package ID - Số xu phát"}</option>${isCashback
-      ? campaign.packages.map(pkg => `<option value="${pkg.packageId}" data-method="${pkg.method}">ID ${pkg.packageId} - ${methodSummary(pkg)}</option>`).join("")
+      ? campaign.packages.filter(pkg => pkg.packageId && pkg.method !== "direct-cashback").map(pkg => `<option value="${pkg.packageId}" data-method="${pkg.method}">ID ${pkg.packageId} - ${methodSummary(pkg)}</option>`).join("")
       : campaign.packageIds.map((id, index) => `<option value="${id}">ID ${id} - ${money(campaign.coins[index])} coin per user</option>`).join("")}` : `<option value="">${actionSelect.value === "cashback" ? "Chọn Package ID - Cashback đã cấu hình" : "Chọn Package ID - Số xu phát đã cấu hình"}</option>`;
     packageSelect.onchange = () => {
       clearFieldError(packageSelect);
