@@ -1933,9 +1933,9 @@ function renderPackages() {
           <div class="coin-history-preview cashback-history-preview" aria-label="Preview nội dung lịch sử Cashback trên Zalopay app">
             <div class="coin-history-preview-head"><strong>Preview on Zalopay app</strong><span>Giao dịch</span></div>
             <div class="cashback-transaction">
-              <div class="cashback-wallet-mark"><img src="assets/figma-voucher/zalopay-app-icon.jpg" alt="ZaloPay"></div>
+              <div class="cashback-wallet-mark"><img src="assets/figma-voucher/zalopay-app-icon.jpg" alt="Zalopay"></div>
               <span class="cashback-transaction-copy"><strong class="pkg-history-preview ${historyContent ? "" : "is-placeholder"}">${escapeHtml(historyContent || "Tiền hoàn từ chương trình ABC")}</strong><small>16:13 - 27/08/2026</small><small class="pkg-cashback-balance-preview">${pkg.isMmf ? "Số dư MMF" : "Số dư ví"}: *******</small></span>
-              <span class="cashback-transaction-amount"><strong class="pkg-cashback-preview">${cashbackPreviewAmount}</strong><small>Thành công</small><span class="pkg-cashback-destination-preview">${pkg.isMmf ? "Tài khoản MMF" : "Ví ZaloPay"}</span></span>
+              <span class="cashback-transaction-amount"><strong class="pkg-cashback-preview">${cashbackPreviewAmount}</strong><small>Thành công</small><span class="pkg-cashback-destination-preview">${pkg.isMmf ? "Tài khoản MMF" : "Ví Zalopay"}</span></span>
             </div>
           </div>
         </div>`
@@ -1980,7 +1980,7 @@ function renderPackages() {
       ${isCashback ? `<div class="cashback-destination">
         <span class="cashback-destination-title">Cashback Destination</span>
         <label class="cashback-destination-choice"><input class="pkg-is-mmf" type="checkbox" ${pkg.isMmf ? "checked" : ""} ${editable ? "" : "disabled"}><span>Send cashback to MMF account</span></label>
-        <small>Uncheck to send cashback to ZaloPay Wallet.</small>
+        <small>Uncheck to send cashback to Zalopay Wallet.</small>
       </div>` : ""}
       ${isCashback && cashbackMethod === "direct-cashback" ? `<div class="cashback-direct-info"><span class="cashback-direct-info-icon" aria-hidden="true">i</span><span><strong>Amount comes from the external request.</strong> Include this Package ID to issue the cashback.</span></div>` : ""}
       ${historyExperience}</div>
@@ -2055,7 +2055,7 @@ function updatePackage(block, pkg) {
     block.querySelector(".pkg-cashback-preview").textContent = preview;
   }
   if (block.querySelector(".pkg-cashback-destination-preview")) {
-    block.querySelector(".pkg-cashback-destination-preview").textContent = pkg.isMmf ? "Tài khoản MMF" : "Ví ZaloPay";
+    block.querySelector(".pkg-cashback-destination-preview").textContent = pkg.isMmf ? "Tài khoản MMF" : "Ví Zalopay";
     block.querySelector(".pkg-cashback-balance-preview").textContent = `${pkg.isMmf ? "Số dư MMF" : "Số dư ví"}: *******`;
   }
   if (block.querySelector(".pkg-remaining")) block.querySelector(".pkg-remaining").value = money(remainingBudget);
