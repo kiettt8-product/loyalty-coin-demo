@@ -103,7 +103,8 @@ const assetCampaigns = [
     { packageId: 31001, method: "cashback", cashback: 50000 },
     { packageId: 31002, method: "cashback-percent", cashbackPercent: 2, cashbackMaxAmount: 50000 },
     { packageId: 31003, method: "direct-cashback" }
-  ], type: "Cashback", time: "31/12/2026 23:59", target: "Trigger Campaign", status: "Approved", label: "ZPO", owner: "kiettt8" }
+  ], type: "Cashback", time: "31/12/2026 23:59", target: "Trigger Campaign", status: "Approved", label: "ZPO", owner: "kiettt8" },
+  { id: 1412, name: "Cashback_Performance_Demo", code: "CB_251126_001", budget: 5000000, packageIds: "31001, 31002", rewards: "", type: "Cashback", time: "31/12/2026 23:59", target: "Trigger Campaign", status: "In Use", label: "ZPO", owner: "kiettt8" }
 ];
 
 const voucherAssets = [
@@ -655,6 +656,7 @@ const templates = {
   "asset-massive": document.getElementById("assetMassiveTemplate"),
   "asset-coin-create": document.getElementById("formTemplate"),
   "asset-cashback-create": document.getElementById("formTemplate"),
+  "asset-cashback-report": document.getElementById("cashbackReportTemplate"),
   "voucher-assets": document.getElementById("voucherAssetListTemplate"),
   "voucher-create": document.getElementById("voucherAssetCreateTemplate"),
   "promotion-list": document.getElementById("promotionListTemplate"),
@@ -766,7 +768,7 @@ function route(name, payload = {}) {
   document.querySelectorAll("[data-route]").forEach(button => button.classList.toggle("active",
     button.dataset.route === name
     || (name === "form" && button.dataset.route === "list")
-    || (["asset-massive", "asset-coin-create", "asset-cashback-create"].includes(name) && button.dataset.route === "asset-list")
+    || (["asset-massive", "asset-coin-create", "asset-cashback-create", "asset-cashback-report"].includes(name) && button.dataset.route === "asset-list")
     || (name === "voucher-create" && button.dataset.route === "voucher-assets")
     || (name.startsWith("promotion-") && button.dataset.route === "promotion-list")
     || (name === "budget-topup-detail" && button.dataset.route === "budget-approval")
@@ -782,6 +784,7 @@ function route(name, payload = {}) {
   if (name === "asset-massive") initAssetMassive();
   if (name === "asset-coin-create") initForm({ mode: "create", returnRoute: "asset-list" });
   if (name === "asset-cashback-create") initForm({ mode: "create", returnRoute: "asset-list" });
+  if (name === "asset-cashback-report") initCashbackReport(payload);
   if (name === "voucher-assets") initVoucherAssetList();
   if (name === "voucher-create") initVoucherAssetCreate();
   if (name === "promotion-list") initPromotionList();
@@ -1592,7 +1595,7 @@ function renderAssetRows(rows = assetCampaigns) {
   const body = document.getElementById("assetCampaignRows");
   body.innerHTML = rows.map(item => `<tr>
     <td>${item.id}</td><td title="${item.name}">${item.name}</td><td title="${item.code}">${item.code}</td><td>${money(item.budget)}</td><td>${assetIdentifierCell(item)}</td><td>${item.type}</td><td>${item.time}</td><td><a href="#" title="${item.target}">${item.target}</a></td><td><span class="status ${statusClass(item.status)}">${item.status}</span></td><td title="${item.label}">${item.label}</td><td>${item.owner}</td>
-    <td><div class="asset-row-actions">${assetActionIcon(item.status === "Draft" ? "approve" : "stop", item.status === "Draft" ? "Approve" : "Stop")}${assetActionIcon("clone", "Clone")}${assetActionIcon("edit", "Edit")}${item.status === "Draft" ? assetActionIcon("delete", "Delete") : ""}</div></td>
+    <td><div class="asset-row-actions">${item.type === "Cashback" && ["In Use", "Ended"].includes(item.status) ? `<button type="button" class="asset-icon-button cashback-report-action" data-cashback-report="${item.id}" aria-label="View Report" title="View Report"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 20h16M6 17v-5M11 17V7M16 17V4M21 17v-8"/></svg></button>` : ""}${assetActionIcon(item.status === "Draft" ? "approve" : "stop", item.status === "Draft" ? "Approve" : "Stop")}${assetActionIcon("clone", "Clone")}${assetActionIcon("edit", "Edit")}${item.status === "Draft" ? assetActionIcon("delete", "Delete") : ""}</div></td>
   </tr>`).join("");
   document.getElementById("assetItemCount").textContent = rows.length ? `1-${rows.length} of 940 items` : "0 items";
 }
@@ -1629,9 +1632,28 @@ function initAssetList() {
     renderAssetRows(assetCampaigns.filter(item => (!id || String(item.id).includes(id) || item.rewards?.includes(id) || item.packageIds?.includes(id)) && (!mkt || item.name.toLowerCase().includes(mkt) || item.code.toLowerCase().includes(mkt)) && (!type || item.type === type) && (!status || item.status === status) && (!label || item.label.includes(label)) && (!owner || item.owner === owner)));
   };
   main.onclick = event => {
+    const report = event.target.closest("[data-cashback-report]");
+    if (report) return route("asset-cashback-report", { id: Number(report.dataset.cashbackReport) });
     const action = event.target.closest(".asset-icon-button");
     if (action) toast(`${action.getAttribute("aria-label")} action — demo only.`);
   };
+}
+
+function initCashbackReport({ id } = {}) {
+  const campaign = assetCampaigns.find(item => item.id === id && item.type === "Cashback");
+  if (!campaign) return route("asset-list");
+  document.getElementById("reportCampaignId").textContent = `#${campaign.id}`;
+  document.getElementById("reportMktCode").textContent = campaign.code;
+  document.getElementById("reportMktName").textContent = campaign.name;
+  const status = document.querySelector(".cashback-report-top .status");
+  status.textContent = campaign.status; status.className = `status ${statusClass(campaign.status)}`;
+  document.getElementById("cashbackReportBack").onclick = () => route("asset-list");
+  document.querySelectorAll("[data-report-tab]").forEach(button => button.addEventListener("click", () => {
+    const tab = button.dataset.reportTab;
+    document.querySelectorAll("[data-report-tab]").forEach(item => { const active = item === button; item.classList.toggle("active", active); item.setAttribute("aria-selected", String(active)); });
+    document.getElementById("cashbackReportBudget").hidden = tab !== "budget";
+    document.getElementById("cashbackReportDistribution").hidden = tab !== "distribution";
+  }));
 }
 
 function assetRewardMarkup(index) {
