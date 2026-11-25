@@ -1642,11 +1642,10 @@ function initAssetList() {
 function initCashbackReport({ id } = {}) {
   const campaign = assetCampaigns.find(item => item.id === id && item.type === "Cashback");
   if (!campaign) return route("asset-list");
-  document.getElementById("reportCampaignId").textContent = `#${campaign.id}`;
+  document.getElementById("reportCampaignId").textContent = campaign.id;
   document.getElementById("reportMktCode").textContent = campaign.code;
   document.getElementById("reportMktName").textContent = campaign.name;
-  const status = document.querySelector(".cashback-report-top .status");
-  status.textContent = campaign.status; status.className = `status ${statusClass(campaign.status)}`;
+  document.getElementById("reportBudgetCampaignName").textContent = campaign.name;
   document.getElementById("cashbackReportBack").onclick = () => route("asset-list");
   document.querySelectorAll("[data-report-tab]").forEach(button => button.addEventListener("click", () => {
     const tab = button.dataset.reportTab;
