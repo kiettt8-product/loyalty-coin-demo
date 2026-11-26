@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Loyalty Coin Campaign Demo</title>
   <link rel="icon" type="image/svg+xml" href="assets/loyalty-coin.svg">
-      <link rel="stylesheet" href="styles.css?v=cashback-safety-v1">
+      <link rel="stylesheet" href="styles.css?v=cashback-segment-note-v2">
 </head>
 <body>
   <header class="topbar">
@@ -408,26 +408,22 @@
               <label class="field required"><span>Hành động:</span><select id="triggerActionType"><option value="coin">Phát xu</option><option value="cashback">Phát Cashback</option></select></label>
               <label class="field required"><span>Số lần tối đa user nhận được hành động</span><div class="limit-control"><input value="1"><select><option>per calendar day</option></select></div></label>
               <label class="field required"><span id="triggerCampaignLabel">Campaign ID / MKT name</span><select id="triggerCampaign"><option value="">Chọn Loyalty Coin Campaign trong Promo Asset Campaign</option></select><small id="triggerCampaignHint">Bạn cần tạo Loyalty Coin Campaign tại Promo Asset Campaign và được FA approve trước.</small></label>
-              <label class="field required"><span id="triggerPackageLabel">Package ID - Số xu phát</span><select id="triggerPackage" disabled><option>Chọn Package ID - Số xu phát đã cấu hình</option></select><small id="triggerDirectHint" hidden>Direct Cashback nhận amount từ request runtime; action cần có amount hợp lệ.</small><small id="triggerPercentSupportNote" class="trigger-percent-support-note" hidden>Hiện chỉ hỗ trợ tính Cashback Percent trên Order Amount. Chưa hỗ trợ Transaction Fee hoặc field khác.</small></label>
+              <label class="field required"><span id="triggerPackageLabel">Package ID - Số xu phát</span><select id="triggerPackage" disabled><option>Chọn Package ID - Số xu phát đã cấu hình</option></select></label>
             </div>
 
             <h2>Áp dụng cho nhóm người dùng (Segment)</h2>
             <p>Hành động này được thực hiện cho nhóm người dùng nào</p>
             <div class="segment-row trigger-segment-row">
-              <label class="field" id="triggerSegmentField"><span>Segment</span><select id="triggerSegment"><option value="">Chọn Segment</option><option value="payment-active">Payment users — active 30 days</option><option value="mmf-active">MMF account holders</option><option value="growth-cohort">Growth cohort — recent 30 days</option></select><small id="triggerSegmentHint" hidden>Segment is required for the Cashback action.</small></label>
-              <label class="field"><span>Condition</span><select id="triggerSegmentOperator"><option value="IN" selected>IN</option></select><small id="triggerSegmentOperatorHint" hidden>Cashback action supports IN only.</small></label>
+              <label class="field" id="triggerSegmentField"><span>Segment</span><select id="triggerSegment"><option value="">Chọn Segment</option><option value="payment-active">Payment users — active 30 days</option><option value="mmf-active">MMF account holders</option><option value="growth-cohort">Growth cohort — recent 30 days</option></select></label>
+              <label class="field"><span>Condition</span><select id="triggerSegmentOperator"><option value="IN" selected>IN</option></select></label>
             </div>
-            <section class="trigger-cashback-safety" id="triggerCashbackSafety" hidden>
-              <div class="trigger-cashback-safety-header"><div><h3>Kiểm tra trước khi chạy</h3><p>Chạy thử điều kiện hiện tại để xem có bao nhiêu user và lượt trigger phù hợp. Chạy thử không phát Cashback.</p></div><span class="trigger-demo-badge">Minh họa</span></div>
-              <div class="trigger-cashback-test-controls"><label class="field"><span>Khoảng thời gian thống kê</span><select id="triggerTestPeriod"><option value="1h">1 giờ gần nhất</option><option value="24h" selected>24 giờ gần nhất</option><option value="7d">7 ngày gần nhất</option></select></label><button type="button" class="btn secondary" id="runCashbackTest" disabled>Chạy thử flow</button></div>
-              <div id="triggerCashbackTestResults" class="trigger-cashback-test-results" hidden>
-                <div class="trigger-test-metric"><span>User thỏa điều kiện</span><strong id="triggerTestUsers">—</strong><small>User duy nhất</small></div>
-                <div class="trigger-test-metric"><span>Lượt trigger thỏa điều kiện</span><strong id="triggerTestEvents">—</strong><small>Có thể gồm nhiều lượt của cùng một user</small></div>
-                <p class="trigger-test-data-note">Số liệu lịch sử chỉ để tham khảo, không đảm bảo volume thực tế. Cập nhật lúc <span id="triggerTestUpdatedAt">—</span>.</p>
-                <label class="trigger-test-confirm"><input id="triggerTestAcknowledged" type="checkbox"><span>Đã xem kết quả chạy thử và xác nhận trước khi phân phối.</span></label>
-              </div>
-              <p id="triggerTestRequiredNote" class="trigger-test-required-note">Cần chạy thử và xác nhận kết quả trước khi chọn Approve and Distribute.</p>
-            </section>
+            <aside class="trigger-cashback-note" id="triggerCashbackNote" hidden>
+              <span class="trigger-cashback-note-badge">Lưu ý</span>
+              <ul>
+                <li><strong>Cashback Percent:</strong> hiện chỉ tính trên Order Amount của giao dịch thanh toán; chưa hỗ trợ Transaction Fee hoặc field khác.</li>
+                <li><strong>Direct Cashback:</strong> không dùng trong Trigger Based Campaign; số tiền được truyền theo request phát Cashback.</li>
+              </ul>
+            </aside>
             <label class="field required risk-field"><span>Thực hiện hành động chỉ với người dùng là</span><div class="segment-row"><select><option>Đánh giá rủi ro toàn hệ thống</option></select><select><option>Normal user</option></select></div></label>
             <button type="button" class="advanced">Điều kiện nâng cao</button>
           </div>
@@ -927,6 +923,6 @@
     </div>
   </template>
 
-      <script src="app.js?v=cashback-safety-v1"></script>
+      <script src="app.js?v=cashback-segment-note-v2"></script>
 </body>
 </html>

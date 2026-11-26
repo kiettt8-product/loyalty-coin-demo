@@ -2355,24 +2355,9 @@ function initTrigger() {
   const actionSelect = document.getElementById("triggerActionType");
   const campaignSelect = document.getElementById("triggerCampaign");
   const packageSelect = document.getElementById("triggerPackage");
-  const cashbackHint = document.getElementById("triggerDirectHint");
-  const percentSupportNote = document.getElementById("triggerPercentSupportNote");
   const segmentSelect = document.getElementById("triggerSegment");
   const segmentField = document.getElementById("triggerSegmentField");
-  const segmentHint = document.getElementById("triggerSegmentHint");
-  const safetyPanel = document.getElementById("triggerCashbackSafety");
-  const testPeriod = document.getElementById("triggerTestPeriod");
-  const runTestButton = document.getElementById("runCashbackTest");
-  const testResults = document.getElementById("triggerCashbackTestResults");
-  const testAcknowledged = document.getElementById("triggerTestAcknowledged");
-  const testRequiredNote = document.getElementById("triggerTestRequiredNote");
-  const submitButton = document.getElementById("triggerSubmit");
-  let cashbackTestPassed = false;
-  const sampleReachByPeriod = {
-    "1h": { users: "86", events: "102" },
-    "24h": { users: "1.240", events: "1.684" },
-    "7d": { users: "5.860", events: "8.210" }
-  };
+  const cashbackNote = document.getElementById("triggerCashbackNote");
   const eligibleCoins = state.campaigns.filter(item => ["Approved", "Auto Approved", "In Use"].includes(item.status) && item.packageIds.length);
   const eligibleCashbacks = assetCampaigns.filter(item => item.type === "Cashback" && ["Approved", "Auto Approved", "In Use"].includes(item.status) && item.packages?.some(pkg => pkg.packageId && pkg.method !== "direct-cashback") && item.packageIds);
   const campaignData = () => actionSelect.value === "cashback" ? eligibleCashbacks : eligibleCoins;
@@ -2382,42 +2367,22 @@ function initTrigger() {
     return `${money(pkg.cashback)} VND/lượt phát`;
   };
   const isCashbackAction = () => actionSelect.value === "cashback";
-  const resetCashbackTest = () => {
-    cashbackTestPassed = false;
-    testResults.hidden = true;
-    testAcknowledged.checked = false;
-    testRequiredNote.hidden = !isCashbackAction();
-    updateCashbackSafetyState();
-  };
-  const updateCashbackSafetyState = () => {
-    const isCashback = isCashbackAction();
-    const readyToTest = Boolean(campaignSelect.value && packageSelect.value && segmentSelect.value);
-    const readyToSubmit = cashbackTestPassed && testAcknowledged.checked;
-    runTestButton.disabled = !isCashback || !readyToTest;
-    submitButton.disabled = isCashback && !readyToSubmit;
-    testRequiredNote.hidden = !isCashback || readyToSubmit;
-  };
   const renderCampaignOptions = () => {
     const isCashback = actionSelect.value === "cashback";
     const choices = campaignData();
     campaignSelect.value = "";
     packageSelect.value = "";
     packageSelect.disabled = true;
-    cashbackHint.hidden = true;
-    percentSupportNote.hidden = true;
-    safetyPanel.hidden = !isCashback;
+    cashbackNote.hidden = !isCashback;
     segmentField.classList.toggle("required", isCashback);
-    segmentHint.hidden = !isCashback;
-    document.getElementById("triggerSegmentOperatorHint").hidden = !isCashback;
     document.getElementById("triggerSegmentOperator").innerHTML = '<option value="IN" selected>IN</option>';
     segmentSelect.value = "";
-    document.getElementById("triggerCampaignHint").textContent = isCashback
-      ? "Chỉ campaign đã được duyệt và có Package ID Cashback hoặc Cashback Percent sẵn sàng mới dùng được. Direct Cashback không hỗ trợ trong Trigger Based Campaign."
-      : "Bạn cần tạo Loyalty Coin Campaign tại Promo Asset Campaign và được FA approve trước.";
+    const campaignHint = document.getElementById("triggerCampaignHint");
+    campaignHint.hidden = isCashback;
+    campaignHint.textContent = "Bạn cần tạo Loyalty Coin Campaign tại Promo Asset Campaign và được FA approve trước.";
     campaignSelect.innerHTML = `<option value="">${isCashback ? "Chọn Cashback Campaign trong Promo Asset Campaign" : "Chọn Loyalty Coin Campaign trong Promo Asset Campaign"}</option>${choices.map(item => `<option value="${isCashback ? "cashback" : "coin"}:${item.id}">${item.id} - ${escapeHtml(item.name)}</option>`).join("")}`;
     document.getElementById("triggerPackageLabel").textContent = isCashback ? "Package ID - Cashback" : "Package ID - Số xu phát";
     packageSelect.innerHTML = `<option value="">${isCashback ? "Chọn Package ID - Cashback đã cấu hình" : "Chọn Package ID - Số xu phát đã cấu hình"}</option>`;
-    resetCashbackTest();
   };
   renderCampaignOptions();
   actionSelect.onchange = () => {
@@ -2428,42 +2393,20 @@ function initTrigger() {
   };
   segmentSelect.onchange = () => {
     clearFieldError(segmentSelect);
-    resetCashbackTest();
-  };
-  testPeriod.onchange = resetCashbackTest;
-  testAcknowledged.onchange = updateCashbackSafetyState;
-  runTestButton.onclick = () => {
-    if (!campaignSelect.value || !packageSelect.value || !segmentSelect.value) return;
-    const result = sampleReachByPeriod[testPeriod.value] || sampleReachByPeriod["24h"];
-    document.getElementById("triggerTestUsers").textContent = result.users;
-    document.getElementById("triggerTestEvents").textContent = result.events;
-    document.getElementById("triggerTestUpdatedAt").textContent = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date());
-    testResults.hidden = false;
-    cashbackTestPassed = true;
-    testAcknowledged.checked = false;
-    updateCashbackSafetyState();
   };
   campaignSelect.onchange = () => {
     clearFieldError(campaignSelect);
     clearFieldError(packageSelect);
-    resetCashbackTest();
     const [kind, rawId] = campaignSelect.value.split(":");
     const campaign = campaignData().find(item => item.id === Number(rawId));
     const isCashback = kind === "cashback" && Boolean(campaign);
     packageSelect.disabled = !campaign;
-    cashbackHint.hidden = true;
     packageSelect.innerHTML = campaign ? `<option value="">${isCashback ? "Chọn Package ID - Cashback đã cấu hình" : "Chọn Package ID - Số xu phát"}</option>${isCashback
       ? campaign.packages.filter(pkg => pkg.packageId && pkg.method !== "direct-cashback").map(pkg => `<option value="${pkg.packageId}" data-method="${pkg.method}">ID ${pkg.packageId} - ${methodSummary(pkg)}</option>`).join("")
       : campaign.packageIds.map((id, index) => `<option value="${id}">ID ${id} - ${money(campaign.coins[index])} coin per user</option>`).join("")}` : `<option value="">${actionSelect.value === "cashback" ? "Chọn Package ID - Cashback đã cấu hình" : "Chọn Package ID - Số xu phát đã cấu hình"}</option>`;
     packageSelect.onchange = () => {
       clearFieldError(packageSelect);
-      const selected = campaign?.packages?.find(pkg => String(pkg.packageId) === packageSelect.value);
-      cashbackHint.hidden = !selected || selected.method !== "direct-cashback";
-      percentSupportNote.hidden = !selected || selected.method !== "cashback-percent";
-      resetCashbackTest();
     };
-    percentSupportNote.hidden = true;
-    resetCashbackTest();
   };
   document.getElementById("triggerForm").onsubmit = event => {
     event.preventDefault();
@@ -2479,10 +2422,6 @@ function initTrigger() {
     }
     if (isCashbackAction() && !segmentSelect.value) {
       setFieldError(segmentSelect, "Segment is required for the Cashback action.");
-      valid = false;
-    }
-    if (isCashbackAction() && !(cashbackTestPassed && testAcknowledged.checked)) {
-      toast("Chạy thử flow và xác nhận kết quả trước khi phân phối Cashback.", "error");
       valid = false;
     }
     if (!valid) return;
