@@ -1973,19 +1973,19 @@ function renderPackages() {
           </div>
         </div>`;
     const cashbackMethodOptions = [
-      ["cashback", "Cashback"],
+      ["cashback", "Fixed Cashback Amount"],
       ["cashback-percent", "Cashback Percent"],
       ["direct-cashback", "Direct Cashback"]
     ];
     const cashbackValueField = cashbackMethod === "cashback"
-      ? `<label class="field required cashback-value-wide"><span>Cashback Per User</span><div class="suffix-input"><input class="pkg-cashback" inputmode="numeric" value="${formattedNumber(pkg.cashback)}" ${editable ? "" : "disabled"} placeholder="Cashback Per User"><b>VND</b></div></label>`
+      ? `<label class="field required cashback-value-wide"><span>Cashback Amount</span><div class="suffix-input"><input class="pkg-cashback" inputmode="numeric" value="${formattedNumber(pkg.cashback)}" ${editable ? "" : "disabled"} placeholder="Cashback Amount"><b>VND</b></div><small>Mỗi lần người dùng đủ điều kiện nhận Cashback, hệ thống hoàn số tiền này. Số lần tối đa phụ thuộc vào rule của campaign.</small></label>`
       : cashbackMethod === "cashback-percent"
         ? `<label class="field required"><span>Cashback Percent</span><div class="suffix-input"><input class="pkg-cashback-percent" inputmode="decimal" value="${escapeHtml(pkg.cashbackPercent || "")}" ${editable ? "" : "disabled"} placeholder="Cashback Percent"><b>%</b></div></label>`
         : "";
     const cashbackLimitField = cashbackMethod === "cashback-percent"
-      ? `<label class="field required"><span>Maximum Cashback Amount</span><div class="suffix-input"><input class="pkg-cashback-max" inputmode="numeric" value="${formattedNumber(pkg.cashbackMaxAmount)}" ${editable ? "" : "disabled"} placeholder="Maximum Cashback Amount"><b>VND</b></div></label>`
+      ? `<label class="field required"><span>Maximum Cashback Amount</span><div class="suffix-input"><input class="pkg-cashback-max" inputmode="numeric" value="${formattedNumber(pkg.cashbackMaxAmount)}" ${editable ? "" : "disabled"} placeholder="Maximum Cashback Amount"><b>VND</b></div><small>Giới hạn số tiền hoàn tối đa cho mỗi lần phát.</small></label>`
       : "";
-    const cashbackFields = `<label class="field required"><span>Cashback Distribution Method</span><select class="pkg-cashback-method" ${editable ? "" : "disabled"}>${cashbackMethodOptions.map(([value, label]) => `<option value="${value}" ${cashbackMethod === value ? "selected" : ""}>${label}</option>`).join("")}</select></label>
+    const cashbackFields = `<label class="field required"><span>Cashback Type</span><select class="pkg-cashback-method" ${editable ? "" : "disabled"}>${cashbackMethodOptions.map(([value, label]) => `<option value="${value}" ${cashbackMethod === value ? "selected" : ""}>${label}</option>`).join("")}</select></label>
         ${cashbackValueField}${cashbackLimitField}`;
     return `<section class="crm-section package-block" data-id="${pkg.id}">
       <h1>Distribute ${isCashback ? "Cashback" : "Loyalty Coin"}</h1>${editable && state.packages.length > 1 ? "<button type='button' class='remove-package'>×</button>" : ""}
@@ -2236,7 +2236,7 @@ function validateCampaign() {
     const isCashback = state.route === "asset-cashback-create";
     const cashbackMethod = pkg.cashbackMethod || "cashback";
     const amountRules = isCashback
-      ? cashbackMethod === "cashback" ? [[".pkg-cashback", !number(pkg.cashback), "Cashback Per User is required"]]
+      ? cashbackMethod === "cashback" ? [[".pkg-cashback", !number(pkg.cashback), "Cashback Amount is required"]]
         : cashbackMethod === "cashback-percent" ? [
           [".pkg-cashback-percent", !(Number(pkg.cashbackPercent) > 0 && Number(pkg.cashbackPercent) <= 100), "Cashback Percent must be greater than 0 and at most 100%"],
           [".pkg-cashback-max", !number(pkg.cashbackMaxAmount), "Maximum Cashback Amount is required"]
@@ -2356,13 +2356,46 @@ function initTrigger() {
   const campaignSelect = document.getElementById("triggerCampaign");
   const packageSelect = document.getElementById("triggerPackage");
   const cashbackHint = document.getElementById("triggerDirectHint");
+  const percentSupportNote = document.getElementById("triggerPercentSupportNote");
+  const segmentSelect = document.getElementById("triggerSegment");
+  const segmentField = document.getElementById("triggerSegmentField");
+  const segmentHint = document.getElementById("triggerSegmentHint");
+  const safetyPanel = document.getElementById("triggerCashbackSafety");
+  const testPeriod = document.getElementById("triggerTestPeriod");
+  const runTestButton = document.getElementById("runCashbackTest");
+  const testResults = document.getElementById("triggerCashbackTestResults");
+  const testAcknowledged = document.getElementById("triggerTestAcknowledged");
+  const testRequiredNote = document.getElementById("triggerTestRequiredNote");
+  const submitButton = document.getElementById("triggerSubmit");
+  let cashbackTestPassed = false;
+  const sampleReachByPeriod = {
+    "1h": { users: "86", events: "102" },
+    "24h": { users: "1.240", events: "1.684" },
+    "7d": { users: "5.860", events: "8.210" }
+  };
   const eligibleCoins = state.campaigns.filter(item => ["Approved", "Auto Approved", "In Use"].includes(item.status) && item.packageIds.length);
   const eligibleCashbacks = assetCampaigns.filter(item => item.type === "Cashback" && ["Approved", "Auto Approved", "In Use"].includes(item.status) && item.packages?.some(pkg => pkg.packageId && pkg.method !== "direct-cashback") && item.packageIds);
   const campaignData = () => actionSelect.value === "cashback" ? eligibleCashbacks : eligibleCoins;
   const methodSummary = pkg => {
-    if (pkg.method === "cashback-percent") return `${pkg.cashbackPercent}% · tối đa ${money(pkg.cashbackMaxAmount)} VND/user`;
+    if (pkg.method === "cashback-percent") return `${pkg.cashbackPercent}% · tối đa ${money(pkg.cashbackMaxAmount)} VND/lượt phát`;
     if (pkg.method === "direct-cashback") return "Direct Cashback · amount từ request";
-    return `${money(pkg.cashback)} VND/user`;
+    return `${money(pkg.cashback)} VND/lượt phát`;
+  };
+  const isCashbackAction = () => actionSelect.value === "cashback";
+  const resetCashbackTest = () => {
+    cashbackTestPassed = false;
+    testResults.hidden = true;
+    testAcknowledged.checked = false;
+    testRequiredNote.hidden = !isCashbackAction();
+    updateCashbackSafetyState();
+  };
+  const updateCashbackSafetyState = () => {
+    const isCashback = isCashbackAction();
+    const readyToTest = Boolean(campaignSelect.value && packageSelect.value && segmentSelect.value);
+    const readyToSubmit = cashbackTestPassed && testAcknowledged.checked;
+    runTestButton.disabled = !isCashback || !readyToTest;
+    submitButton.disabled = isCashback && !readyToSubmit;
+    testRequiredNote.hidden = !isCashback || readyToSubmit;
   };
   const renderCampaignOptions = () => {
     const isCashback = actionSelect.value === "cashback";
@@ -2371,12 +2404,20 @@ function initTrigger() {
     packageSelect.value = "";
     packageSelect.disabled = true;
     cashbackHint.hidden = true;
+    percentSupportNote.hidden = true;
+    safetyPanel.hidden = !isCashback;
+    segmentField.classList.toggle("required", isCashback);
+    segmentHint.hidden = !isCashback;
+    document.getElementById("triggerSegmentOperatorHint").hidden = !isCashback;
+    document.getElementById("triggerSegmentOperator").innerHTML = '<option value="IN" selected>IN</option>';
+    segmentSelect.value = "";
     document.getElementById("triggerCampaignHint").textContent = isCashback
-      ? "Chỉ campaign đã được duyệt và có Package ID Cashback hoặc Cashback Percent sẵn sàng mới dùng được."
+      ? "Chỉ campaign đã được duyệt và có Package ID Cashback hoặc Cashback Percent sẵn sàng mới dùng được. Direct Cashback không hỗ trợ trong Trigger Based Campaign."
       : "Bạn cần tạo Loyalty Coin Campaign tại Promo Asset Campaign và được FA approve trước.";
     campaignSelect.innerHTML = `<option value="">${isCashback ? "Chọn Cashback Campaign trong Promo Asset Campaign" : "Chọn Loyalty Coin Campaign trong Promo Asset Campaign"}</option>${choices.map(item => `<option value="${isCashback ? "cashback" : "coin"}:${item.id}">${item.id} - ${escapeHtml(item.name)}</option>`).join("")}`;
     document.getElementById("triggerPackageLabel").textContent = isCashback ? "Package ID - Cashback" : "Package ID - Số xu phát";
     packageSelect.innerHTML = `<option value="">${isCashback ? "Chọn Package ID - Cashback đã cấu hình" : "Chọn Package ID - Số xu phát đã cấu hình"}</option>`;
+    resetCashbackTest();
   };
   renderCampaignOptions();
   actionSelect.onchange = () => {
@@ -2385,9 +2426,27 @@ function initTrigger() {
     clearFieldError(packageSelect);
     renderCampaignOptions();
   };
+  segmentSelect.onchange = () => {
+    clearFieldError(segmentSelect);
+    resetCashbackTest();
+  };
+  testPeriod.onchange = resetCashbackTest;
+  testAcknowledged.onchange = updateCashbackSafetyState;
+  runTestButton.onclick = () => {
+    if (!campaignSelect.value || !packageSelect.value || !segmentSelect.value) return;
+    const result = sampleReachByPeriod[testPeriod.value] || sampleReachByPeriod["24h"];
+    document.getElementById("triggerTestUsers").textContent = result.users;
+    document.getElementById("triggerTestEvents").textContent = result.events;
+    document.getElementById("triggerTestUpdatedAt").textContent = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date());
+    testResults.hidden = false;
+    cashbackTestPassed = true;
+    testAcknowledged.checked = false;
+    updateCashbackSafetyState();
+  };
   campaignSelect.onchange = () => {
     clearFieldError(campaignSelect);
     clearFieldError(packageSelect);
+    resetCashbackTest();
     const [kind, rawId] = campaignSelect.value.split(":");
     const campaign = campaignData().find(item => item.id === Number(rawId));
     const isCashback = kind === "cashback" && Boolean(campaign);
@@ -2400,7 +2459,11 @@ function initTrigger() {
       clearFieldError(packageSelect);
       const selected = campaign?.packages?.find(pkg => String(pkg.packageId) === packageSelect.value);
       cashbackHint.hidden = !selected || selected.method !== "direct-cashback";
+      percentSupportNote.hidden = !selected || selected.method !== "cashback-percent";
+      resetCashbackTest();
     };
+    percentSupportNote.hidden = true;
+    resetCashbackTest();
   };
   document.getElementById("triggerForm").onsubmit = event => {
     event.preventDefault();
@@ -2412,6 +2475,14 @@ function initTrigger() {
     }
     if (!packageSelect.value) {
       setFieldError(packageSelect, "Package ID is required.");
+      valid = false;
+    }
+    if (isCashbackAction() && !segmentSelect.value) {
+      setFieldError(segmentSelect, "Segment is required for the Cashback action.");
+      valid = false;
+    }
+    if (isCashbackAction() && !(cashbackTestPassed && testAcknowledged.checked)) {
+      toast("Chạy thử flow và xác nhận kết quả trước khi phân phối Cashback.", "error");
       valid = false;
     }
     if (!valid) return;
